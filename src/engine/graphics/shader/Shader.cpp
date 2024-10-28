@@ -8,8 +8,8 @@ auto Shader::create(
   std::string sourceCode
 ) -> std::expected<Shader, std::string> {
   const GLuint shader = glCreateShader(shaderType);
-  const GLenum error = glGetError();
-  if (error != GL_NO_ERROR) {
+  if (shader == 0) {
+    const GLenum error = glGetError();
     return std::unexpected(std::format("glCreateShader error: {}", error));
   }
 
