@@ -59,4 +59,8 @@ auto Shader::operator=(Shader&& other) -> Shader& {
   return *this;
 }
 
+auto Shader::operator*() -> GLuint {
+  return m_shader;
+}
+
 }

@@ -21,6 +21,8 @@ public:
   auto operator=(const Shader&) -> Shader& = delete;
   auto operator=(Shader&&) -> Shader&;
 
+  auto operator*() -> GLuint;
+
 private:
   Shader(GLuint shader);
 
