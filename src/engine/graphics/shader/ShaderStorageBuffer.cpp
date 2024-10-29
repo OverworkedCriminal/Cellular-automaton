@@ -20,6 +20,7 @@ auto ShaderStorageBuffer::create(
 
   const GLenum error = glGetError();
   if (error != GL_NO_ERROR) {
+    glDeleteBuffers(1, &ssbo);
     return std::unexpected(std::format("glNamedBufferData failed: 0x{:04x}", error));
   }
 

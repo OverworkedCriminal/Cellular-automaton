@@ -17,6 +17,7 @@ auto Program::create(
     glAttachShader(program, **shader);
     const GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
+      glDeleteProgram(program);
       return std::unexpected(std::format("glAttachShader error: 0x{:04x}", error));
     }
   }
@@ -33,6 +34,7 @@ auto Program::create(
     infoLog.resize(infoLogLength);
     glGetProgramInfoLog(program, infoLog.size(), &infoLogLength, infoLog.data());
 
+    glDeleteProgram(program);
     return std::unexpected("failed to link program: " + infoLog);
   }
 

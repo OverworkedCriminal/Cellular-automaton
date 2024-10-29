@@ -28,6 +28,7 @@ auto Shader::create(
     infoLog.resize(infoLogLength);
     glGetShaderInfoLog(shader, infoLog.size(), &infoLogLength, infoLog.data());
 
+    glDeleteShader(shader);
     return std::unexpected("failed to compile shader: " + infoLog);
   }
 
