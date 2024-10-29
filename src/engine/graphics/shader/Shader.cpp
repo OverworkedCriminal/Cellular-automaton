@@ -10,7 +10,7 @@ auto Shader::create(
   const GLuint shader = glCreateShader(shaderType);
   if (shader == 0) {
     const GLenum error = glGetError();
-    return std::unexpected(std::format("glCreateShader error: {}", error));
+    return std::unexpected(std::format("glCreateShader error: 0x{:04x}", error));
   }
 
   const char* sourceCodeCString = sourceCode.c_str();

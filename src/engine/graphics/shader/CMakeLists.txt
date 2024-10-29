@@ -1,1 +1,7 @@
-target_sources(cellular-automaton PUBLIC Shader.cpp)
+target_sources(
+  cellular-automaton
+  PUBLIC
+  Program.cpp
+  Shader.cpp
+  ShaderStorageBuffer.cpp
+)
