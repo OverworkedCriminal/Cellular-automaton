@@ -3,4 +3,5 @@ target_sources(
   PUBLIC
   Program.cpp
   Shader.cpp
+  ShaderStorageBuffer.cpp
 )
