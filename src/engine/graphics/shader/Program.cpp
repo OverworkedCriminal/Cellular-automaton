@@ -10,14 +10,14 @@ auto Program::create(
   const GLuint program = glCreateProgram();
   if (program == 0) {
     const GLenum error = glGetError();
-    return std::unexpected(std::format("glCreateProgram error: {}", error));
+    return std::unexpected(std::format("glCreateProgram error: 0x{:04x}", error));
   }
 
   for (auto shader : shaders) {
     glAttachShader(program, **shader);
     const GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
-      return std::unexpected(std::format("glAttachShader error: {}", error));
+      return std::unexpected(std::format("glAttachShader error: 0x{:04x}", error));
     }
   }
 
@@ -64,6 +64,14 @@ auto Program::operator=(Program&& other) -> Program& {
   return *this;
 }
 
+auto Program::useProgram() -> std::expected<void, std::string> {
+  glUseProgram(m_program);
+  const GLenum error = glGetError();
+  if (error != GL_NO_ERROR) {
+    return std::unexpected(std::format("glUseProgram failed: 0x{:04x}", error));
+  }
 
+  return {};
+}
 
 }

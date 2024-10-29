@@ -22,6 +22,8 @@ public:
   auto operator=(const Program&) -> Program& = delete;
   auto operator=(Program&&) -> Program&;
 
+  auto useProgram() -> std::expected<void, std::string>;
+
 private:
   Program(GLuint program);
 
