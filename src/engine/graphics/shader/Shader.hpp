@@ -11,7 +11,12 @@ class Shader {
 public:
   static auto create(
     GLenum shaderType,
-    std::string sourceCode
+    const std::string& sourceCode
+  ) -> std::expected<Shader, std::string>;
+
+  static auto create_from_file(
+    GLenum shaderType,
+    const std::string& filepath
   ) -> std::expected<Shader, std::string>;
 
   Shader(const Shader&) = delete;
