@@ -21,6 +21,8 @@ public:
   auto operator=(const Texture&) -> Texture& = delete;
   auto operator=(Texture&&) -> Texture&;
 
+  auto bind() -> void;
+
 private:
   Texture(GLuint texture);
 
