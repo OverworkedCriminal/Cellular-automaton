@@ -1,1 +1,6 @@
-target_sources(cellular-automaton PUBLIC VertexBuffer.cpp)
+target_sources(
+  cellular-automaton
+  PUBLIC
+  VertexArrayObject.cpp
+  VertexBuffer.cpp
+)
