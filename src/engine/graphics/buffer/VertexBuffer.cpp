@@ -17,11 +17,21 @@ auto VertexBuffer::create(
   if (error != GL_NO_ERROR) {
     return std::unexpected(std::format("glVertexAttribPointer failed: 0x{:04x}", error));
   }
+  glEnableVertexAttribArray(0);
+  error = glGetError();
+  if (error != GL_NO_ERROR) {
+    return std::unexpected(std::format("glEnableVertexAttribArray failed: 0x{:04x}", error));
+  }
 
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*) (2 * sizeof(GLfloat)));
   error = glGetError();
   if (error != GL_NO_ERROR) {
     return std::unexpected(std::format("glVertexAttribPointer failed: 0x{:04x}", error));
+  }
+  glEnableVertexAttribArray(1);
+  error = glGetError();
+  if (error != GL_NO_ERROR) {
+    return std::unexpected(std::format("glEnableVertexAttribArray failed: 0x{:04x}", error));
   }
 
   glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
