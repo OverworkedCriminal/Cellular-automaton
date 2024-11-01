@@ -27,6 +27,7 @@ auto Window::open(
   }
 
   glfwMakeContextCurrent(glfwWindow);
+  glfwSetInputMode(glfwWindow, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
 
   if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
     glfwTerminate();
