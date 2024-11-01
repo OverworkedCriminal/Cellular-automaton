@@ -1,4 +1,5 @@
-#include "engine/engine.hpp"
+#include "engine/Config.hpp"
+#include "engine/application/IApplication.hpp"
 #include "engine/window/Window.hpp"
 
 namespace engine {
@@ -15,7 +16,7 @@ static auto validate_config(const Config& config) -> std::expected<void, std::st
 
 auto run(
   const Config& config,
-  std::unique_ptr<IApplication>&& application
+  IApplication& application
 ) -> std::expected<void, std::string> {
   auto validationResult = validate_config(config);
   if (!validationResult.has_value()) {
@@ -32,13 +33,13 @@ auto run(
   }
   Window& window = *windowResult;
 
-  auto onCreateResult = application->onCreate();
+  auto onCreateResult = application.onCreate();
   if (!onCreateResult.has_value()) {
     return std::unexpected("application onCreate failed: " + onCreateResult.error());
   }
 
   while (!glfwWindowShouldClose(*window)) {
-    auto onUpdateResult = application->onUpdate();
+    auto onUpdateResult = application.onUpdate();
     if (!onUpdateResult.has_value()) {
       return std::unexpected("application onUpdate failed " + onUpdateResult.error());
     }
@@ -47,7 +48,7 @@ auto run(
     glfwPollEvents();
   }
 
-  auto onDestroyResult = application->onDestroy();
+  auto onDestroyResult = application.onDestroy();
   if (!onDestroyResult.has_value()) {
     return std::unexpected("application onDestroy failed: " + onDestroyResult.error());
   }
