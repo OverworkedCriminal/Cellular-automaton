@@ -21,6 +21,8 @@ public:
   auto operator=(const VertexBuffer&) -> VertexBuffer& = delete;
   auto operator=(VertexBuffer&&) -> VertexBuffer&;
 
+  auto operator*() -> GLuint;
+
   auto bind() -> void;
 
 private:
