@@ -22,6 +22,7 @@ public:
   auto operator=(Texture&&) -> Texture&;
 
   auto bind() -> void;
+  auto bindImageTexture() -> std::expected<void, Error>;
 
 private:
   Texture(GLuint texture);

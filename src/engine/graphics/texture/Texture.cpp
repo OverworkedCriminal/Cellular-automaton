@@ -76,4 +76,22 @@ auto Texture::bind() -> void {
   glBindTexture(GL_TEXTURE_2D, m_texture);
 }
 
+auto Texture::bindImageTexture() -> std::expected<void, Error> {
+  glBindImageTexture(
+    0,
+    m_texture,
+    0,
+    GL_FALSE,
+    0,
+    GL_READ_WRITE,
+    GL_RGBA32F
+  );
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glBindImageTexture", glError));
+  }
+
+  return {};
+}
+
 }
