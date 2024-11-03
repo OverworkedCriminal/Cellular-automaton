@@ -15,7 +15,7 @@ int main() {
 
   auto applicationResult = GpuApplication::create(WINDOW_WIDTH, WINDOW_HEIGHT);
   if (!applicationResult.has_value()) {
-    std::cerr << "Failed to create GpuApplication " + applicationResult.error();
+    std::cerr << "Failed to create GpuApplication " << applicationResult.error();
     return -1;
   }
 

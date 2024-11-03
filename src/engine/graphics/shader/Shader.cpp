@@ -1,17 +1,17 @@
 #include "engine/graphics/shader/Shader.hpp"
+#include "engine/utils/error.hpp"
 #include "engine/utils/file.hpp"
-#include <format>
 
 namespace engine {
 
 auto Shader::create(
   GLenum shaderType,
   const std::string& sourceCode
-) -> std::expected<Shader, std::string> {
+) -> std::expected<Shader, Error> {
   const GLuint shader = glCreateShader(shaderType);
   if (shader == 0) {
-    const GLenum error = glGetError();
-    return std::unexpected(std::format("glCreateShader error: 0x{:04x}", error));
+    const GLenum glError = glGetError();
+    return std::unexpected(errorGL("glCreateShader", glError));
   }
 
   const char* sourceCodeCString = sourceCode.c_str();
@@ -30,7 +30,7 @@ auto Shader::create(
     glGetShaderInfoLog(shader, infoLog.size(), &infoLogLength, infoLog.data());
 
     glDeleteShader(shader);
-    return std::unexpected("failed to compile shader: " + infoLog);
+    return std::unexpected(error("failed to compile shader: " + infoLog));
   }
 
   Shader outShader(shader);
@@ -41,15 +41,15 @@ auto Shader::create(
 auto Shader::create_from_file(
   GLenum shaderType,
   const std::string &filepath
-) -> std::expected<Shader, std::string> {
+) -> std::expected<Shader, Error> {
   auto readFileResult = read_file(filepath);
   if (!readFileResult.has_value()) {
-    return std::unexpected("failed to read shader file: " + readFileResult.error());
+    return std::unexpected(error("failed to read shader file", readFileResult.error()));
   }
 
   auto shaderResult = create(shaderType, *readFileResult);
   if (!shaderResult.has_value()) {
-    return std::unexpected("failed to create shader from file: " + shaderResult.error());
+    return std::unexpected(error("failed to create shader from file", shaderResult.error()));
   }
 
   return std::move(*shaderResult);
@@ -57,9 +57,7 @@ auto Shader::create_from_file(
 
 Shader::Shader(GLuint shader)
   :m_shader(shader)
-{
-
-}
+{}
 
 Shader::Shader(Shader&& other) {
   m_shader = other.m_shader;

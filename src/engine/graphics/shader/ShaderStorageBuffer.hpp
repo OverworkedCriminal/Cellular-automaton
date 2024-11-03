@@ -1,16 +1,16 @@
 #ifndef ENGINE_GRAPHICS_SHADER_SHADER_STORAGE_BUFFER_HPP
 #define ENGINE_GRAPHICS_SHADER_SHADER_STORAGE_BUFFER_HPP
 
+#include "engine/error/Error.hpp"
 #include "glad/glad.h"
 #include <expected>
-#include <string>
 #include <vector>
 
 namespace engine {
 
 class ShaderStorageBuffer {
 public:
-  static auto create(GLsizeiptr size) -> std::expected<ShaderStorageBuffer, std::string>;
+  static auto create(GLsizeiptr size) -> std::expected<ShaderStorageBuffer, Error>;
 
   ShaderStorageBuffer(const ShaderStorageBuffer&) = delete;
   ShaderStorageBuffer(ShaderStorageBuffer&&);
@@ -19,7 +19,7 @@ public:
   auto operator=(const ShaderStorageBuffer&) -> ShaderStorageBuffer& = delete;
   auto operator=(ShaderStorageBuffer&&) -> ShaderStorageBuffer&;
 
-  auto bindBufferBase(GLuint index) -> std::expected<void, std::string>;
+  auto bindBufferBase(GLuint index) -> std::expected<void, Error>;
 
   auto store(const std::vector<GLubyte>& buffer) -> void;
   auto load(std::vector<GLubyte>& buffer) -> void;
