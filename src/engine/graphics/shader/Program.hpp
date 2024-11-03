@@ -23,8 +23,13 @@ public:
 
   auto useProgram() -> std::expected<void, Error>;
 
+  auto setUniform(const std::string& name, GLuint value) -> std::expected<void, Error>;
+  auto setUniform(const std::string& name, GLint value) -> std::expected<void, Error>;
+
 private:
   Program(GLuint program);
+
+  auto getUniformLocation(const std::string& name) -> std::expected<GLint, Error>;
 
   GLuint m_program;
 

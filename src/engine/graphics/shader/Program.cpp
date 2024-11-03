@@ -75,9 +75,55 @@ auto Program::useProgram() -> std::expected<void, Error> {
 
   return {};
 }
+
+auto Program::setUniform(
+  const std::string& name,
+  GLuint value
+) -> std::expected<void, Error> {
+  auto locationResult = getUniformLocation(name);
+  if (!locationResult.has_value()) {
+    return std::unexpected(std::move(locationResult.error()));
+  }
+
+  glUniform1ui(*locationResult, value);
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glUniform1ui", glError));
   }
 
   return {};
+}
+
+auto Program::setUniform(
+  const std::string& name,
+  GLint value
+) -> std::expected<void, Error> {
+  auto locationResult = getUniformLocation(name);
+  if (!locationResult.has_value()) {
+    return std::unexpected(std::move(locationResult.error()));
+  }
+
+  glUniform1i(*locationResult, value);
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glUniform1ui", glError));
+  }
+
+  return {};
+}
+
+auto Program::getUniformLocation(const std::string& name) -> std::expected<GLint, Error> {
+  const GLint location = glGetUniformLocation(m_program, name.c_str());
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glGetUniformLocation", glError));
+  }
+
+  if (location == -1) {
+    return std::unexpected(error("failed to find uniform location of " + name));
+  }
+
+  return location;
 }
 
 }
