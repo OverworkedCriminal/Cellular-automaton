@@ -1,1 +1,6 @@
-target_sources(cellular-automaton PUBLIC file.cpp)
+target_sources(
+  cellular-automaton
+  PUBLIC
+  error.cpp
+  file.cpp
+)
