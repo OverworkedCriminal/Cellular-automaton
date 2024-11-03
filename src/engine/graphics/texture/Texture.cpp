@@ -1,5 +1,5 @@
 #include "engine/graphics/texture/Texture.hpp"
-#include <format>
+#include "engine/utils/error.hpp"
 #include <vector>
 
 namespace engine {
@@ -7,13 +7,13 @@ namespace engine {
 auto Texture::create(
   GLsizei width,
   GLsizei height
-) -> std::expected<Texture, std::string> {
+) -> std::expected<Texture, Error> {
   if (width <= 0 || height <= 0) {
-    return std::unexpected("invalid texture dimensions");
+    return std::unexpected(error("invalid texture dimensions"));
   }
 
   // times 3 because of RGB channels
-  const std::vector<GLfloat> initialTextureState(width * height * 3, 0.5f);
+  const std::vector<GLfloat> initialTextureState(width * height * 4, 0.5f);
 
   GLuint texture;
   glGenTextures(1, &texture);
@@ -29,18 +29,18 @@ auto Texture::create(
   glTexImage2D(
     GL_TEXTURE_2D,
     0,
-    GL_RGB,
+    GL_RGBA32F,
     width,
     height,
     0,
-    GL_RGB,
+    GL_RGBA,
     GL_FLOAT,
     initialTextureState.data()
   );
 
-  const GLenum error = glGetError();
-  if (error != GL_NO_ERROR) {
-    return std::unexpected(std::format("glTexImage2D failed: 0x{:04x}", error));
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glTexImage2D", glError));
   }
 
   Texture outTexture(texture);

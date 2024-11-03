@@ -1,24 +1,24 @@
 #include "engine/graphics/shader/Program.hpp"
 #include "engine/graphics/shader/Shader.hpp"
-#include <format>
+#include "engine/utils/error.hpp"
 
 namespace engine {
 
 auto Program::create(
   const std::vector<Shader*>& shaders
-) -> std::expected<Program, std::string> {
+) -> std::expected<Program, Error> {
   const GLuint program = glCreateProgram();
   if (program == 0) {
-    const GLenum error = glGetError();
-    return std::unexpected(std::format("glCreateProgram error: 0x{:04x}", error));
+    const GLenum glError = glGetError();
+    return std::unexpected(errorGL("glCreateProgram", glError));
   }
 
   for (auto shader : shaders) {
     glAttachShader(program, **shader);
-    const GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
+    const GLenum glError = glGetError();
+    if (glError != GL_NO_ERROR) {
       glDeleteProgram(program);
-      return std::unexpected(std::format("glAttachShader error: 0x{:04x}", error));
+      return std::unexpected(errorGL("glAttachShader", glError));
     }
   }
 
@@ -35,7 +35,7 @@ auto Program::create(
     glGetProgramInfoLog(program, infoLog.size(), &infoLogLength, infoLog.data());
 
     glDeleteProgram(program);
-    return std::unexpected("failed to link program: " + infoLog);
+    return std::unexpected(error("failed to link program: " + infoLog));
   }
 
   Program outProgram(program);
@@ -66,11 +66,15 @@ auto Program::operator=(Program&& other) -> Program& {
   return *this;
 }
 
-auto Program::useProgram() -> std::expected<void, std::string> {
+auto Program::useProgram() -> std::expected<void, Error> {
   glUseProgram(m_program);
-  const GLenum error = glGetError();
-  if (error != GL_NO_ERROR) {
-    return std::unexpected(std::format("glUseProgram failed: 0x{:04x}", error));
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glUseProgram", glError));
+  }
+
+  return {};
+}
   }
 
   return {};

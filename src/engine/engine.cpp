@@ -1,6 +1,7 @@
 #include "engine/engine.hpp"
 #include "engine/Config.hpp"
 #include "engine/application/IApplication.hpp"
+#include "engine/utils/error.hpp"
 #include "engine/window/Window.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -34,18 +35,18 @@ public:
     return *this;
   }
 
-  auto run(std::unique_ptr<IApplication> application) -> std::expected<void, std::string> {
+  auto run(std::unique_ptr<IApplication> application) -> std::expected<void, Error> {
     updateContext();
 
     auto onCreateResult = application->onCreate(m_context);
     if (!onCreateResult.has_value()) {
-      return std::unexpected("application onCreate failed: " + onCreateResult.error());
+      return std::unexpected(error("application onCreate failed", onCreateResult.error()));
     }
 
     while (!glfwWindowShouldClose(*m_window)) {
       auto onUpdateResult = application->onUpdate(m_context);
       if (!onUpdateResult.has_value()) {
-        std::cerr << "application onUpdate failed. Main loop stopped " << onUpdateResult.error() << '\n';
+        std::cerr << "application onUpdate failed. Main loop stopped: " << onUpdateResult.error() << '\n';
         break;
       }
 
@@ -56,7 +57,7 @@ public:
 
     auto onDestroyResult = application->onDestroy(m_context);
     if (!onDestroyResult.has_value()) {
-      return std::unexpected("application onDestroy failed: " + onDestroyResult.error());
+      return std::unexpected(error("application onDestroy failed", onDestroyResult.error()));
     }
 
     return {};
@@ -89,11 +90,11 @@ private:
 
 };
 
-static auto validate_config(const Config& config) -> std::expected<void, std::string> {
+static auto validate_config(const Config& config) -> std::expected<void, Error> {
   if (config.windowWidth <= 0) {
-    return std::unexpected("windowWidth must be positive");
+    return std::unexpected(error("windowWidth must be positive"));
   } else if (config.windowHeight <= 0) {
-    return std::unexpected("windowHeight must be positive");
+    return std::unexpected(error("windowHeight must be positive"));
   } else {
     return {};
   }
@@ -102,10 +103,10 @@ static auto validate_config(const Config& config) -> std::expected<void, std::st
 auto run(
   const Config& config,
   std::unique_ptr<IApplication> application
-) -> std::expected<void, std::string> {
+) -> std::expected<void, Error> {
   auto validationResult = validate_config(config);
   if (!validationResult.has_value()) {
-    return std::unexpected("invalid config: " + validationResult.error());
+    return std::unexpected(error("invalid config", validationResult.error()));
   }
 
   auto windowResult = Window::open(
@@ -114,13 +115,13 @@ auto run(
     config.windowHeight
   );
   if (!windowResult.has_value()) {
-    return std::unexpected("failed to open window: " + windowResult.error());
+    return std::unexpected(error("failed to open window", windowResult.error()));
   }
 
   Engine engine = Engine::create(std::move(*windowResult));
   auto runResult = engine.run(std::move(application));
   if (!runResult.has_value()) {
-    return std::unexpected("run failed: " + runResult.error());
+    return std::unexpected(error("run failed", runResult.error()));
   }
 
   return {};

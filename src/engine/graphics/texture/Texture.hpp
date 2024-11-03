@@ -1,9 +1,9 @@
 #ifndef ENGINE_GRAPHICS_TEXTURE_TEXTURE_HPP
 #define ENGINE_GRAPHICS_TEXTURE_TEXTURE_HPP
 
+#include "engine/error/Error.hpp"
 #include "glad/glad.h"
 #include <expected>
-#include <string>
 
 namespace engine {
 
@@ -12,7 +12,7 @@ public:
   static auto create(
     GLsizei width,
     GLsizei height
-  ) -> std::expected<Texture, std::string>;
+  ) -> std::expected<Texture, Error>;
 
   Texture(const Texture&) = delete;
   Texture(Texture&&);

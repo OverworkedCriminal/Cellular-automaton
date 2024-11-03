@@ -2,8 +2,8 @@
 #define ENGINE_APPLICATION_IAPPLICATION_HPP
 
 #include "engine/Context.hpp"
+#include "engine/error/Error.hpp"
 #include <expected>
-#include <string>
 
 namespace engine {
 
@@ -13,15 +13,15 @@ public:
 
   virtual auto onCreate(
     const Context& context
-  ) -> std::expected<void, std::string> { return {}; }
+  ) -> std::expected<void, Error> { return {}; }
 
   virtual auto onDestroy(
     const Context& context
-  ) -> std::expected<void, std::string> { return {}; }
+  ) -> std::expected<void, Error> { return {}; }
 
   virtual auto onUpdate(
     const Context& context
-  ) -> std::expected<void, std::string> { return {}; }
+  ) -> std::expected<void, Error> { return {}; }
 };
 
 } // namespace engine

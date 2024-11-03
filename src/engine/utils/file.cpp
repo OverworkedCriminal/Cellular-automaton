@@ -1,15 +1,16 @@
 #include "engine/utils/file.hpp"
+#include "engine/utils/error.hpp"
 
 #include <fstream>
 #include <ios>
 
 namespace engine {
 
-auto read_file(const std::string& path) -> std::expected<std::string, std::string> {
+auto read_file(const std::string& path) -> std::expected<std::string, Error> {
   // Open file at the end to know its size
   std::ifstream file(path, std::ios_base::in | std::ios_base::ate);
   if (!file.is_open()) {
-    return std::unexpected("failed to read file: " + path);
+    return std::unexpected(error("failed to read file: " + path));
   }
 
   std::string content;
