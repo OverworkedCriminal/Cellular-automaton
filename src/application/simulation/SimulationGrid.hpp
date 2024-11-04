@@ -35,8 +35,8 @@ public:
     std::vector<std::byte>* buffer,
     unsigned int width,
     unsigned int height,
-    unsigned int cellSize,
-    unsigned int cellValueOffset
+    unsigned int cellSize = 1,
+    unsigned int cellValueOffset = 0
   ) -> std::expected<SimulationGrid, engine::Error>;
 
   SimulationGrid(const SimulationGrid&) = default;
