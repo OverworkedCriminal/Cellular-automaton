@@ -3,6 +3,23 @@
 
 using engine::error;
 
+static auto validateBuffer(
+  std::vector<std::byte>* buffer,
+  unsigned int width,
+  unsigned int height,
+  unsigned int cellSize
+) -> std::expected<void, engine::Error> {
+  if (buffer == nullptr) {
+    return std::unexpected(error("buffer can't' be nullptr"));
+  }
+
+  if (buffer->size() < width * height * cellSize) {
+    return std::unexpected(error("buffer is too small"));
+  }
+
+  return {};
+}
+
 auto SimulationGrid::create(
   std::vector<std::byte>* buffer,
   unsigned int width,
@@ -10,8 +27,9 @@ auto SimulationGrid::create(
   unsigned int cellSize,
   unsigned int cellValueOffset
 ) -> std::expected<SimulationGrid, engine::Error> {
-  if (buffer->size() < width * height * cellSize) {
-    return std::unexpected(error("buffer is too small"));
+  auto validationResult = validateBuffer(buffer, width, height, cellSize);
+  if (!validationResult.has_value()) {
+    return std::unexpected(std::move(validationResult.error()));
   }
 
   if (cellValueOffset >= cellSize) {
@@ -41,7 +59,7 @@ SimulationGrid::SimulationGrid(
   ,m_cellValueOffset(cellValueOffset)
 {}
 
-auto SimulationGrid::get(unsigned int x, unsigned int y) -> std::byte {
+auto SimulationGrid::getCell(unsigned int x, unsigned int y) -> std::byte {
   const auto& buffer = *m_buffer;
 
   const auto idx = bufferIndex(x, y);
@@ -49,12 +67,33 @@ auto SimulationGrid::get(unsigned int x, unsigned int y) -> std::byte {
   return buffer[idx];
 }
 
-auto SimulationGrid::set(unsigned int x, unsigned int y, std::byte value) -> void {
+auto SimulationGrid::setCell(unsigned int x, unsigned int y, std::byte value) -> void {
   auto& buffer = *m_buffer;
 
   const auto idx = bufferIndex(x, y);
 
   buffer[idx] = value;
+}
+
+auto SimulationGrid::getWidth() -> unsigned int {
+  return m_width;
+}
+
+auto SimulationGrid::getHeight() -> unsigned int {
+  return m_height;
+}
+
+auto SimulationGrid::swapBuffer(
+  std::vector<std::byte>* buffer
+) -> std::expected<void, engine::Error> {
+  auto validationResult = validateBuffer(buffer, m_width, m_height, m_cellSize);
+  if (!validationResult.has_value()) {
+    return validationResult;
+  }
+
+  m_buffer = buffer;
+
+  return {};
 }
 
 auto SimulationGrid::bufferIndex(unsigned int x, unsigned int y) -> unsigned int {

@@ -45,8 +45,13 @@ public:
   auto operator=(const SimulationGrid&) -> SimulationGrid& = default;
   auto operator=(SimulationGrid&&) -> SimulationGrid& = default;
 
-  auto get(unsigned int x, unsigned int y) -> std::byte;
-  auto set(unsigned int x, unsigned int y, std::byte value) -> void;
+  auto getCell(unsigned int x, unsigned int y) -> std::byte;
+  auto setCell(unsigned int x, unsigned int y, std::byte value) -> void;
+
+  auto getWidth() -> unsigned int;
+  auto getHeight() -> unsigned int;
+
+  auto swapBuffer(std::vector<std::byte>* buffer) -> std::expected<void, engine::Error>;
 
 private:
   SimulationGrid(
