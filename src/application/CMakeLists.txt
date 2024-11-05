@@ -1,2 +1,3 @@
 add_subdirectory(simulation)
-add_subdirectory(gpu)
+
+target_sources(cellular-automaton PUBLIC Application.cpp)
