@@ -24,9 +24,7 @@ auto ShaderStorageBuffer::create(
     return std::unexpected(errorGL("glNamedBufferData", glError));
   }
 
-  ShaderStorageBuffer shaderStorageBuffer(ssbo, size);
-
-  return shaderStorageBuffer;
+  return ShaderStorageBuffer(ssbo, size);
 }
 
 ShaderStorageBuffer::ShaderStorageBuffer(GLuint ssbo, GLsizeiptr size)
@@ -63,7 +61,7 @@ auto ShaderStorageBuffer::bindBufferBase(GLuint index) -> std::expected<void, Er
   return {};
 }
 
-auto ShaderStorageBuffer::store(const std::vector<GLubyte>& buffer) -> void {
+auto ShaderStorageBuffer::store(const std::vector<std::byte>& buffer) -> void {
   const GLsizeiptr size = std::min(
     m_size,
     static_cast<GLsizeiptr>(buffer.size())
@@ -72,7 +70,7 @@ auto ShaderStorageBuffer::store(const std::vector<GLubyte>& buffer) -> void {
   glNamedBufferSubData(m_ssbo, 0, size, buffer.data());
 }
 
-auto ShaderStorageBuffer::load(std::vector<GLubyte>& buffer) -> void {
+auto ShaderStorageBuffer::load(std::vector<std::byte>& buffer) -> void {
   const GLsizeiptr size = std::min(
     m_size,
     static_cast<GLsizeiptr>(buffer.size())

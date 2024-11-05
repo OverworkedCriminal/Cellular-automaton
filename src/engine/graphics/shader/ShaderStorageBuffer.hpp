@@ -3,6 +3,7 @@
 
 #include "engine/error/Error.hpp"
 #include "glad/glad.h"
+#include <cstddef>
 #include <expected>
 #include <vector>
 
@@ -21,8 +22,8 @@ public:
 
   auto bindBufferBase(GLuint index) -> std::expected<void, Error>;
 
-  auto store(const std::vector<GLubyte>& buffer) -> void;
-  auto load(std::vector<GLubyte>& buffer) -> void;
+  auto store(const std::vector<std::byte>& buffer) -> void;
+  auto load(std::vector<std::byte>& buffer) -> void;
 
 private:
   ShaderStorageBuffer(GLuint ssbo, GLsizeiptr size);
