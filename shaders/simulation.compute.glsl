@@ -15,7 +15,8 @@ uniform uint gridHeight;
 uniform uint gridPadding;
 
 const vec4 colors[] = vec4[](
-  vec4(1.0, 1.0, 1.0, 1.0)
+  vec4(1.0, 1.0, 1.0, 1.0), // BLANK
+  vec4(1.0, 1.0, 0.0, 1.0)  // SAND
 );
 
 
@@ -23,16 +24,20 @@ uint bufferIdx(uvec2 coords) {
   return coords.y * gridWidth + coords.x;
 }
 
-uint calculateCell(uvec2 coords) {
-  return 0;
+uint calculateCellValue(uvec2 coords) {
+  uint idx = bufferIdx(coords);
+  return inputBuffer[idx];
 }
 
 
 void main() {
   uvec2 coords = gl_GlobalInvocationID.xy + uvec2(gridPadding, gridPadding);
 
-  uint cell = calculateCell(coords);
-  vec4 color = colors[cell];
+  uint cellValue = calculateCellValue(coords);
+  vec4 color = colors[cellValue];
 
+  uint idx = bufferIdx(coords);
+
+  outputBuffer[idx] = cellValue;
   imageStore(simulationTexture, ivec2(coords), color);
 }

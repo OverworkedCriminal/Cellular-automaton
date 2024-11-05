@@ -30,12 +30,12 @@ auto ShaderStorageBuffer::create(
 ShaderStorageBuffer::ShaderStorageBuffer(GLuint ssbo, GLsizeiptr size)
   :m_ssbo(ssbo)
   ,m_size(size)
+{}
+
+ShaderStorageBuffer::ShaderStorageBuffer(ShaderStorageBuffer&& other)
+  :m_ssbo(other.m_ssbo)
+  ,m_size(other.m_size)
 {
-
-}
-
-ShaderStorageBuffer::ShaderStorageBuffer(ShaderStorageBuffer&& other) {
-  m_ssbo = other.m_ssbo;
   other.m_ssbo = 0;
 }
 
@@ -47,7 +47,10 @@ ShaderStorageBuffer::~ShaderStorageBuffer() {
 
 auto ShaderStorageBuffer::operator=(ShaderStorageBuffer&& other) -> ShaderStorageBuffer& {
   m_ssbo = other.m_ssbo;
+  m_size = other.m_size;
+
   other.m_ssbo = 0;
+
   return *this;
 }
 
