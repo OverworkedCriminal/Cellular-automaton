@@ -59,8 +59,28 @@ auto Application::onUpdate(
   const engine::Context& context
 ) -> std::expected<void, engine::Error> {
   if (context.mousePressed) {
-    m_simulation->paint([](SimulationGrid& simulationGrid) {
-      // TODO: write to simulation grid
+    m_simulation->paint([&context, this](SimulationGrid& simulationGrid) {
+      const int& x = context.mousePosX;
+      const int& y = m_height - context.mousePosY;
+
+      if (x < 0 || x >= m_width || y < 0 || y >= m_height) {
+        return;
+      }
+
+      for (int col = -5; col <= 5; ++col) {
+        const int currentCol = x + col;
+        if (currentCol < 0 || currentCol >= m_width) {
+          continue;
+        }
+
+        for (int row = -5; row <= 5; ++row) {
+          const int currentRow = y + row;
+          if (currentRow < 0 || currentRow >= m_height) {
+            continue;
+          }
+          simulationGrid.setCell(currentCol, currentRow, std::byte(2));
+        }
+      }
     });
   }
   

@@ -127,7 +127,7 @@ auto GpuSimulation::onUpdate() -> std::expected<void, engine::Error> {
     return std::unexpected(errorGL("glDispatchCompute", glError));
   }
 
-  glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
+  glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
   glError = glGetError();
   if (glError != GL_NO_ERROR) {
     return std::unexpected(errorGL("glMemoryBarrier", glError));
@@ -154,6 +154,18 @@ auto GpuSimulation::initSimulationGrid(bool isGpuBigEndian) -> std::expected<voi
     return std::unexpected(error("failed to create simulation grid", simulationGridResult.error()));
   }
   m_simulationGrid = std::move(*simulationGridResult);
+
+  // Fill grid with ones
+  // Frame of size PADDING is filled with 0 to make sure they don't take part in simulation
+  for (int col = 0; col < m_width; ++col) {
+    for (int row = 0; row < m_height; ++row) {
+      if (col < PADDING || col >= m_width - PADDING || row < PADDING || row >= m_height - PADDING) {
+        m_simulationGrid->setCell(col, row, std::byte(0));
+      } else {
+        m_simulationGrid->setCell(col, row, std::byte(1));
+      }
+    }
+  }
 
   return {};
 }

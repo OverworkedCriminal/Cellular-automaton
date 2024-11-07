@@ -13,7 +13,7 @@ auto Texture::create(
   }
 
   // times 3 because of RGB channels
-  const std::vector<GLfloat> initialTextureState(width * height * 4, 0.5f);
+  const std::vector<GLfloat> initialTextureState(width * height * 4, 0.0f);
 
   GLuint texture;
   glGenTextures(1, &texture);
