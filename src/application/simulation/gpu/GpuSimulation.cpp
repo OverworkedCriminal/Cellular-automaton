@@ -160,9 +160,9 @@ auto GpuSimulation::initSimulationGrid(bool isGpuBigEndian) -> std::expected<voi
   for (int col = 0; col < m_width; ++col) {
     for (int row = 0; row < m_height; ++row) {
       if (col < PADDING || col >= m_width - PADDING || row < PADDING || row >= m_height - PADDING) {
-        m_simulationGrid->setCell(col, row, std::byte(0));
+        m_simulationGrid->setCell(col, row, std::byte(1) /*PADDING*/);
       } else {
-        m_simulationGrid->setCell(col, row, std::byte(1));
+        m_simulationGrid->setCell(col, row, std::byte(2) /*AIR*/);
       }
     }
   }

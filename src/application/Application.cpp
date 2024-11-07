@@ -78,7 +78,7 @@ auto Application::onUpdate(
           if (currentRow < 0 || currentRow >= m_height) {
             continue;
           }
-          simulationGrid.setCell(currentCol, currentRow, std::byte(2));
+          simulationGrid.setCell(currentCol, currentRow, std::byte(4) /*SAND*/);
         }
       }
     });
