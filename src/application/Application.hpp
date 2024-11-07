@@ -43,6 +43,8 @@ private:
   );
 
   auto initDrawing() -> std::expected<void, engine::Error>;
+  auto updateSelectedCellValue(const engine::Context& context) -> void;
+  auto updateSimulationGrid(const engine::Context& context) -> void;
 
   int m_width;
   int m_height;
@@ -54,6 +56,8 @@ private:
 
   std::optional<engine::Program> m_drawingProgram;
   std::optional<engine::Texture> m_texture;
+
+  std::byte m_selectedCellValue;
 };
 
 #endif

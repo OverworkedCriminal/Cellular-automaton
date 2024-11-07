@@ -7,6 +7,9 @@ struct Context {
   int mousePosX;
   int mousePosY;
   bool mousePressed;
+
+  bool key1Pressed;
+  bool key2Pressed;
 };
 
 }

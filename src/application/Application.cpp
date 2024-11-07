@@ -6,6 +6,9 @@
 using engine::error;
 using engine::errorGL;
 
+constexpr auto CV_SAND = std::byte(4);
+constexpr auto CV_WATER = std::byte(8);
+
 auto Application::create(
   int width,
   int height,
@@ -41,6 +44,8 @@ auto Application::onCreate(
     return std::unexpected(error("simulation onCreate failed", simulationResult.error()));
   }
 
+  m_selectedCellValue = CV_SAND;
+
   return {};
 }
 
@@ -58,31 +63,8 @@ auto Application::onDestroy(
 auto Application::onUpdate(
   const engine::Context& context
 ) -> std::expected<void, engine::Error> {
-  if (context.mousePressed) {
-    m_simulation->paint([&context, this](SimulationGrid& simulationGrid) {
-      const int& x = context.mousePosX;
-      const int& y = m_height - context.mousePosY;
-
-      if (x < 0 || x >= m_width || y < 0 || y >= m_height) {
-        return;
-      }
-
-      for (int col = -5; col <= 5; ++col) {
-        const int currentCol = x + col;
-        if (currentCol < 0 || currentCol >= m_width) {
-          continue;
-        }
-
-        for (int row = -5; row <= 5; ++row) {
-          const int currentRow = y + row;
-          if (currentRow < 0 || currentRow >= m_height) {
-            continue;
-          }
-          simulationGrid.setCell(currentCol, currentRow, std::byte(4) /*SAND*/);
-        }
-      }
-    });
-  }
+  updateSelectedCellValue(context);
+  updateSimulationGrid(context);
   
   auto simulationResult = m_simulation->onUpdate();
   if (!simulationResult.has_value()) {
@@ -170,4 +152,42 @@ auto Application::initDrawing() -> std::expected<void, engine::Error> {
   m_vao = std::move(*vaoResult);
 
   return {};
+}
+
+auto Application::updateSelectedCellValue(const engine::Context& context) -> void {
+  if (context.key1Pressed) {
+    m_selectedCellValue = CV_SAND;
+  } else if (context.key2Pressed) {
+    m_selectedCellValue = CV_WATER;
+  }
+}
+
+auto Application::updateSimulationGrid(const engine::Context& context) -> void {
+  if (!context.mousePressed) {
+    return;
+  }
+
+  m_simulation->paint([&context, this](SimulationGrid& simulationGrid) {
+    const int x = context.mousePosX;
+    const int y = m_height - context.mousePosY;
+
+    if (x < 0 || x >= m_width || y < 0 || y >= m_height) {
+      return;
+    }
+
+    for (int col = -5; col <= 5; ++col) {
+      const int currentCol = x + col;
+      if (currentCol < 0 || currentCol >= m_width) {
+        continue;
+      }
+
+      for (int row = -5; row <= 5; ++row) {
+        const int currentRow = y + row;
+        if (currentRow < 0 || currentRow >= m_height) {
+          continue;
+        }
+        simulationGrid.setCell(currentCol, currentRow, m_selectedCellValue);
+      }
+    }
+  });  
 }
