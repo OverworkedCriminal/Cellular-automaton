@@ -1,0 +1,1 @@
+target_sources(cellular-automaton PUBLIC Error.cpp)

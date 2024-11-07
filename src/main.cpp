@@ -1,21 +1,42 @@
+#include "application/Application.hpp"
+#include "application/simulation/gpu/GpuSimulation.hpp"
 #include "engine/Config.hpp"
-#include "engine/application/IApplication.hpp"
 #include "engine/engine.hpp"
 #include <iostream>
 #include <memory>
 
 int main() {
+  constexpr int WINDOW_WIDTH = 800;
+  constexpr int WINDOW_HEIGHT = 600;
+
   const engine::Config config = {
     .windowTitle = "Cellular automaton",
-    .windowWidth = 800,
-    .windowHeight = 600
+    .windowWidth = WINDOW_WIDTH,
+    .windowHeight = WINDOW_HEIGHT
   };
 
-  auto application = std::make_unique<engine::IApplication>();
+  auto simulation = GpuSimulation::create(WINDOW_WIDTH, WINDOW_HEIGHT);
+  if (!simulation.has_value()) {
+    std::cerr << "Simulation creation failed\n\t" << simulation.error() << '\n';
+    return -1;
+  }
+  auto simulationPtr = std::make_unique<GpuSimulation>(std::move(*simulation));
+  
+  auto application = Application::create(
+    WINDOW_WIDTH,
+    WINDOW_HEIGHT,
+    std::move(simulationPtr)
+  );
+  if (!application.has_value()) {
+    std::cerr << "Application creation failed:\n\t" << application.error() << '\n';
+    return -1;
+  }
+  auto applicationPtr = std::make_unique<Application>(std::move(*application));
 
-  auto result = engine::run(config, std::move(application));
+  auto result = engine::run(config, std::move(applicationPtr));
   if (!result.has_value()) {
-    std::cerr << "Engine failed: " << result.error() << '\n';
+    std::cerr << "Engine failed:\n\t" << result.error() << '\n';
+    return -1;
   }
 
   return 0;

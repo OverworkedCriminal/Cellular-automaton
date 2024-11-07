@@ -1,6 +1,7 @@
 #ifndef ENGINE_WINDOW_WINDOW_HPP
 #define ENGINE_WINDOW_WINDOW_HPP
 
+#include "engine/error/Error.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include <expected>
@@ -18,13 +19,13 @@ public:
    * @param title 
    * @param width 
    * @param height 
-   * @return std::expected<Window, std::string> 
+   * @return std::expected<Window, Error> 
    */
   static auto open(
     const std::string& title,
     int width,
     int height
-  ) -> std::expected<Window, std::string>;
+  ) -> std::expected<Window, Error>;
 
   Window(const Window&) = delete;
   Window(Window&&);

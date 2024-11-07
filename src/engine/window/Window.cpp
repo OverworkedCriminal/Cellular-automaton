@@ -1,4 +1,5 @@
 #include "engine/window/Window.hpp"
+#include "engine/utils/error.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
@@ -8,12 +9,12 @@ auto Window::open(
   const std::string& title,
   int width,
   int height
-) -> std::expected<Window, std::string> {
+) -> std::expected<Window, Error> {
   if (width <= 0 || height <= 0) {
-    return std::unexpected("invalid window dimensions");
+    return std::unexpected(error("invalid window dimensions"));
   }
   if (!glfwInit()) {
-    return std::unexpected("failed to init GLFW");
+    return std::unexpected(error("failed to init GLFW"));
   }
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -23,14 +24,15 @@ auto Window::open(
   GLFWwindow* glfwWindow = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
   if (!glfwWindow) {
     glfwTerminate();
-    return std::unexpected("failed to create window");
+    return std::unexpected(error("failed to create window"));
   }
 
   glfwMakeContextCurrent(glfwWindow);
+  glfwSetInputMode(glfwWindow, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
 
   if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
     glfwTerminate();
-    return std::unexpected("failed to init GLAD");
+    return std::unexpected(error("failed to init GLAD"));
   }
 
   glViewport(0, 0, width, height);
