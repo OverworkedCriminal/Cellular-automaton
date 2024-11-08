@@ -82,8 +82,10 @@ private:
 
     int key1State = glfwGetKey(*m_window, GLFW_KEY_1);
     int key2State = glfwGetKey(*m_window, GLFW_KEY_2);
+    int key3State = glfwGetKey(*m_window, GLFW_KEY_3);
     m_context.key1Pressed = key1State == GLFW_PRESS;
     m_context.key2Pressed = key2State == GLFW_PRESS;
+    m_context.key3Pressed = key3State == GLFW_PRESS;
   }
 
   Window m_window;

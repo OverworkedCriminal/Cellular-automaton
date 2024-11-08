@@ -6,6 +6,7 @@
 using engine::error;
 using engine::errorGL;
 
+constexpr auto CV_AIR = std::byte(2);
 constexpr auto CV_SAND = std::byte(4);
 constexpr auto CV_WATER = std::byte(8);
 
@@ -156,8 +157,10 @@ auto Application::initDrawing() -> std::expected<void, engine::Error> {
 
 auto Application::updateSelectedCellValue(const engine::Context& context) -> void {
   if (context.key1Pressed) {
-    m_selectedCellValue = CV_SAND;
+    m_selectedCellValue = CV_AIR;
   } else if (context.key2Pressed) {
+    m_selectedCellValue = CV_SAND;
+  } else if (context.key3Pressed) {
     m_selectedCellValue = CV_WATER;
   }
 }
