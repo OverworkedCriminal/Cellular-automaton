@@ -51,11 +51,13 @@ private:
 
   std::unique_ptr<ISimulation> m_simulation;
 
-  std::optional<engine::VertexArrayObject> m_vao;
-  std::optional<engine::VertexBuffer> m_vbo;
+  std::optional<engine::VertexArrayObject> m_vaoOpt;
+  std::optional<engine::VertexBuffer> m_vboOpt;
 
-  std::optional<engine::Program> m_drawingProgram;
-  std::optional<engine::Texture> m_texture;
+  std::optional<engine::Program> m_drawingProgramOpt;
+  std::optional<std::shared_ptr<engine::Texture>> m_texturePtrOpt;
+
+  Context m_context;
 
   std::byte m_selectedCellValue;
 };

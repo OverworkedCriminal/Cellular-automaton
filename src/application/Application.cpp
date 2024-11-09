@@ -40,7 +40,9 @@ auto Application::onCreate(
     return std::unexpected(error("initDrawing failed", initDrawingResult.error()));
   }
 
-  auto simulationResult = m_simulation->onCreate();
+  m_context.texturePtr = *m_texturePtrOpt;
+
+  auto simulationResult = m_simulation->onCreate(m_context);
   if (!simulationResult.has_value()) {
     return std::unexpected(error("simulation onCreate failed", simulationResult.error()));
   }
@@ -53,7 +55,7 @@ auto Application::onCreate(
 auto Application::onDestroy(
   const engine::Context& context
 ) -> std::expected<void, engine::Error> {
-  auto simulationResult = m_simulation->onDestroy();
+  auto simulationResult = m_simulation->onDestroy(m_context);
   if (!simulationResult.has_value()) {
     return std::unexpected(error("simulation onDestroy failed", simulationResult.error()));
   }
@@ -67,20 +69,16 @@ auto Application::onUpdate(
   updateSelectedCellValue(context);
   updateSimulationGrid(context);
   
-  auto simulationResult = m_simulation->onUpdate();
+  auto simulationResult = m_simulation->onUpdate(m_context);
   if (!simulationResult.has_value()) {
     return std::unexpected(error("simulation onUpdate failed", simulationResult.error()));
   }
 
-  m_vao->bind();
-  m_texture->bind();
-  auto useProgramResult = m_drawingProgram->useProgram();
+  m_vaoOpt->bind();
+  (*m_texturePtrOpt)->bind();
+  auto useProgramResult = m_drawingProgramOpt->useProgram();
   if (!useProgramResult.has_value()) {
     return std::unexpected(error("use drawing program failed", useProgramResult.error()));
-  }
-  auto bindImageTextureResult = m_texture->bindImageTexture();
-  if (!bindImageTextureResult.has_value()) {
-    return std::unexpected(error("bind image texture failed", bindImageTextureResult.error()));
   }
 
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -111,13 +109,13 @@ auto Application::initDrawing() -> std::expected<void, engine::Error> {
   if (!drawingProgramResult.has_value()) {
     return std::unexpected(error("failed to create drawing program", drawingProgramResult.error()));
   }
-  m_drawingProgram = std::move(*drawingProgramResult);
+  m_drawingProgramOpt = std::move(*drawingProgramResult);
 
   auto textureResult = engine::Texture::create(m_width, m_height);
   if (!textureResult.has_value()) {
     return std::unexpected(error("failed to create texture", textureResult.error()));
   }
-  m_texture = std::move(*textureResult);
+  m_texturePtrOpt = std::make_shared<engine::Texture>(std::move(*textureResult));
 
   const std::array<GLfloat, 16> data = {
     // positions  tex coords
@@ -130,27 +128,27 @@ auto Application::initDrawing() -> std::expected<void, engine::Error> {
   if (!vboResult.has_value()) {
     return std::unexpected(error("create VBO failed", vboResult.error()));
   }
-  m_vbo = std::move(*vboResult);
+  m_vboOpt = std::move(*vboResult);
 
   const std::vector<engine::VaoAttribute> vaoAttributes = {
     {
       .offset = 0 * sizeof(GLfloat),
       .stride = 4 * sizeof(GLfloat),
       .size = 2,
-      .buffer = *m_vbo
+      .buffer = *m_vboOpt
     },
     {
       .offset = 2 * sizeof(GLfloat),
       .stride = 4 * sizeof(GLfloat),
       .size = 2,
-      .buffer = *m_vbo
+      .buffer = *m_vboOpt
     }
   };
   auto vaoResult = engine::VertexArrayObject::create(vaoAttributes);
   if (!vaoResult.has_value()) {
     return std::unexpected(error("create VAO failed", vaoResult.error()));
   }
-  m_vao = std::move(*vaoResult);
+  m_vaoOpt = std::move(*vaoResult);
 
   return {};
 }

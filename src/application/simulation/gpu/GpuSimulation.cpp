@@ -86,7 +86,7 @@ auto GpuSimulation::paint(const std::function<void(SimulationGrid&)>& paintFn) -
   m_inputSSBO->store(*m_buffer);
 }
 
-auto GpuSimulation::onCreate() -> std::expected<void, engine::Error> {
+auto GpuSimulation::onCreate(const Context& applicationContext) -> std::expected<void, engine::Error> {
   auto isGpuBigEndianResult = isGpuBigEndian();
   if (!isGpuBigEndianResult.has_value()) {
     return std::unexpected(error("failed to check if gpu is big endian", isGpuBigEndianResult.error()));
@@ -105,7 +105,7 @@ auto GpuSimulation::onCreate() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuSimulation::onUpdate() -> std::expected<void, engine::Error> {
+auto GpuSimulation::onUpdate(const Context& applicationContext) -> std::expected<void, engine::Error> {
   auto useSimulationProgramResult = m_simulationProgram->useProgram();
   if (!useSimulationProgramResult.has_value()) {
     return std::unexpected(error("failed to use simulation program", useSimulationProgramResult.error()));
@@ -118,6 +118,10 @@ auto GpuSimulation::onUpdate() -> std::expected<void, engine::Error> {
   auto outputBindResult = m_outputSSBO->bindBufferBase(1);
   if (!outputBindResult.has_value()) {
     return std::unexpected(error("failed to bind output SSBO", outputBindResult.error()));
+  }
+  auto bindImageTextureResult = applicationContext.texturePtr->bindImageTexture();
+  if (!bindImageTextureResult.has_value()) {
+    return std::unexpected(error("failed to bind image texture", bindImageTextureResult.error()));
   }
 
   GLenum glError;
