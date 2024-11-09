@@ -27,10 +27,11 @@ const vec4 COLORS[] = vec4[](
 );
 
 /**
- * To access mask use: fallMask(cell)
- * To apply mask use: cell & fallMask(cell)
+ * To access mask use: fallRule(cell)
+ * Using: cell & fallRule(otherCell) says whether
+ * otherCell can fall through cell
  */
-const uint FALL_MASKS[] = uint[](
+const uint FALL_RULES[] = uint[](
   0,  // 0b00000000 PADDING
   0,  // 0b00000000 AIR
   10, // 0b00001010 SAND
@@ -38,107 +39,143 @@ const uint FALL_MASKS[] = uint[](
 );
 
 /**
- * Utility function that calculates idx to input/output buffers
+ * To access mask use: moveRule(cell)
+ * Using: cell & moveRule(otherCell) says whether
+ * otherCell can move through cell
  */
+const uint MOVE_RULES[] = uint[](
+  0, // 0b00000000 PADDING
+  0, // 0b00000000 AIR
+  0, // 0b00000000 SAND
+  2  // 0b00000010 WATER
+);
+
 uint bufferIdx(uvec2 coords) {
   return coords.y * gridWidth + coords.x;
 }
 
-/**
- * Utility function that simplifies selecting value from COLORS
- */
 vec4 color(uint cell) {
   uint idx = uint(log2(cell));
   return COLORS[idx];
 }
 
-/**
- * Utility function that simplifies selecting value from FALL_MASKS
- */
-uint fallMask(uint cell) {
+uint fallRule(uint cell) {
   uint idx = uint(log2(cell));
-  return FALL_MASKS[idx];
+  return FALL_RULES[idx];
 }
 
-// Returns cellValue that fall into this idx
-// Returns 0 if no cellValue can fall into this idx
-uint fallInto(uint idx) {
+uint moveRule(uint cell) {
+  uint idx = uint(log2(cell));
+  return MOVE_RULES[idx];
+}
+
+/**
+ * Returns idx of cellValue that should be placed at idx
+ * Returns passed idx if cellValue should remain unchanged
+ */
+uint fall(uint idx) {
+  uint otherIdx;
+  uint otherCell;
   uint mask;
-  uint checkedCell;
 
   uint cell = inputBuffer[idx];
 
-  checkedCell = inputBuffer[idx + gridWidth];
-  mask = fallMask(checkedCell);
+  // Falling into this cell
+
+  otherIdx = idx + gridWidth;
+  mask = fallRule(inputBuffer[otherIdx]);
   if ((cell & mask) > 0) {
-    return checkedCell;
+    // other can fall down (here)
+    return otherIdx;
   }
 
-  checkedCell = inputBuffer[idx + gridWidth + 1];
-  mask = fallMask(checkedCell);
-  if ((cell & mask) > 0 && (inputBuffer[idx + 1] & mask) == 0) {
-    return checkedCell;
+  otherIdx = idx + gridWidth + 1;
+  mask = fallRule(inputBuffer[otherIdx]);
+  if ((cell & mask) > 0) {
+    // other can fall left (here)
+    if ((inputBuffer[idx + 1] & mask) == 0) {
+      // other can't fall down
+      return otherIdx;
+    }
   }
 
-  checkedCell = inputBuffer[idx + gridWidth - 1];
-  mask = fallMask(checkedCell);
-  if ((cell & mask) > 0 && (inputBuffer[idx - 1] & mask) == 0 && (inputBuffer[idx - 2] & mask) == 0) {
-    return checkedCell;
+  otherIdx = idx + gridWidth - 1;
+  mask = fallRule(inputBuffer[otherIdx]);
+  if ((cell & mask) > 0) {
+    // other can fall right (here)
+    if ((inputBuffer[idx - 1] & mask) == 0 && (inputBuffer[idx - 2] & mask) == 0) {
+      // other can't fall down AND other can't fall left
+      return otherIdx;
+    }
   }
 
-  return 0;
+  // Falling out of this cell
+
+  mask = fallRule(cell);
+
+  otherIdx = idx - gridWidth;
+  otherCell = inputBuffer[otherIdx];
+  if ((otherCell & mask) > 0) {
+    // can fall down
+    return otherIdx;
+  }
+
+  otherIdx = idx - gridWidth - 1;
+  otherCell = inputBuffer[otherIdx];
+  if ((otherCell & mask) > 0) {
+    // can fall left
+    uint otherMask = fallRule(inputBuffer[idx - 1]);
+    if ((otherCell & otherMask) == 0) {
+      // other can't fall down
+      return otherIdx;
+    }
+  }
+
+  otherIdx = idx - gridWidth + 1;
+  otherCell = inputBuffer[otherIdx];
+  if ((otherCell & mask) > 0) {
+    // can fall right
+    uint rightMask = fallRule(inputBuffer[idx + 1]);
+    if ((otherCell & rightMask) > 0) {
+      // right can fall down and has priority to do so
+      return idx;
+    }
+    uint farRightMask = fallRule(inputBuffer[idx + 2]);
+    if ((otherCell & farRightMask) > 0 && (inputBuffer[idx - gridWidth + 2] & farRightMask) == 0) {
+      // far right can fall left AND far right can't fall down
+      return idx;
+    }
+    // right can't fall down AND far right can't fall left
+    return otherIdx;
+  }
+
+  return idx;
 }
 
-// Returns cellValue from below idx that replaces current cellValue
-// Returns 0 if cellValue can't fall down
-uint fallOut(uint idx) {
-  uint checkedCell;
-
-  uint mask = fallMask(inputBuffer[idx]);
-  if (mask == 0) {
-    return 0;
-  }
-
-  checkedCell = inputBuffer[idx - gridWidth];
-  if ((checkedCell & mask) > 0) {
-    return checkedCell;
-  }
-
-  checkedCell = inputBuffer[idx - gridWidth - 1];
-  if ((checkedCell & mask) > 0 && (checkedCell & fallMask(inputBuffer[idx - 1])) == 0) {
-    return checkedCell;
-  }
-
-  checkedCell = inputBuffer[idx - gridWidth + 1];
-  if ((checkedCell & mask) > 0) {
-    if ((checkedCell & fallMask(inputBuffer[idx + 1])) > 0) {
-      return 0;
-    }
-    if ((checkedCell & fallMask(inputBuffer[idx + 2])) > 0 && (inputBuffer[idx - gridWidth + 2] & fallMask(inputBuffer[idx + 2])) == 0) {
-      return 0;
-    }
-    return checkedCell;
-  }
-
-  return 0;
+/**
+ * Returns idx of cellValue that should be placed at idx
+ * Returns passed idx if cellValue should remain unchanged
+ */
+uint move(uint idx) {
+  return idx;
 }
 
 uint calculateCellValue(uint idx) {
-  uint newCellValue;
+  uint newCellValueIdx;
 
   uint currentCellValue = inputBuffer[idx];
   if (currentCellValue == PADDING) {
     return PADDING;
   }
 
-  newCellValue = fallInto(idx);
-  if (newCellValue != 0) {
-    return newCellValue;
+  newCellValueIdx = fall(idx);
+  if (newCellValueIdx != idx) {
+    return inputBuffer[newCellValueIdx];
   }
 
-  newCellValue = fallOut(idx);
-  if (newCellValue != 0) {
-    return newCellValue;
+  newCellValueIdx = move(idx);
+  if (newCellValueIdx != idx) {
+    return inputBuffer[newCellValueIdx];
   }
 
   return currentCellValue;
