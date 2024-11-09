@@ -13,6 +13,12 @@ uniform writeonly image2D simulationTexture;
 uniform uint gridWidth;
 uniform uint gridHeight;
 uniform uint gridPadding;
+/**
+ * Should be:
+ * -1 LEFT
+ *  1 RIGHT
+ */
+uniform int priorityDirection;
 
 const uint PADDING = 1;
 
@@ -89,21 +95,21 @@ uint fall(uint idx) {
     return otherIdx;
   }
 
-  otherIdx = idx + gridWidth + 1;
+  otherIdx = idx + gridWidth - priorityDirection;
   mask = fallRule(inputBuffer[otherIdx]);
   if ((cell & mask) > 0) {
     // other can fall left (here)
-    if ((inputBuffer[idx + 1] & mask) == 0) {
+    if ((inputBuffer[idx - priorityDirection] & mask) == 0) {
       // other can't fall down
       return otherIdx;
     }
   }
 
-  otherIdx = idx + gridWidth - 1;
+  otherIdx = idx + gridWidth + priorityDirection;
   mask = fallRule(inputBuffer[otherIdx]);
   if ((cell & mask) > 0) {
     // other can fall right (here)
-    if ((inputBuffer[idx - 1] & mask) == 0 && (inputBuffer[idx - 2] & mask) == 0) {
+    if ((inputBuffer[idx + priorityDirection] & mask) == 0 && (inputBuffer[idx + 2 * priorityDirection] & mask) == 0) {
       // other can't fall down AND other can't fall left
       return otherIdx;
     }
@@ -120,28 +126,28 @@ uint fall(uint idx) {
     return otherIdx;
   }
 
-  otherIdx = idx - gridWidth - 1;
+  otherIdx = idx - gridWidth + priorityDirection;
   otherCell = inputBuffer[otherIdx];
   if ((otherCell & mask) > 0) {
     // can fall left
-    uint otherMask = fallRule(inputBuffer[idx - 1]);
+    uint otherMask = fallRule(inputBuffer[idx + priorityDirection]);
     if ((otherCell & otherMask) == 0) {
       // other can't fall down
       return otherIdx;
     }
   }
 
-  otherIdx = idx - gridWidth + 1;
+  otherIdx = idx - gridWidth - priorityDirection;
   otherCell = inputBuffer[otherIdx];
   if ((otherCell & mask) > 0) {
     // can fall right
-    uint rightMask = fallRule(inputBuffer[idx + 1]);
+    uint rightMask = fallRule(inputBuffer[idx - priorityDirection]);
     if ((otherCell & rightMask) > 0) {
       // right can fall down and has priority to do so
       return idx;
     }
-    uint farRightMask = fallRule(inputBuffer[idx + 2]);
-    if ((otherCell & farRightMask) > 0 && (inputBuffer[idx - gridWidth + 2] & farRightMask) == 0) {
+    uint farRightMask = fallRule(inputBuffer[idx - 2 * priorityDirection]);
+    if ((otherCell & farRightMask) > 0 && (inputBuffer[idx - gridWidth - 2 * priorityDirection] & farRightMask) == 0) {
       // far right can fall left AND far right can't fall down
       return idx;
     }

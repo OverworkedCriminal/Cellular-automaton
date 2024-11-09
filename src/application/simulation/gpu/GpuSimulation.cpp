@@ -110,6 +110,13 @@ auto GpuSimulation::onUpdate(const Context& applicationContext) -> std::expected
   if (!useSimulationProgramResult.has_value()) {
     return std::unexpected(error("failed to use simulation program", useSimulationProgramResult.error()));
   }
+  auto uniformResult = m_simulationProgram->setUniform(
+    "priorityDirection",
+    static_cast<GLint>(applicationContext.priorityDirection)
+  );
+  if (!uniformResult.has_value()) {
+    std::cerr << "failed to set priorityDirection uniform\n\t" << uniformResult.error() << '\n';
+  }
 
   auto inputBindResult = m_inputSSBO->bindBufferBase(0);
   if (!inputBindResult.has_value()) {

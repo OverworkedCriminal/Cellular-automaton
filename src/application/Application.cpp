@@ -2,6 +2,7 @@
 #include "application/simulation/ISimulation.hpp"
 #include "engine/graphics/buffer/VertexArrayObject.hpp"
 #include "engine/utils/error.hpp"
+#include <cstdlib>
 
 using engine::error;
 using engine::errorGL;
@@ -35,6 +36,8 @@ Application::Application(
 auto Application::onCreate(
   const engine::Context& context
 ) -> std::expected<void, engine::Error> {
+  srand(std::time(0));
+  
   auto initDrawingResult = initDrawing();
   if (!initDrawingResult.has_value()) {
     return std::unexpected(error("initDrawing failed", initDrawingResult.error()));
@@ -68,7 +71,8 @@ auto Application::onUpdate(
 ) -> std::expected<void, engine::Error> {
   updateSelectedCellValue(context);
   updateSimulationGrid(context);
-  
+  updateContext();
+
   auto simulationResult = m_simulation->onUpdate(m_context);
   if (!simulationResult.has_value()) {
     return std::unexpected(error("simulation onUpdate failed", simulationResult.error()));
@@ -190,5 +194,9 @@ auto Application::updateSimulationGrid(const engine::Context& context) -> void {
         simulationGrid.setCell(currentCol, currentRow, m_selectedCellValue);
       }
     }
-  });  
+  });
+}
+
+auto Application::updateContext() -> void {
+  m_context.priorityDirection = static_cast<Direction>((rand() % 2) * 2 - 1);
 }

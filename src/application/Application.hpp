@@ -45,6 +45,7 @@ private:
   auto initDrawing() -> std::expected<void, engine::Error>;
   auto updateSelectedCellValue(const engine::Context& context) -> void;
   auto updateSimulationGrid(const engine::Context& context) -> void;
+  auto updateContext() -> void;
 
   int m_width;
   int m_height;
