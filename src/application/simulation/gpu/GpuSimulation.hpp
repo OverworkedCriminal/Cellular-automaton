@@ -21,8 +21,8 @@ public:
   auto operator=(GpuSimulation&&) -> GpuSimulation& = default;
 
   auto paint(const std::function<void(SimulationGrid&)>& paintFn) -> void override;
-  auto onCreate() -> std::expected<void, engine::Error> override;
-  auto onUpdate() -> std::expected<void, engine::Error> override;
+  auto onCreate(const Context& applicationContext) -> std::expected<void, engine::Error> override;
+  auto onUpdate(const Context& applicationContext) -> std::expected<void, engine::Error> override;
 
 private:
   GpuSimulation(int width, int height);

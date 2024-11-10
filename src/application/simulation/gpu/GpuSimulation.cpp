@@ -86,7 +86,7 @@ auto GpuSimulation::paint(const std::function<void(SimulationGrid&)>& paintFn) -
   m_inputSSBO->store(*m_buffer);
 }
 
-auto GpuSimulation::onCreate() -> std::expected<void, engine::Error> {
+auto GpuSimulation::onCreate(const Context& applicationContext) -> std::expected<void, engine::Error> {
   auto isGpuBigEndianResult = isGpuBigEndian();
   if (!isGpuBigEndianResult.has_value()) {
     return std::unexpected(error("failed to check if gpu is big endian", isGpuBigEndianResult.error()));
@@ -105,10 +105,17 @@ auto GpuSimulation::onCreate() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuSimulation::onUpdate() -> std::expected<void, engine::Error> {
+auto GpuSimulation::onUpdate(const Context& applicationContext) -> std::expected<void, engine::Error> {
   auto useSimulationProgramResult = m_simulationProgram->useProgram();
   if (!useSimulationProgramResult.has_value()) {
     return std::unexpected(error("failed to use simulation program", useSimulationProgramResult.error()));
+  }
+  auto uniformResult = m_simulationProgram->setUniform(
+    "priorityDirection",
+    static_cast<GLint>(applicationContext.priorityDirection)
+  );
+  if (!uniformResult.has_value()) {
+    std::cerr << "failed to set priorityDirection uniform\n\t" << uniformResult.error() << '\n';
   }
 
   auto inputBindResult = m_inputSSBO->bindBufferBase(0);
@@ -118,6 +125,10 @@ auto GpuSimulation::onUpdate() -> std::expected<void, engine::Error> {
   auto outputBindResult = m_outputSSBO->bindBufferBase(1);
   if (!outputBindResult.has_value()) {
     return std::unexpected(error("failed to bind output SSBO", outputBindResult.error()));
+  }
+  auto bindImageTextureResult = applicationContext.texturePtr->bindImageTexture();
+  if (!bindImageTextureResult.has_value()) {
+    return std::unexpected(error("failed to bind image texture", bindImageTextureResult.error()));
   }
 
   GLenum glError;
@@ -160,9 +171,9 @@ auto GpuSimulation::initSimulationGrid(bool isGpuBigEndian) -> std::expected<voi
   for (int col = 0; col < m_width; ++col) {
     for (int row = 0; row < m_height; ++row) {
       if (col < PADDING || col >= m_width - PADDING || row < PADDING || row >= m_height - PADDING) {
-        m_simulationGrid->setCell(col, row, std::byte(0));
+        m_simulationGrid->setCell(col, row, std::byte(1) /*PADDING*/);
       } else {
-        m_simulationGrid->setCell(col, row, std::byte(1));
+        m_simulationGrid->setCell(col, row, std::byte(2) /*AIR*/);
       }
     }
   }
