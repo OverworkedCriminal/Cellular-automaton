@@ -33,15 +33,27 @@ const vec4 COLORS[] = vec4[](
 );
 
 /**
- * To access mask use: fallRule(cell)
- * Using: cell & fallRule(otherCell) says whether
+ * To access mask use: fallDownRule(cell)
+ * Using: cell & fallDownRule(otherCell) says whether
  * otherCell can fall through cell
  */
-const uint FALL_RULES[] = uint[](
+const uint FALL_DOWN_RULES[] = uint[](
   0,  // 0b00000000 PADDING
   0,  // 0b00000000 AIR
   10, // 0b00001010 SAND
   2   // 0b00000010 WATER
+);
+
+/**
+ * To access mask use: fallDiagRule(cell)
+ * Using: cell & fallDiagRule(otherCell) says whether
+ * otherCell can fall diagonally through cell
+ */
+const uint FALL_DIAG_RULES[] = uint[](
+  0, // 0b00000000 PADDING
+  0, // 0b00000000 AIR
+  2, // 0b00000010 SAND
+  2  // 0b00000010 WATER
 );
 
 /**
@@ -65,9 +77,14 @@ vec4 color(uint cell) {
   return COLORS[idx];
 }
 
-uint fallRule(uint cell) {
+uint fallDownRule(uint cell) {
   uint idx = uint(log2(cell));
-  return FALL_RULES[idx];
+  return FALL_DOWN_RULES[idx];
+}
+
+uint fallDiagRule(uint cell) {
+  uint idx = uint(log2(cell));
+  return FALL_DIAG_RULES[idx];
 }
 
 uint moveRule(uint cell) {
@@ -75,83 +92,50 @@ uint moveRule(uint cell) {
   return MOVE_RULES[idx];
 }
 
-/**
- * Returns idx of cellValue that should be placed at idx
- * Returns passed idx if cellValue should remain unchanged
- */
-uint fall(uint idx) {
+uint fall_down(uint idx) {
   uint otherIdx;
-  uint otherCell;
   uint mask;
 
   uint cell = inputBuffer[idx];
 
-  // Falling into this cell
-
+  // move into this cell
   otherIdx = idx + gridWidth;
-  mask = fallRule(inputBuffer[otherIdx]);
+  mask = fallDownRule(inputBuffer[otherIdx]);
   if ((cell & mask) > 0) {
     // other can fall down (here)
     return otherIdx;
   }
 
-  otherIdx = idx + gridWidth - priorityDirection;
-  mask = fallRule(inputBuffer[otherIdx]);
-  if ((cell & mask) > 0) {
-    // other can fall left (here)
-    if ((inputBuffer[idx - priorityDirection] & mask) == 0) {
-      // other can't fall down
-      return otherIdx;
-    }
-  }
-
-  otherIdx = idx + gridWidth + priorityDirection;
-  mask = fallRule(inputBuffer[otherIdx]);
-  if ((cell & mask) > 0) {
-    // other can fall right (here)
-    if ((inputBuffer[idx + priorityDirection] & mask) == 0 && (inputBuffer[idx + 2 * priorityDirection] & mask) == 0) {
-      // other can't fall down AND other can't fall left
-      return otherIdx;
-    }
-  }
-
-  // Falling out of this cell
-
-  mask = fallRule(cell);
-
+  // move out of this cell
   otherIdx = idx - gridWidth;
-  otherCell = inputBuffer[otherIdx];
-  if ((otherCell & mask) > 0) {
-    // can fall down
+  mask = fallDownRule(cell);
+  if ((inputBuffer[otherIdx] & mask) > 0) {
+    // cell can fall down
     return otherIdx;
   }
 
-  otherIdx = idx - gridWidth + priorityDirection;
-  otherCell = inputBuffer[otherIdx];
-  if ((otherCell & mask) > 0) {
-    // can fall left
-    uint otherMask = fallRule(inputBuffer[idx + priorityDirection]);
-    if ((otherCell & otherMask) == 0) {
-      // other can't fall down
-      return otherIdx;
-    }
+  return idx;
+}
+
+uint fall_diag(uint idx, uint direction) {
+  uint otherIdx;
+  uint mask;
+
+  uint cell = inputBuffer[idx];
+
+  // move into this cell
+  otherIdx = idx + gridWidth - direction;
+  mask = fallDiagRule(inputBuffer[otherIdx]);
+  if ((cell & mask) > 0) {
+    // other can fall here diagonally
+    return otherIdx;
   }
 
-  otherIdx = idx - gridWidth - priorityDirection;
-  otherCell = inputBuffer[otherIdx];
-  if ((otherCell & mask) > 0) {
-    // can fall right
-    uint rightMask = fallRule(inputBuffer[idx - priorityDirection]);
-    if ((otherCell & rightMask) > 0) {
-      // right can fall down and has priority to do so
-      return idx;
-    }
-    uint farRightMask = fallRule(inputBuffer[idx - 2 * priorityDirection]);
-    if ((otherCell & farRightMask) > 0 && (inputBuffer[idx - gridWidth - 2 * priorityDirection] & farRightMask) == 0) {
-      // far right can fall left AND far right can't fall down
-      return idx;
-    }
-    // right can't fall down AND far right can't fall left
+  // move out of this cell
+  otherIdx = idx - gridWidth + direction;
+  mask = fallDiagRule(cell);
+  if ((inputBuffer[otherIdx] & mask) > 0) {
+    // can fall diagonally
     return otherIdx;
   }
 
@@ -159,10 +143,77 @@ uint fall(uint idx) {
 }
 
 /**
- * Returns idx of cellValue that should be placed at idx
- * Returns passed idx if cellValue should remain unchanged
+ * Returns index to inputBuffer of value that should
+ * be placed at idx.
+ * Returns idx when value should not be changed
+ */
+uint fall(uint idx) {
+  // return idx;
+  uint newIdx;
+
+  newIdx = fall_down(idx);
+  if (newIdx != idx) {
+    return newIdx;
+  }
+
+  newIdx = fall_diag(idx, priorityDirection);
+  if (newIdx != idx) {
+    if (fall_down(newIdx) == newIdx) {
+      return newIdx;
+    }
+  }
+
+  newIdx = fall_diag(idx, -priorityDirection);
+  if (newIdx != idx) {
+    if (fall_down(newIdx) == newIdx && fall_diag(newIdx, priorityDirection) == newIdx) {
+      return newIdx;
+    }
+  }
+
+  return idx;
+}
+
+uint move_side(uint idx, uint direction) {
+  uint otherIdx;
+  uint mask;
+
+  uint cell = inputBuffer[idx];
+
+  // move into this cell
+  otherIdx = idx - direction;
+  mask = moveRule(inputBuffer[otherIdx]);
+  if ((cell & mask) > 0) {
+    // other can move (here)
+    return otherIdx;
+  }
+
+  // move out of this cell
+
+  otherIdx = idx + direction;
+  mask = moveRule(cell);
+  if ((inputBuffer[otherIdx] & mask) > 0) {
+    // can move
+    return otherIdx;
+  }
+
+  return idx;
+}
+
+/**
+ * Returns index to inputBuffer of value that should
+ * be placed at idx.
+ * Returns idx when value should not be changed
  */
 uint move(uint idx) {
+  uint newIdx;
+
+  newIdx = move_side(idx, priorityDirection);
+  if (newIdx != idx) {
+    if (fall(newIdx) == newIdx) {
+      return newIdx;
+    }
+  }
+
   return idx;
 }
 
