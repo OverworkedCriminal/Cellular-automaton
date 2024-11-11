@@ -11,6 +11,9 @@ class ISimulation {
 public:
   virtual ~ISimulation() {}
 
+  virtual auto width() -> unsigned int = 0;
+  virtual auto height() -> unsigned int = 0;
+
   virtual auto paint(const std::function<void(SimulationGrid&)>& paintFn) -> void = 0;
 
   virtual auto onCreate(const Context& applicationContext) -> std::expected<void, engine::Error> { return {}; }
