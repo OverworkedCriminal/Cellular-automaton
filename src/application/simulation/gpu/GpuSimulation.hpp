@@ -20,6 +20,9 @@ public:
   auto operator=(const GpuSimulation&) -> GpuSimulation& = delete;
   auto operator=(GpuSimulation&&) -> GpuSimulation& = default;
 
+  auto width() -> unsigned int override;
+  auto height() -> unsigned int override;
+
   auto paint(const std::function<void(SimulationGrid&)>& paintFn) -> void override;
   auto onCreate(const Context& applicationContext) -> std::expected<void, engine::Error> override;
   auto onUpdate(const Context& applicationContext) -> std::expected<void, engine::Error> override;

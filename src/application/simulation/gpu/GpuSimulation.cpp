@@ -78,6 +78,14 @@ GpuSimulation::GpuSimulation(int width, int height)
   ,m_height(height)
 {}
 
+auto GpuSimulation::width() -> unsigned int {
+  return m_width;
+}
+
+auto GpuSimulation::height() -> unsigned int {
+  return m_height;
+}
+
 auto GpuSimulation::paint(const std::function<void(SimulationGrid&)>& paintFn) -> void {
   m_inputSSBO->load(*m_buffer);
 

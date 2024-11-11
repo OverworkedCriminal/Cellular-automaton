@@ -50,6 +50,9 @@ private:
   int m_width;
   int m_height;
 
+  float m_simulationWidthScale;
+  float m_simulationHeightScale;
+
   std::unique_ptr<ISimulation> m_simulation;
 
   std::optional<engine::VertexArrayObject> m_vaoOpt;

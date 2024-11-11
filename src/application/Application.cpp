@@ -37,7 +37,10 @@ auto Application::onCreate(
   const engine::Context& context
 ) -> std::expected<void, engine::Error> {
   srand(std::time(0));
-  
+
+  m_simulationWidthScale = static_cast<float>(m_simulation->width()) / static_cast<float>(m_width);
+  m_simulationHeightScale = static_cast<float>(m_simulation->height()) / static_cast<float>(m_height);
+
   auto initDrawingResult = initDrawing();
   if (!initDrawingResult.has_value()) {
     return std::unexpected(error("initDrawing failed", initDrawingResult.error()));
@@ -115,7 +118,7 @@ auto Application::initDrawing() -> std::expected<void, engine::Error> {
   }
   m_drawingProgramOpt = std::move(*drawingProgramResult);
 
-  auto textureResult = engine::Texture::create(m_width, m_height);
+  auto textureResult = engine::Texture::create(m_simulation->width(), m_simulation->height());
   if (!textureResult.has_value()) {
     return std::unexpected(error("failed to create texture", textureResult.error()));
   }
@@ -173,8 +176,8 @@ auto Application::updateSimulationGrid(const engine::Context& context) -> void {
   }
 
   m_simulation->paint([&context, this](SimulationGrid& simulationGrid) {
-    const int x = context.mousePosX;
-    const int y = m_height - context.mousePosY;
+    const auto x = static_cast<unsigned int>(static_cast<float>(context.mousePosX) * m_simulationWidthScale);
+    const auto y = static_cast<unsigned int>(static_cast<float>(m_height - context.mousePosY) * m_simulationHeightScale);
 
     if (x < 0 || x >= m_width || y < 0 || y >= m_height) {
       return;
