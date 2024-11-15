@@ -1,14 +1,17 @@
 #include "application/Application.hpp"
 #include "application/simulation/ISimulation.hpp"
+#include "engine/application/KeyboardKey.hpp"
+#include "engine/application/MouseButton.hpp"
 #include "engine/graphics/buffer/VertexArrayObject.hpp"
 #include "engine/utils/error.hpp"
 #include <cstdlib>
+#include <functional>
 
 using engine::error;
 using engine::errorGL;
 
-constexpr auto CV_AIR = std::byte(2);
-constexpr auto CV_SAND = std::byte(4);
+constexpr auto CV_AIR   = std::byte(2);
+constexpr auto CV_SAND  = std::byte(4);
 constexpr auto CV_WATER = std::byte(8);
 
 auto Application::create(
@@ -31,12 +34,14 @@ Application::Application(
   :m_width(width)
   ,m_height(height)
   ,m_simulation(std::forward<std::unique_ptr<ISimulation>&&>(simulation))
+  ,m_paintFn([](auto grid) {})
 {}
 
-auto Application::onCreate(
-  const engine::Context& context
-) -> std::expected<void, engine::Error> {
+auto Application::onCreate() -> std::expected<void, engine::Error> {
   srand(std::time(0));
+
+  m_mouseLeftPressed = false;
+  m_paintFn = std::bind(&Application::paintSquare, this, std::placeholders::_1);
 
   m_simulationWidthScale = static_cast<float>(m_simulation->width()) / static_cast<float>(m_width);
   m_simulationHeightScale = static_cast<float>(m_simulation->height()) / static_cast<float>(m_height);
@@ -58,9 +63,7 @@ auto Application::onCreate(
   return {};
 }
 
-auto Application::onDestroy(
-  const engine::Context& context
-) -> std::expected<void, engine::Error> {
+auto Application::onDestroy() -> std::expected<void, engine::Error> {
   auto simulationResult = m_simulation->onDestroy(m_context);
   if (!simulationResult.has_value()) {
     return std::unexpected(error("simulation onDestroy failed", simulationResult.error()));
@@ -69,11 +72,11 @@ auto Application::onDestroy(
   return {};
 }
 
-auto Application::onUpdate(
-  const engine::Context& context
-) -> std::expected<void, engine::Error> {
-  updateSelectedCellValue(context);
-  updateSimulationGrid(context);
+auto Application::onUpdate() -> std::expected<void, engine::Error> {
+  if (m_mouseLeftPressed) {
+    m_simulation->paint(m_paintFn);
+  }
+
   updateContext();
 
   auto simulationResult = m_simulation->onUpdate(m_context);
@@ -96,6 +99,33 @@ auto Application::onUpdate(
 
   return {};
 }
+
+auto Application::onKeyboardInput(engine::KeyboardKey key, bool pressed) -> void {
+  if (pressed == false) {
+    return;
+  }
+
+  switch (key) {
+    case engine::KeyboardKey::_1: m_selectedCellValue = CV_AIR;   break;
+    case engine::KeyboardKey::_2: m_selectedCellValue = CV_SAND;  break;
+    case engine::KeyboardKey::_3: m_selectedCellValue = CV_WATER; break;
+    default: break;
+  }
+}
+
+auto Application::onMouseMoveInput(unsigned int posX, unsigned int posY) -> void {
+  m_mousePosX = posX;
+  m_mousePosY = posY;
+}
+
+auto Application::onMouseButtonInput(engine::MouseButton button, bool pressed) -> void {
+  if (button != engine::MouseButton::LEFT) {
+    return;
+  }
+
+  m_mouseLeftPressed = pressed;
+}
+
 
 auto Application::initDrawing() -> std::expected<void, engine::Error> {
   auto vertexShaderResult = engine::Shader::create_from_file(GL_VERTEX_SHADER, "shaders/texture.vertex.glsl");
@@ -160,46 +190,30 @@ auto Application::initDrawing() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto Application::updateSelectedCellValue(const engine::Context& context) -> void {
-  if (context.key1Pressed) {
-    m_selectedCellValue = CV_AIR;
-  } else if (context.key2Pressed) {
-    m_selectedCellValue = CV_SAND;
-  } else if (context.key3Pressed) {
-    m_selectedCellValue = CV_WATER;
-  }
+auto Application::updateContext() -> void {
+  m_context.priorityDirection = static_cast<Direction>((rand() % 2) * 2 - 1);
 }
 
-auto Application::updateSimulationGrid(const engine::Context& context) -> void {
-  if (!context.mousePressed) {
+auto Application::paintSquare(SimulationGrid& simulationGrid) -> void {
+  const auto x = static_cast<unsigned int>(static_cast<float>(m_mousePosX) * m_simulationWidthScale);
+  const auto y = static_cast<unsigned int>(static_cast<float>(m_height - m_mousePosY) * m_simulationHeightScale);
+
+  if (x < 0 || x >= m_width || y < 0 || y >= m_height) {
     return;
   }
 
-  m_simulation->paint([&context, this](SimulationGrid& simulationGrid) {
-    const auto x = static_cast<unsigned int>(static_cast<float>(context.mousePosX) * m_simulationWidthScale);
-    const auto y = static_cast<unsigned int>(static_cast<float>(m_height - context.mousePosY) * m_simulationHeightScale);
-
-    if (x < 0 || x >= m_width || y < 0 || y >= m_height) {
-      return;
+  for (int col = -5; col <= 5; ++col) {
+    const int currentCol = x + col;
+    if (currentCol < 0 || currentCol >= m_width) {
+      continue;
     }
 
-    for (int col = -5; col <= 5; ++col) {
-      const int currentCol = x + col;
-      if (currentCol < 0 || currentCol >= m_width) {
+    for (int row = -5; row <= 5; ++row) {
+      const int currentRow = y + row;
+      if (currentRow < 0 || currentRow >= m_height) {
         continue;
       }
-
-      for (int row = -5; row <= 5; ++row) {
-        const int currentRow = y + row;
-        if (currentRow < 0 || currentRow >= m_height) {
-          continue;
-        }
-        simulationGrid.setCell(currentCol, currentRow, m_selectedCellValue);
-      }
+      simulationGrid.setCell(currentCol, currentRow, m_selectedCellValue);
     }
-  });
-}
-
-auto Application::updateContext() -> void {
-  m_context.priorityDirection = static_cast<Direction>((rand() % 2) * 2 - 1);
+  }
 }
