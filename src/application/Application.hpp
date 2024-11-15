@@ -29,7 +29,7 @@ public:
   auto onUpdate() -> std::expected<void, engine::Error> override;
 
   auto onKeyboardInput(engine::KeyboardKey key, bool pressed) -> void override;
-  auto onMouseMoveInput(unsigned int posX, unsigned int posY) -> void override;
+  auto onMouseMoveInput(int posX, int posY) -> void override;
   auto onMouseButtonInput(engine::MouseButton button, bool pressed) -> void override;
 
   auto onFramebufferSizeChange(unsigned int width, unsigned int height) -> void override;
@@ -55,6 +55,11 @@ private:
 
   float m_simulationWidthScale;
   float m_simulationHeightScale;
+
+  unsigned int m_simulationWidthLowerBound;
+  unsigned int m_simulationWidthUpperBound;
+  unsigned int m_simulationHeightLowerBound;
+  unsigned int m_simulationHeightUpperBound;
 
   std::unique_ptr<ISimulation> m_simulation;
 

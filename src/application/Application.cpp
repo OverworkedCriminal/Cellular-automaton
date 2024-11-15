@@ -43,8 +43,7 @@ auto Application::onCreate() -> std::expected<void, engine::Error> {
   m_mouseLeftPressed = false;
   m_paintFn = std::bind(&Application::paintSquare, this, std::placeholders::_1);
 
-  m_simulationWidthScale = static_cast<float>(m_simulation->width()) / static_cast<float>(m_width);
-  m_simulationHeightScale = static_cast<float>(m_simulation->height()) / static_cast<float>(m_height);
+  onFramebufferSizeChange(m_width, m_height);
 
   auto initDrawingResult = initDrawing();
   if (!initDrawingResult.has_value()) {
@@ -113,9 +112,9 @@ auto Application::onKeyboardInput(engine::KeyboardKey key, bool pressed) -> void
   }
 }
 
-auto Application::onMouseMoveInput(unsigned int posX, unsigned int posY) -> void {
-  m_mousePosX = posX;
-  m_mousePosY = posY;
+auto Application::onMouseMoveInput(int posX, int posY) -> void {
+  m_mousePosX = std::clamp(posX, 0, m_width);
+  m_mousePosY = std::clamp(posY, 0, m_height);
 }
 
 auto Application::onMouseButtonInput(engine::MouseButton button, bool pressed) -> void {
@@ -129,8 +128,15 @@ auto Application::onMouseButtonInput(engine::MouseButton button, bool pressed) -
 auto Application::onFramebufferSizeChange(unsigned int width, unsigned int height) -> void {
   m_width = width;
   m_height = height;
+
   m_simulationWidthScale = static_cast<float>(m_simulation->width()) / static_cast<float>(m_width);
   m_simulationHeightScale = static_cast<float>(m_simulation->height()) / static_cast<float>(m_height);
+
+  unsigned int padding = m_simulation->padding();
+  m_simulationWidthLowerBound = padding;
+  m_simulationWidthUpperBound = m_simulation->width() - padding;
+  m_simulationHeightLowerBound = padding;
+  m_simulationHeightUpperBound = m_simulation->height() - padding;
 }
 
 auto Application::initDrawing() -> std::expected<void, engine::Error> {
@@ -204,19 +210,16 @@ auto Application::paintSquare(SimulationGrid& simulationGrid) -> void {
   const auto x = static_cast<unsigned int>(static_cast<float>(m_mousePosX) * m_simulationWidthScale);
   const auto y = static_cast<unsigned int>(static_cast<float>(m_height - m_mousePosY) * m_simulationHeightScale);
 
-  if (x < 0 || x >= m_width || y < 0 || y >= m_height) {
-    return;
-  }
-
-  for (int col = -5; col <= 5; ++col) {
+  constexpr int BRUSH_SIZE = 5;
+  for (int col = -BRUSH_SIZE; col <= BRUSH_SIZE; ++col) {
     const int currentCol = x + col;
-    if (currentCol < 0 || currentCol >= m_width) {
+    if (currentCol < m_simulationWidthLowerBound || currentCol >= m_simulationWidthUpperBound) {
       continue;
     }
 
-    for (int row = -5; row <= 5; ++row) {
+    for (int row = -BRUSH_SIZE; row <= BRUSH_SIZE; ++row) {
       const int currentRow = y + row;
-      if (currentRow < 0 || currentRow >= m_height) {
+      if (currentRow < m_simulationHeightLowerBound || currentRow >= m_simulationHeightUpperBound) {
         continue;
       }
       simulationGrid.setCell(currentCol, currentRow, m_selectedCellValue);

@@ -43,8 +43,8 @@ static auto mousePositionCallback(
   auto applicationPtr = reinterpret_cast<IApplication*>(glfwGetWindowUserPointer(window));
   
   applicationPtr->onMouseMoveInput(
-    static_cast<unsigned int>(posX), 
-    static_cast<unsigned int>(posY)
+    static_cast<int>(posX), 
+    static_cast<int>(posY)
   );
 }
 
