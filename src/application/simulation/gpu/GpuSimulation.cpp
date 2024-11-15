@@ -86,7 +86,7 @@ auto GpuSimulation::height() -> unsigned int {
   return m_height;
 }
 
-auto padding() -> unsigned int {
+auto GpuSimulation::padding() -> unsigned int {
   return PADDING;
 }
 
