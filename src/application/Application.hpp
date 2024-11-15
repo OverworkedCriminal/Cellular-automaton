@@ -2,6 +2,7 @@
 #define APPLICATION_APPLICATION_HPP
 
 #include "application/simulation/ISimulation.hpp"
+#include "application/simulation/SimulationGrid.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/graphics/buffer/VertexArrayObject.hpp"
 #include "engine/graphics/buffer/VertexBuffer.hpp"
@@ -23,17 +24,15 @@ public:
   auto operator=(const Application&) -> Application& = delete;
   auto operator=(Application&&) -> Application& = default;
 
-  auto onCreate(
-    const engine::Context& context
-  ) -> std::expected<void, engine::Error> override;
+  auto onCreate() -> std::expected<void, engine::Error> override;
+  auto onDestroy() -> std::expected<void, engine::Error> override;
+  auto onUpdate() -> std::expected<void, engine::Error> override;
 
-  auto onDestroy(
-    const engine::Context& context
-  ) -> std::expected<void, engine::Error> override;
+  auto onKeyboardInput(engine::KeyboardKey key, bool pressed) -> void override;
+  auto onMouseMoveInput(int posX, int posY) -> void override;
+  auto onMouseButtonInput(engine::MouseButton button, bool pressed) -> void override;
 
-  auto onUpdate(
-    const engine::Context& context
-  ) -> std::expected<void, engine::Error> override;
+  auto onFramebufferSizeChange(unsigned int width, unsigned int height) -> void override;
 
 private:
   Application(
@@ -43,17 +42,28 @@ private:
   );
 
   auto initDrawing() -> std::expected<void, engine::Error>;
-  auto updateSelectedCellValue(const engine::Context& context) -> void;
-  auto updateSimulationGrid(const engine::Context& context) -> void;
   auto updateContext() -> void;
+
+  auto paintSquare(SimulationGrid& simulationGrid) -> void;
 
   int m_width;
   int m_height;
 
+  unsigned int m_mousePosX;
+  unsigned int m_mousePosY;
+  bool m_mouseLeftPressed;
+
   float m_simulationWidthScale;
   float m_simulationHeightScale;
 
+  unsigned int m_simulationWidthLowerBound;
+  unsigned int m_simulationWidthUpperBound;
+  unsigned int m_simulationHeightLowerBound;
+  unsigned int m_simulationHeightUpperBound;
+
   std::unique_ptr<ISimulation> m_simulation;
+
+  std::function<void(SimulationGrid&)> m_paintFn;
 
   std::optional<engine::VertexArrayObject> m_vaoOpt;
   std::optional<engine::VertexBuffer> m_vboOpt;

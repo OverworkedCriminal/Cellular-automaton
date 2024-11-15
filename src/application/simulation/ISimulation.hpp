@@ -13,6 +13,7 @@ public:
 
   virtual auto width() -> unsigned int = 0;
   virtual auto height() -> unsigned int = 0;
+  virtual auto padding() -> unsigned int = 0;
 
   virtual auto paint(const std::function<void(SimulationGrid&)>& paintFn) -> void = 0;
 
