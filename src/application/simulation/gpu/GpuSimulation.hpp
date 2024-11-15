@@ -22,6 +22,7 @@ public:
 
   auto width() -> unsigned int override;
   auto height() -> unsigned int override;
+  auto padding() -> unsigned int override;
 
   auto paint(const std::function<void(SimulationGrid&)>& paintFn) -> void override;
   auto onCreate(const Context& applicationContext) -> std::expected<void, engine::Error> override;
