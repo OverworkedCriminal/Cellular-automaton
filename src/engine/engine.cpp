@@ -71,7 +71,9 @@ static auto framebufferSizeCallback(
   int height
 ) -> void {
   auto applicationPtr = reinterpret_cast<IApplication*>(glfwGetWindowUserPointer(window));
+
   glViewport(0, 0, width, height);
+  applicationPtr->onFramebufferSizeChange(width, height);
 }
 
 static auto initGLFW(
@@ -137,6 +139,11 @@ auto runApplication(
   if (!result.has_value()) {
     return std::unexpected(error("application on create failed", result.error()));
   }
+
+  // Makes sure correct framebuffer size is used
+  int width, height;
+  glfwGetFramebufferSize(window, &width, &height);
+  framebufferSizeCallback(window, width, height);
 
   while(!glfwWindowShouldClose(window)) {
     result = applicationPtr->onUpdate();

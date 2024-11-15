@@ -32,6 +32,8 @@ public:
   auto onMouseMoveInput(unsigned int posX, unsigned int posY) -> void override;
   auto onMouseButtonInput(engine::MouseButton button, bool pressed) -> void override;
 
+  auto onFramebufferSizeChange(unsigned int width, unsigned int height) -> void override;
+
 private:
   Application(
     int width,

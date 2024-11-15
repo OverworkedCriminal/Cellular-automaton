@@ -19,6 +19,8 @@ public:
   virtual auto onKeyboardInput(KeyboardKey key, bool pressed) -> void {}
   virtual auto onMouseMoveInput(unsigned int posX, unsigned int posY) -> void {}
   virtual auto onMouseButtonInput(MouseButton button, bool pressed) -> void {}
+
+  virtual auto onFramebufferSizeChange(unsigned int width, unsigned int height) -> void {};
 };
 
 } // namespace engine

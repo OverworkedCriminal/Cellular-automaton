@@ -126,6 +126,12 @@ auto Application::onMouseButtonInput(engine::MouseButton button, bool pressed) -
   m_mouseLeftPressed = pressed;
 }
 
+auto Application::onFramebufferSizeChange(unsigned int width, unsigned int height) -> void {
+  m_width = width;
+  m_height = height;
+  m_simulationWidthScale = static_cast<float>(m_simulation->width()) / static_cast<float>(m_width);
+  m_simulationHeightScale = static_cast<float>(m_simulation->height()) / static_cast<float>(m_height);
+}
 
 auto Application::initDrawing() -> std::expected<void, engine::Error> {
   auto vertexShaderResult = engine::Shader::create_from_file(GL_VERTEX_SHADER, "shaders/texture.vertex.glsl");
