@@ -32,6 +32,7 @@ public:
   auto operator=(VertexArrayObject&&) -> VertexArrayObject&;
 
   auto bind() -> void;
+  auto unbind() -> void;
   auto bindBuffer(
     GLuint idx,
     engine::VertexBuffer& buffer,

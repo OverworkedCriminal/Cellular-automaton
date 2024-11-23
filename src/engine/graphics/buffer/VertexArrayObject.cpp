@@ -73,6 +73,9 @@ auto VertexArrayObject::operator=(VertexArrayObject&& other) -> VertexArrayObjec
 auto VertexArrayObject::bind() -> void {
   glBindVertexArray(m_vao);
 }
+auto VertexArrayObject::unbind() -> void {
+  glBindVertexArray(0);
+}
 
 auto VertexArrayObject::bindBuffer(
   GLuint idx,
