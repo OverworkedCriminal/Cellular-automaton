@@ -1,12 +1,12 @@
-#include "engine/graphics/buffer/VertexArrayObject.hpp"
+#include "engine/graphics/buffer/VertexArray.hpp"
 #include "engine/graphics/buffer/VertexBuffer.hpp"
 #include "engine/utils/error.hpp"
 
 namespace engine {
 
-auto VertexArrayObject::create(
+auto VertexArray::create(
   const std::vector<VaoAttribute>& attributes
-) -> std::expected<VertexArrayObject, Error> {
+) -> std::expected<VertexArray, Error> {
   if (attributes.empty()) {
     return std::unexpected(error("cannot create VAO without any attribute"));
   }
@@ -44,40 +44,40 @@ auto VertexArrayObject::create(
     }
   }
 
-  return VertexArrayObject(vao);
+  return VertexArray(vao);
 }
 
-VertexArrayObject::VertexArrayObject(GLuint vao)
+VertexArray::VertexArray(GLuint vao)
   :m_vao(vao)
 {}
 
-VertexArrayObject::VertexArrayObject(VertexArrayObject&& other) {
+VertexArray::VertexArray(VertexArray&& other) {
   m_vao = other.m_vao;
   other.m_vao = 0;
 }
 
-VertexArrayObject::~VertexArrayObject() {
+VertexArray::~VertexArray() {
   if (m_vao != 0) {
     glDeleteVertexArrays(1, &m_vao);
   }
 }
 
 
-auto VertexArrayObject::operator=(VertexArrayObject&& other) -> VertexArrayObject& {
+auto VertexArray::operator=(VertexArray&& other) -> VertexArray& {
   m_vao = other.m_vao;
   other.m_vao = 0;
 
   return *this;
 }
 
-auto VertexArrayObject::bind() -> void {
+auto VertexArray::bind() -> void {
   glBindVertexArray(m_vao);
 }
-auto VertexArrayObject::unbind() -> void {
+auto VertexArray::unbind() -> void {
   glBindVertexArray(0);
 }
 
-auto VertexArrayObject::bindBuffer(
+auto VertexArray::bindBuffer(
   GLuint idx,
   engine::VertexBuffer& buffer,
   GLintptr offset,

@@ -18,18 +18,18 @@ struct VaoAttribute {
   GLboolean normalized;
 };
 
-class VertexArrayObject {
+class VertexArray {
 public:
   static auto create(
     const std::vector<VaoAttribute>& attributes
-  ) -> std::expected<VertexArrayObject, Error>;
+  ) -> std::expected<VertexArray, Error>;
 
-  VertexArrayObject(const VertexArrayObject&) = delete;
-  VertexArrayObject(VertexArrayObject&&);
-  ~VertexArrayObject();
+  VertexArray(const VertexArray&) = delete;
+  VertexArray(VertexArray&&);
+  ~VertexArray();
 
-  auto operator=(const VertexArrayObject&) -> VertexArrayObject& = delete;
-  auto operator=(VertexArrayObject&&) -> VertexArrayObject&;
+  auto operator=(const VertexArray&) -> VertexArray& = delete;
+  auto operator=(VertexArray&&) -> VertexArray&;
 
   auto bind() -> void;
   auto unbind() -> void;
@@ -41,7 +41,7 @@ public:
   ) -> std::expected<void, engine::Error>;
 
 private:
-  VertexArrayObject(GLuint vao);
+  VertexArray(GLuint vao);
 
   GLuint m_vao;
 };
