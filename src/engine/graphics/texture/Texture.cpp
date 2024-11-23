@@ -13,7 +13,7 @@ auto Texture::create(
     return std::unexpected(error("invalid texture dimensions"));
   }
 
-  // times 3 because of RGB channels
+  // times 4 because of RGBA channels
   const std::vector<GLfloat> initialTextureState(width * height * 4, 0.0f);
 
   GLuint texture;
