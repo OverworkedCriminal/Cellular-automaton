@@ -134,16 +134,11 @@ auto runApplication(
   std::unique_ptr<IApplication> applicationPtr
 ) -> std::expected<void, Error> {
   std::expected<void, Error> result;
-  
+
   result = applicationPtr->onCreate();
   if (!result.has_value()) {
     return std::unexpected(error("application on create failed", result.error()));
   }
-
-  // Makes sure correct framebuffer size is used
-  int width, height;
-  glfwGetFramebufferSize(window, &width, &height);
-  framebufferSizeCallback(window, width, height);
 
   while(!glfwWindowShouldClose(window)) {
     result = applicationPtr->onUpdate();
@@ -173,8 +168,22 @@ auto run(
     return std::unexpected(error("failed to init window", window.error()));
   }
 
+  // Set GLFW window context to application
   glfwSetWindowUserPointer(*window, applicationPtr.get());
 
+  // Init application
+
+  int width, height;
+  glfwGetFramebufferSize(*window, &width, &height);
+  framebufferSizeCallback(*window, width, height);
+
+  double posX, posY;
+  glfwGetCursorPos(*window, &posX, &posY);
+  mousePositionCallback(*window, posX, posY);
+
+  keyboardCallback(*window, GLFW_KEY_1, 0, GLFW_PRESS, 0);
+
+  // Run application
   auto runApplicationResult = runApplication(*window, std::move(applicationPtr));
 
   destroyGLFW();
