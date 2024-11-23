@@ -2,21 +2,12 @@
 #define APPLICATION_APPLICATION_HPP
 
 #include "application/simulation/ISimulation.hpp"
-#include "application/simulation/SimulationGrid.hpp"
 #include "engine/application/IApplication.hpp"
-#include "engine/graphics/buffer/VertexArrayObject.hpp"
-#include "engine/graphics/buffer/VertexBuffer.hpp"
-#include "engine/graphics/shader/Program.hpp"
-#include "engine/graphics/texture/Texture.hpp"
 #include <memory>
 
 class Application :public engine::IApplication {
 public:
-  static auto create(
-    int width,
-    int height,
-    std::unique_ptr<ISimulation> simulation
-  ) -> std::expected<Application, engine::Error>;
+  static auto create(std::unique_ptr<ISimulation> simulation) -> Application;
 
   Application(const Application&) = delete;
   Application(Application&&) = default;
@@ -35,45 +26,10 @@ public:
   auto onFramebufferSizeChange(unsigned int width, unsigned int height) -> void override;
 
 private:
-  Application(
-    int width,
-    int height,
-    std::unique_ptr<ISimulation>&& simulation
-  );
-
-  auto initDrawing() -> std::expected<void, engine::Error>;
-  auto updateContext() -> void;
-
-  auto paintSquare(SimulationGrid& simulationGrid) -> void;
-
-  int m_width;
-  int m_height;
-
-  unsigned int m_mousePosX;
-  unsigned int m_mousePosY;
-  bool m_mouseLeftPressed;
-
-  float m_simulationWidthScale;
-  float m_simulationHeightScale;
-
-  unsigned int m_simulationWidthLowerBound;
-  unsigned int m_simulationWidthUpperBound;
-  unsigned int m_simulationHeightLowerBound;
-  unsigned int m_simulationHeightUpperBound;
-
-  std::unique_ptr<ISimulation> m_simulation;
-
-  std::function<void(SimulationGrid&)> m_paintFn;
-
-  std::optional<engine::VertexArrayObject> m_vaoOpt;
-  std::optional<engine::VertexBuffer> m_vboOpt;
-
-  std::optional<engine::Program> m_drawingProgramOpt;
-  std::optional<std::shared_ptr<engine::Texture>> m_texturePtrOpt;
+  Application(std::unique_ptr<ISimulation>&& simulation);
 
   Context m_context;
-
-  std::byte m_selectedCellValue;
+  std::unique_ptr<ISimulation> m_simulation;
 };
 
 #endif
