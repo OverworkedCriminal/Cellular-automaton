@@ -106,7 +106,7 @@ auto Program::setUniform(
   glUniform1i(*locationResult, value);
   const GLenum glError = glGetError();
   if (glError != GL_NO_ERROR) {
-    return std::unexpected(errorGL("glUniform1ui", glError));
+    return std::unexpected(errorGL("glUniform1i", glError));
   }
 
   return {};
