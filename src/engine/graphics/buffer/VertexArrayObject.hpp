@@ -10,15 +10,13 @@
 namespace engine {
 
 struct VaoAttribute {
-  GLintptr offset;
-  GLsizei stride;
   /**
    * Must be 1, 2, 3, 4
    */
   GLint size;
-  VertexBuffer& buffer;
+  GLenum type;
+  GLboolean normalized;
 };
-
 
 class VertexArrayObject {
 public:
@@ -34,6 +32,12 @@ public:
   auto operator=(VertexArrayObject&&) -> VertexArrayObject&;
 
   auto bind() -> void;
+  auto bindBuffer(
+    GLuint idx,
+    engine::VertexBuffer& buffer,
+    GLintptr offset,
+    GLsizei stride
+  ) -> std::expected<void, engine::Error>;
 
 private:
   VertexArrayObject(GLuint vao);
