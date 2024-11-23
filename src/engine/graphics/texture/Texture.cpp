@@ -1,5 +1,6 @@
 #include "engine/graphics/texture/Texture.hpp"
 #include "engine/utils/error.hpp"
+#include <cassert>
 #include <vector>
 
 namespace engine {
@@ -71,8 +72,10 @@ auto Texture::operator=(Texture&& other) -> Texture& {
   return *this;
 }
 
-auto Texture::bind() -> void {
-  glActiveTexture(GL_TEXTURE0);
+auto Texture::bind(GLint unit) -> void {
+  assert(unit >= 0 && unit < 32);
+
+  glActiveTexture(GL_TEXTURE0 + unit);
   glBindTexture(GL_TEXTURE_2D, m_texture);
 }
 

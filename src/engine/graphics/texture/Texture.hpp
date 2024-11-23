@@ -21,7 +21,7 @@ public:
   auto operator=(const Texture&) -> Texture& = delete;
   auto operator=(Texture&&) -> Texture&;
 
-  auto bind() -> void;
+  auto bind(GLint unit) -> void;
   auto bindImageTexture() -> std::expected<void, Error>;
 
 private:
