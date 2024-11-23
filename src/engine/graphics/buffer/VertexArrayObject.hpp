@@ -10,11 +10,11 @@
 namespace engine {
 
 struct VaoAttribute {
+  GLintptr offset;
+  GLsizei stride;
   /**
    * Must be 1, 2, 3, 4
    */
-  GLintptr offset;
-  GLsizei stride;
   GLint size;
   VertexBuffer& buffer;
 };
