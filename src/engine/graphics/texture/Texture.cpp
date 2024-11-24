@@ -79,9 +79,11 @@ auto Texture::bind(GLint unit) -> void {
   glBindTexture(GL_TEXTURE_2D, m_texture);
 }
 
-auto Texture::bindImageTexture() -> std::expected<void, Error> {
+auto Texture::bindImageTexture(GLint unit) -> std::expected<void, Error> {
+  assert(unit >= 0 && unit < 32);
+
   glBindImageTexture(
-    0,
+    unit,
     m_texture,
     0,
     GL_FALSE,
