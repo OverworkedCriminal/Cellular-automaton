@@ -64,7 +64,7 @@ auto ShaderStorageBuffer::bindBufferBase(GLuint index) -> std::expected<void, Er
   return {};
 }
 
-auto ShaderStorageBuffer::store(const std::vector<std::byte>& buffer) -> void {
+auto ShaderStorageBuffer::store(const std::vector<uint8_t>& buffer) -> void {
   const GLsizeiptr size = std::min(
     m_size,
     static_cast<GLsizeiptr>(buffer.size())
@@ -73,7 +73,7 @@ auto ShaderStorageBuffer::store(const std::vector<std::byte>& buffer) -> void {
   glNamedBufferSubData(m_ssbo, 0, size, buffer.data());
 }
 
-auto ShaderStorageBuffer::load(std::vector<std::byte>& buffer) -> void {
+auto ShaderStorageBuffer::load(std::vector<uint8_t>& buffer) -> void {
   const GLsizeiptr size = std::min(
     m_size,
     static_cast<GLsizeiptr>(buffer.size())

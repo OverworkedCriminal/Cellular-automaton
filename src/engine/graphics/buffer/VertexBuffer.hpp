@@ -3,15 +3,15 @@
 
 #include "engine/error/Error.hpp"
 #include "glad/glad.h"
-#include <array>
 #include <expected>
+#include <vector>
 
 namespace engine {
 
 class VertexBuffer {
 public:
   static auto create(
-    const std::array<GLfloat, 16>& data
+    const std::vector<GLfloat>& data
   ) -> std::expected<VertexBuffer, Error>;
 
   VertexBuffer(const VertexBuffer&) = delete;

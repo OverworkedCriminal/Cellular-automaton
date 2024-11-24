@@ -1,20 +1,17 @@
 #ifndef APPLICATION_CONTEXT_HPP
 #define APPLICATION_CONTEXT_HPP
 
-#include "application/simulation/Direction.hpp"
-#include "engine/graphics/texture/Texture.hpp"
-#include <memory>
+#include "engine/application/KeyboardKey.hpp"
 
 struct Context {
-  /**
-   * Output texture used to draw simulation on screen
-   */
-  std::shared_ptr<engine::Texture> texturePtr;
+  unsigned int framebufferWidth;
+  unsigned int framebufferHeight;
 
-  /**
-   * Which direction should be processed first
-   */
-  Direction priorityDirection;
+  engine::KeyboardKey keyboardLastKeyPressed;
+
+  unsigned int mousePosX;
+  unsigned int mousePosY;
+  bool mouseLeftPressed;
 };
 
 #endif

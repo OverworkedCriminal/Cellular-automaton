@@ -1,5 +1,6 @@
 #include "engine/graphics/texture/Texture.hpp"
 #include "engine/utils/error.hpp"
+#include <cassert>
 #include <vector>
 
 namespace engine {
@@ -12,7 +13,7 @@ auto Texture::create(
     return std::unexpected(error("invalid texture dimensions"));
   }
 
-  // times 3 because of RGB channels
+  // times 4 because of RGBA channels
   const std::vector<GLfloat> initialTextureState(width * height * 4, 0.0f);
 
   GLuint texture;
@@ -71,14 +72,18 @@ auto Texture::operator=(Texture&& other) -> Texture& {
   return *this;
 }
 
-auto Texture::bind() -> void {
-  glActiveTexture(GL_TEXTURE0);
+auto Texture::bind(GLint unit) -> void {
+  assert(unit >= 0 && unit < 32);
+
+  glActiveTexture(GL_TEXTURE0 + unit);
   glBindTexture(GL_TEXTURE_2D, m_texture);
 }
 
-auto Texture::bindImageTexture() -> std::expected<void, Error> {
+auto Texture::bindImageTexture(GLint unit) -> std::expected<void, Error> {
+  assert(unit >= 0 && unit < 32);
+
   glBindImageTexture(
-    0,
+    unit,
     m_texture,
     0,
     GL_FALSE,

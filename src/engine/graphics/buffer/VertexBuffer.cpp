@@ -4,7 +4,7 @@
 namespace engine {
 
 auto VertexBuffer::create(
-  const std::array<GLfloat, 16>& data
+  const std::vector<GLfloat>& data
 ) -> std::expected<VertexBuffer, Error> {
   GLenum glError;
   GLuint buffer;

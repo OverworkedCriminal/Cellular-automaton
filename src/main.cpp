@@ -25,16 +25,8 @@ int main() {
   }
   auto simulationPtr = std::make_unique<GpuSimulation>(std::move(*simulation));
   
-  auto application = Application::create(
-    WINDOW_WIDTH,
-    WINDOW_HEIGHT,
-    std::move(simulationPtr)
-  );
-  if (!application.has_value()) {
-    std::cerr << "Application creation failed:\n\t" << application.error() << '\n';
-    return -1;
-  }
-  auto applicationPtr = std::make_unique<Application>(std::move(*application));
+  auto application = Application::create(std::move(simulationPtr));
+  auto applicationPtr = std::make_unique<Application>(std::move(application));
 
   auto result = engine::run(config, std::move(applicationPtr));
   if (!result.has_value()) {

@@ -1,6 +1,6 @@
 target_sources(
   cellular-automaton
   PUBLIC
-  VertexArrayObject.cpp
+  VertexArray.cpp
   VertexBuffer.cpp
 )
