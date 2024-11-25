@@ -1,4 +1,3 @@
-#include "application/Application.hpp"
 #include "application/simulation/gpu/GpuSimulation.hpp"
 #include "engine/Config.hpp"
 #include "engine/engine.hpp"
@@ -24,11 +23,8 @@ int main() {
     return -1;
   }
   auto simulationPtr = std::make_unique<GpuSimulation>(std::move(*simulation));
-  
-  auto application = Application::create(std::move(simulationPtr));
-  auto applicationPtr = std::make_unique<Application>(std::move(application));
 
-  auto result = engine::run(config, std::move(applicationPtr));
+  auto result = engine::run(config, std::move(simulationPtr));
   if (!result.has_value()) {
     std::cerr << "Engine failed:\n\t" << result.error() << '\n';
     return -1;

@@ -2,10 +2,10 @@
 #include "engine/Config.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/application/KeyboardKey.hpp"
-#include "engine/application/MouseButton.hpp"
 #include "engine/utils/error.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#include <algorithm>
 #include <iostream>
 
 namespace engine {
@@ -17,21 +17,14 @@ static auto keyboardCallback(
   int action,
   int mods
 ) -> void {
-  auto applicationPtr = reinterpret_cast<IApplication*>(glfwGetWindowUserPointer(window));
+  auto context = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
 
   switch (action) {
     case GLFW_RELEASE:
-    case GLFW_PRESS: {
-      // assertions make sure code does not compile
-      // when GLFW_RELEASE / GLFW_PRESS values change
-      static_assert(static_cast<bool>(GLFW_RELEASE) == false, "GLFW_RELEASE must be false");
-      static_assert(static_cast<bool>(GLFW_PRESS) == true, "GLFW_PRESS must be true");
-
-      applicationPtr->onKeyboardInput(
-        static_cast<KeyboardKey>(key),
-        static_cast<bool>(action)
-      );
-    }
+      break;
+    case GLFW_PRESS:
+      context->keyboardLastKeyPressed = static_cast<KeyboardKey>(key);
+      break;
   }
 }
 
@@ -40,12 +33,13 @@ static auto mousePositionCallback(
   double posX,
   double posY
 ) -> void {
-  auto applicationPtr = reinterpret_cast<IApplication*>(glfwGetWindowUserPointer(window));
-  
-  applicationPtr->onMouseMoveInput(
-    static_cast<int>(posX), 
-    static_cast<int>(posY)
-  );
+  auto context = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
+
+  unsigned mousePosX = std::clamp(static_cast<int>(posX), 0, static_cast<int>(context->framebufferWidth));
+  unsigned mousePosY = std::clamp(static_cast<int>(posY), 0, static_cast<int>(context->framebufferHeight));
+
+  context->mousePosX = mousePosX;
+  context->mousePosY = context->framebufferHeight - 1 - mousePosY;
 }
 
 static auto mouseButtonCallback(
@@ -54,15 +48,16 @@ static auto mouseButtonCallback(
   int action,
   int mods
 ) -> void {
-  auto applicationPtr = reinterpret_cast<IApplication*>(glfwGetWindowUserPointer(window));
-
   static_assert(static_cast<bool>(GLFW_RELEASE) == false, "GLFW_RELEASE must be false");
   static_assert(static_cast<bool>(GLFW_PRESS) == true, "GLFW_PRESS must be true");
 
-  applicationPtr->onMouseButtonInput(
-    static_cast<MouseButton>(button), 
-    static_cast<bool>(action)
-  );
+  auto context = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
+
+  switch (button) {
+    case GLFW_MOUSE_BUTTON_LEFT:
+      context->mouseLeftPressed = action;
+      break;
+  }
 }
 
 static auto framebufferSizeCallback(
@@ -70,10 +65,11 @@ static auto framebufferSizeCallback(
   int width,
   int height
 ) -> void {
-  auto applicationPtr = reinterpret_cast<IApplication*>(glfwGetWindowUserPointer(window));
+  auto context = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
 
   glViewport(0, 0, width, height);
-  applicationPtr->onFramebufferSizeChange(width, height);
+  context->framebufferWidth = width;
+  context->framebufferHeight = height;
 }
 
 static auto initGLFW(
@@ -131,17 +127,18 @@ static auto destroyGLFW() -> void {
 
 auto runApplication(
   GLFWwindow* window,
+  Context& engineContext,
   std::unique_ptr<IApplication> applicationPtr
 ) -> std::expected<void, Error> {
   std::expected<void, Error> result;
 
-  result = applicationPtr->onCreate();
+  result = applicationPtr->onCreate(engineContext);
   if (!result.has_value()) {
     return std::unexpected(error("application on create failed", result.error()));
   }
 
   while(!glfwWindowShouldClose(window)) {
-    result = applicationPtr->onUpdate();
+    result = applicationPtr->onUpdate(engineContext);
     if (!result.has_value()) {
       std::cerr << "application on update failed. closing main loop\n\t" << result.error() << '\n';
       break;
@@ -151,7 +148,7 @@ auto runApplication(
     glfwPollEvents();
   }
 
-  result = applicationPtr->onDestroy();
+  result = applicationPtr->onDestroy(engineContext);
   if (!result.has_value()) {
     return std::unexpected(error("application on destroy failed", result.error()));
   }
@@ -168,8 +165,10 @@ auto run(
     return std::unexpected(error("failed to init window", window.error()));
   }
 
+  Context engineContext;
+
   // Set GLFW window context to application
-  glfwSetWindowUserPointer(*window, applicationPtr.get());
+  glfwSetWindowUserPointer(*window, &engineContext);
 
   // Init application
 
@@ -184,7 +183,11 @@ auto run(
   keyboardCallback(*window, GLFW_KEY_1, 0, GLFW_PRESS, 0);
 
   // Run application
-  auto runApplicationResult = runApplication(*window, std::move(applicationPtr));
+  auto runApplicationResult = runApplication(
+    *window,
+    engineContext,
+    std::move(applicationPtr)
+  );
 
   destroyGLFW();
 
