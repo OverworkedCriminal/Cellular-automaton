@@ -83,7 +83,7 @@ GpuSimulation::GpuSimulation(int width, int height)
   ,m_height(height)
 {}
 
-auto GpuSimulation::onCreate(const Context& applicationContext) -> std::expected<void, engine::Error> {
+auto GpuSimulation::onCreate(const engine::Context& applicationContext) -> std::expected<void, engine::Error> {
   srand(time(NULL));
 
   auto initSimulationResult = initSimulation();
@@ -99,7 +99,7 @@ auto GpuSimulation::onCreate(const Context& applicationContext) -> std::expected
   return {};
 }
 
-auto GpuSimulation::onUpdate(const Context& applicationContext) -> std::expected<void, engine::Error> {
+auto GpuSimulation::onUpdate(const engine::Context& applicationContext) -> std::expected<void, engine::Error> {
   if (applicationContext.mouseLeftPressed) {
     const Cell cell = tryMapIntoCell(applicationContext.keyboardLastKeyPressed)
       .value_or(Cell::AIR);
@@ -247,7 +247,7 @@ auto GpuSimulation::initDrawing() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuSimulation::paint(Cell cell, const Context& applicationContext) -> void {
+auto GpuSimulation::paint(Cell cell, const engine::Context& applicationContext) -> void {
   auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
 
   m_inputSSBO->load(buffer);
@@ -256,7 +256,7 @@ auto GpuSimulation::paint(Cell cell, const Context& applicationContext) -> void 
   auto scaleY = static_cast<float>(m_height) / static_cast<float>(applicationContext.framebufferHeight);
 
   auto posX = static_cast<unsigned int>(static_cast<float>(applicationContext.mousePosX) * scaleX);
-  auto posY = static_cast<unsigned int>(static_cast<float>(applicationContext.framebufferHeight - 1 - applicationContext.mousePosY) * scaleY);
+  auto posY = static_cast<unsigned int>(static_cast<float>(applicationContext.mousePosY) * scaleY);
 
   ::paint(
     posX,

@@ -3,6 +3,8 @@
 
 #include "engine/application/KeyboardKey.hpp"
 
+namespace engine {
+
 struct Context {
   unsigned int framebufferWidth;
   unsigned int framebufferHeight;
@@ -13,5 +15,7 @@ struct Context {
   unsigned int mousePosY;
   bool mouseLeftPressed;
 };
+
+}
 
 #endif

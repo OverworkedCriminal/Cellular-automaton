@@ -3,14 +3,14 @@
 
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/simulation/Cell.hpp"
-#include "application/simulation/ISimulation.hpp"
+#include "engine/application/IApplication.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/Program.hpp"
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/graphics/texture/Texture.hpp"
 #include <expected>
 
-class GpuSimulation :public ISimulation {
+class GpuSimulation :public engine::IApplication {
 public:
   static auto create(
     int width,
@@ -23,8 +23,8 @@ public:
   auto operator=(const GpuSimulation&) -> GpuSimulation& = delete;
   auto operator=(GpuSimulation&&) -> GpuSimulation& = default;
 
-  auto onCreate(const Context& applicationContext) -> std::expected<void, engine::Error> override;
-  auto onUpdate(const Context& applicationContext) -> std::expected<void, engine::Error> override;
+  auto onCreate(const engine::Context& applicationContext) -> std::expected<void, engine::Error> override;
+  auto onUpdate(const engine::Context& applicationContext) -> std::expected<void, engine::Error> override;
 
 private:
   GpuSimulation(int width, int height);
@@ -32,7 +32,7 @@ private:
   auto initSimulation() -> std::expected<void, engine::Error>;
   auto initDrawing() -> std::expected<void, engine::Error>;
 
-  auto paint(Cell cell, const Context& applicationContext) -> void;
+  auto paint(Cell cell, const engine::Context& applicationContext) -> void;
 
   unsigned int m_width;
   unsigned int m_height;
