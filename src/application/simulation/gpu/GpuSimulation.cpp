@@ -2,17 +2,26 @@
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/simulation/Cell.hpp"
 #include "application/simulation/painting/painting.hpp"
+#include "engine/EngineContext.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/Program.hpp"
 #include "engine/graphics/shader/Shader.hpp"
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/graphics/texture/Texture.hpp"
+#include "engine/input/binding/KeyboardKey.hpp"
+#include "engine/input/binding/MouseButton.hpp"
+#include "engine/input/callback/KeyboardKeyCallback.hpp"
 #include "engine/utils/error.hpp"
 #include <ctime>
+#include <functional>
 #include <iostream>
 
 using engine::error;
 using engine::errorGL;
+using engine::EngineContext;
+using engine::input::MouseButton;
+using engine::input::KeyboardKey;
+using engine::input::KeyboardKeyCallback;
 
 static constexpr unsigned int PADDING = 2;
 
@@ -83,7 +92,9 @@ GpuSimulation::GpuSimulation(int width, int height)
   ,m_height(height)
 {}
 
-auto GpuSimulation::onCreate(const engine::Context& applicationContext) -> std::expected<void, engine::Error> {
+auto GpuSimulation::onCreate(EngineContext& applicationContext) -> std::expected<void, engine::Error> {
+  auto& input = applicationContext.inputSystem;
+  
   srand(time(NULL));
 
   auto initSimulationResult = initSimulation();
@@ -96,14 +107,20 @@ auto GpuSimulation::onCreate(const engine::Context& applicationContext) -> std::
     return std::unexpected(error("failed to init drawing", initDrawingResult.error()));
   }
 
+  m_paintCell = Cell::SAND;
+  auto keyboardCallback = KeyboardKeyCallback::create([this] (auto key, auto pressed) { onKeyboardKeyEvent(key, pressed); });
+  m_keyboardCallback = std::make_shared<KeyboardKeyCallback>(std::move(keyboardCallback));
+  input.addKeyboardKeyCallback(*m_keyboardCallback);
+
   return {};
 }
 
-auto GpuSimulation::onUpdate(const engine::Context& applicationContext) -> std::expected<void, engine::Error> {
-  if (applicationContext.mouseLeftPressed) {
-    const Cell cell = tryMapIntoCell(applicationContext.keyboardLastKeyPressed)
-      .value_or(Cell::AIR);
-    paint(cell, applicationContext);
+auto GpuSimulation::onUpdate(EngineContext& context) -> std::expected<void, engine::Error> {
+  const auto& input = context.inputSystem;
+
+  const bool mouseLeftPressed = input.isMouseButtonPressed(MouseButton::LEFT);
+  if (mouseLeftPressed) {
+    paint(m_paintCell,context);
   }
 
   auto useSimulationProgramResult = m_simulationProgram->useProgram();
@@ -247,16 +264,22 @@ auto GpuSimulation::initDrawing() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuSimulation::paint(Cell cell, const engine::Context& applicationContext) -> void {
+auto GpuSimulation::paint(Cell cell, const EngineContext& context) -> void {
+  const auto& input = context.inputSystem;
+  const auto& window = context.windowSystem;
+
+  const auto [mousePosX, mousePosY] = input.getMousePosition();
+  const auto [framebufferWidth, framebufferHeight] = window.getFramebufferSize();
+  
   auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
 
   m_inputSSBO->load(buffer);
 
-  auto scaleX = static_cast<float>(m_width) / static_cast<float>(applicationContext.framebufferWidth);
-  auto scaleY = static_cast<float>(m_height) / static_cast<float>(applicationContext.framebufferHeight);
+  auto scaleX = static_cast<float>(m_width) / static_cast<float>(framebufferWidth);
+  auto scaleY = static_cast<float>(m_height) / static_cast<float>(framebufferHeight);
 
-  auto posX = static_cast<unsigned int>(static_cast<float>(applicationContext.mousePosX) * scaleX);
-  auto posY = static_cast<unsigned int>(static_cast<float>(applicationContext.mousePosY) * scaleY);
+  auto posX = static_cast<unsigned int>(static_cast<float>(mousePosX) * scaleX);
+  auto posY = static_cast<unsigned int>(static_cast<float>(mousePosY) * scaleY);
 
   ::paint(
     posX,
@@ -271,4 +294,13 @@ auto GpuSimulation::paint(Cell cell, const engine::Context& applicationContext) 
   );
 
   m_inputSSBO->store(buffer);
+}
+
+auto GpuSimulation::onKeyboardKeyEvent(KeyboardKey key, bool pressed) -> void {
+  auto cell = tryMapIntoCell(key);
+  if (!cell.has_value()) {
+    return;
+  }
+
+  m_paintCell = *cell;
 }

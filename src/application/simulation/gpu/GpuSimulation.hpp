@@ -8,7 +8,10 @@
 #include "engine/graphics/shader/Program.hpp"
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/graphics/texture/Texture.hpp"
+#include "engine/input/binding/KeyboardKey.hpp"
+#include "engine/input/callback/IKeyboardKeyCallback.hpp"
 #include <expected>
+#include <memory>
 
 class GpuSimulation :public engine::IApplication {
 public:
@@ -23,8 +26,8 @@ public:
   auto operator=(const GpuSimulation&) -> GpuSimulation& = delete;
   auto operator=(GpuSimulation&&) -> GpuSimulation& = default;
 
-  auto onCreate(const engine::Context& applicationContext) -> std::expected<void, engine::Error> override;
-  auto onUpdate(const engine::Context& applicationContext) -> std::expected<void, engine::Error> override;
+  auto onCreate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
+  auto onUpdate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
 
 private:
   GpuSimulation(int width, int height);
@@ -32,7 +35,9 @@ private:
   auto initSimulation() -> std::expected<void, engine::Error>;
   auto initDrawing() -> std::expected<void, engine::Error>;
 
-  auto paint(Cell cell, const engine::Context& applicationContext) -> void;
+  auto paint(Cell cell, const engine::EngineContext& context) -> void;
+
+  auto onKeyboardKeyEvent(engine::input::KeyboardKey key, bool pressed) -> void;
 
   unsigned int m_width;
   unsigned int m_height;
@@ -49,6 +54,9 @@ private:
 
   std::optional<engine::Texture> m_drawingTexture;
   std::optional<TextureDrawingProgram> m_drawingProgram;
+
+  std::optional<std::shared_ptr<engine::input::IKeyboardKeyCallback>> m_keyboardCallback;
+  Cell m_paintCell;
 };
 
 #endif
