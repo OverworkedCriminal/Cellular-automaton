@@ -9,7 +9,7 @@ class IKeyboardKeyCallback {
 public:
   virtual ~IKeyboardKeyCallback() {}
 
-  virtual auto onKeyEvent(KeyboardKey key, bool pressed) -> void;
+  virtual auto onKeyEvent(KeyboardKey key, bool pressed) -> void = 0;
 };
 
 }

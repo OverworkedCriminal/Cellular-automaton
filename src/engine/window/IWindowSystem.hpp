@@ -9,7 +9,7 @@ class IWindowSystem {
 public:
   virtual ~IWindowSystem() {}
 
-  virtual auto getFramebufferSize() const -> WindowSize;
+  virtual auto getFramebufferSize() const -> WindowSize = 0;
 };
 
 }

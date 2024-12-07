@@ -15,13 +15,13 @@ class IInputSystem {
 public:
   virtual ~IInputSystem() {}
 
-  virtual auto isKeyboardKeyPressed(KeyboardKey key) const -> bool;
-  virtual auto isMouseButtonPressed(MouseButton button) const -> bool;
-  virtual auto getMousePosition() const -> MousePosition;
+  virtual auto isKeyboardKeyPressed(KeyboardKey key) const -> bool = 0;
+  virtual auto isMouseButtonPressed(MouseButton button) const -> bool = 0;
+  virtual auto getMousePosition() const -> MousePosition = 0;
 
-  virtual auto addKeyboardKeyCallback(std::weak_ptr<IKeyboardKeyCallback>) -> void;
-  virtual auto addMousePositionCallback(std::weak_ptr<IMousePositionCallback>) -> void;
-  virtual auto addMouseButtonCallback(std::weak_ptr<IMouseButtonCallback>) -> void;
+  virtual auto addKeyboardKeyCallback(std::weak_ptr<IKeyboardKeyCallback>) -> void = 0;
+  virtual auto addMousePositionCallback(std::weak_ptr<IMousePositionCallback>) -> void = 0;
+  virtual auto addMouseButtonCallback(std::weak_ptr<IMouseButtonCallback>) -> void = 0;
 };
 
 }

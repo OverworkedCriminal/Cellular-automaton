@@ -9,7 +9,7 @@ class IMouseButtonCallback {
 public:
   virtual ~IMouseButtonCallback() {}
 
-  virtual auto onButtonEvent(MouseButton button, bool pressed) -> void;
+  virtual auto onButtonEvent(MouseButton button, bool pressed) -> void = 0;
 };
 
 }

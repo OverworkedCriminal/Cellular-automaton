@@ -9,7 +9,7 @@ class IMousePositionCallback {
 public:
   virtual ~IMousePositionCallback() {}
 
-  virtual auto onPositionEvent(MousePosition position) -> void;
+  virtual auto onPositionEvent(MousePosition position) -> void = 0;
 };
 
 }
