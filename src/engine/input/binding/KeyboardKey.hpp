@@ -6,7 +6,7 @@
 
 namespace engine::input {
 
-enum class KeyboardKey {
+enum class KeyboardKey : int {
   _1 = GLFW_KEY_1,
   _2 = GLFW_KEY_2,
   _3 = GLFW_KEY_3,

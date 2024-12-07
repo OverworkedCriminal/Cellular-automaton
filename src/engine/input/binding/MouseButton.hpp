@@ -6,7 +6,7 @@
 
 namespace engine::input {
 
-enum class MouseButton {
+enum class MouseButton : int {
   LEFT = GLFW_MOUSE_BUTTON_LEFT,
   RIGHT = GLFW_MOUSE_BUTTON_RIGHT,
   _
