@@ -1,7 +1,7 @@
 #include "engine/engine.hpp"
 #include "engine/Config.hpp"
 #include "engine/application/IApplication.hpp"
-#include "engine/application/KeyboardKey.hpp"
+#include "engine/input/KeyboardKey.hpp"
 #include "engine/utils/error.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"

@@ -1,7 +1,7 @@
 #ifndef APPLICATION_CONTEXT_HPP
 #define APPLICATION_CONTEXT_HPP
 
-#include "engine/application/KeyboardKey.hpp"
+#include "engine/input/KeyboardKey.hpp"
 
 namespace engine {
 
