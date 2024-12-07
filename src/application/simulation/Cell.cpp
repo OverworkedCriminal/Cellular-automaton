@@ -2,12 +2,13 @@
 #include "engine/utils/error.hpp"
 
 using engine::error;
+using engine::input::KeyboardKey;
 
-auto tryMapIntoCell(engine::KeyboardKey key) -> std::expected<Cell, engine::Error> {
+auto tryMapIntoCell(KeyboardKey key) -> std::expected<Cell, engine::Error> {
   switch (key) {
-    case engine::KeyboardKey::_1: return Cell::AIR;
-    case engine::KeyboardKey::_2: return Cell::SAND;
-    case engine::KeyboardKey::_3: return Cell::WATER;
+    case KeyboardKey::_1: return Cell::AIR;
+    case KeyboardKey::_2: return Cell::SAND;
+    case KeyboardKey::_3: return Cell::WATER;
     default:
       return std::unexpected(error("unsupported key"));
   }
