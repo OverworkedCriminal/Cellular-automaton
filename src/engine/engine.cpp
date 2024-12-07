@@ -1,14 +1,19 @@
 #include "engine/engine.hpp"
 #include "engine/Config.hpp"
+#include "engine/GlfwWindowContext.hpp"
 #include "engine/application/IApplication.hpp"
-#include "engine/application/KeyboardKey.hpp"
+#include "engine/input/IInputSystem.hpp"
+#include "engine/input/InputSystem.hpp"
 #include "engine/utils/error.hpp"
+#include "engine/window/WindowSystem.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
-#include <algorithm>
 #include <iostream>
 
 namespace engine {
+
+using namespace engine::input;
+using namespace engine::window;
 
 static auto keyboardCallback(
   GLFWwindow* window,
@@ -17,15 +22,9 @@ static auto keyboardCallback(
   int action,
   int mods
 ) -> void {
-  auto context = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
-
-  switch (action) {
-    case GLFW_RELEASE:
-      break;
-    case GLFW_PRESS:
-      context->keyboardLastKeyPressed = static_cast<KeyboardKey>(key);
-      break;
-  }
+  void* userPointer = glfwGetWindowUserPointer(window);
+  auto* context = reinterpret_cast<GlfwWindowContext*>(userPointer);
+  context->inputSystem.keyboardCallback(window, key, scancode, action, mods);
 }
 
 static auto mousePositionCallback(
@@ -33,13 +32,9 @@ static auto mousePositionCallback(
   double posX,
   double posY
 ) -> void {
-  auto context = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
-
-  unsigned mousePosX = std::clamp(static_cast<int>(posX), 0, static_cast<int>(context->framebufferWidth));
-  unsigned mousePosY = std::clamp(static_cast<int>(posY), 0, static_cast<int>(context->framebufferHeight));
-
-  context->mousePosX = mousePosX;
-  context->mousePosY = context->framebufferHeight - 1 - mousePosY;
+  void* userPointer = glfwGetWindowUserPointer(window);
+  auto* context = reinterpret_cast<GlfwWindowContext*>(userPointer);
+  context->inputSystem.mousePositionCallback(window, posX, posY);
 }
 
 static auto mouseButtonCallback(
@@ -48,16 +43,9 @@ static auto mouseButtonCallback(
   int action,
   int mods
 ) -> void {
-  static_assert(static_cast<bool>(GLFW_RELEASE) == false, "GLFW_RELEASE must be false");
-  static_assert(static_cast<bool>(GLFW_PRESS) == true, "GLFW_PRESS must be true");
-
-  auto context = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
-
-  switch (button) {
-    case GLFW_MOUSE_BUTTON_LEFT:
-      context->mouseLeftPressed = action;
-      break;
-  }
+  void* userPointer = glfwGetWindowUserPointer(window);
+  auto* context = reinterpret_cast<GlfwWindowContext*>(userPointer);
+  context->inputSystem.mouseButtonCallback(window, button, action, mods);
 }
 
 static auto framebufferSizeCallback(
@@ -65,11 +53,7 @@ static auto framebufferSizeCallback(
   int width,
   int height
 ) -> void {
-  auto context = reinterpret_cast<Context*>(glfwGetWindowUserPointer(window));
-
   glViewport(0, 0, width, height);
-  context->framebufferWidth = width;
-  context->framebufferHeight = height;
 }
 
 static auto initGLFW(
@@ -127,7 +111,7 @@ static auto destroyGLFW() -> void {
 
 auto runApplication(
   GLFWwindow* window,
-  Context& engineContext,
+  EngineContext& engineContext,
   std::unique_ptr<IApplication> applicationPtr
 ) -> std::expected<void, Error> {
   std::expected<void, Error> result;
@@ -165,22 +149,19 @@ auto run(
     return std::unexpected(error("failed to init window", window.error()));
   }
 
-  Context engineContext;
+  auto inputSystem = InputSystem::create(*window);
+  auto windowSystem = WindowSystem::create(*window);
+  auto engineContext = EngineContext {
+    .inputSystem = dynamic_cast<IInputSystem&>(inputSystem),
+    .windowSystem = windowSystem
+  };
+
+  auto glfwWindowContext = GlfwWindowContext {
+    .inputSystem = inputSystem
+  };
 
   // Set GLFW window context to application
-  glfwSetWindowUserPointer(*window, &engineContext);
-
-  // Init application
-
-  int width, height;
-  glfwGetFramebufferSize(*window, &width, &height);
-  framebufferSizeCallback(*window, width, height);
-
-  double posX, posY;
-  glfwGetCursorPos(*window, &posX, &posY);
-  mousePositionCallback(*window, posX, posY);
-
-  keyboardCallback(*window, GLFW_KEY_1, 0, GLFW_PRESS, 0);
+  glfwSetWindowUserPointer(*window, &glfwWindowContext);
 
   // Run application
   auto runApplicationResult = runApplication(

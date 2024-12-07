@@ -1,0 +1,30 @@
+#ifndef ENGINE_WINDOW_WINDOW_SYSTEM_HPP
+#define ENGINE_WINDOW_WINDOW_SYSTEM_HPP
+
+#include "engine/window/IWindowSystem.hpp"
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
+
+namespace engine::window {
+
+class WindowSystem :public IWindowSystem {
+public:
+  static auto create(GLFWwindow* window) -> WindowSystem;
+
+  WindowSystem(const WindowSystem&) = delete;
+  WindowSystem(WindowSystem&&) = default;
+
+  auto operator=(const WindowSystem&) -> WindowSystem& = delete;
+  auto operator=(WindowSystem&&) -> WindowSystem& = default;
+
+  auto getFramebufferSize() const -> WindowSize override;
+
+private:
+  WindowSystem(GLFWwindow* window);
+
+  GLFWwindow* m_window;
+};
+
+}
+
+#endif
