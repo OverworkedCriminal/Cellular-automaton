@@ -1,1 +1,1 @@
-target_sources(cellular-automaton PUBLIC painting.cpp)
+target_sources(cellular-automaton PUBLIC PaintingBrush.cpp)
