@@ -1,4 +1,4 @@
-#include "application/simulation/painting/painting.hpp"
+#include "application/painting/painting.hpp"
 
 auto paint(
   unsigned int posX,

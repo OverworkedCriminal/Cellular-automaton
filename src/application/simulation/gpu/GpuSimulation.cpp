@@ -1,7 +1,7 @@
 #include "application/simulation/gpu/GpuSimulation.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/simulation/Cell.hpp"
-#include "application/simulation/painting/painting.hpp"
+#include "application/painting/painting.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/Program.hpp"
@@ -270,7 +270,7 @@ auto GpuSimulation::paint(Cell cell, const EngineContext& context) -> void {
 
   const auto [mousePosX, mousePosY] = input.getMousePosition();
   const auto [framebufferWidth, framebufferHeight] = window.getFramebufferSize();
-  
+
   auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
 
   m_inputSSBO->load(buffer);
