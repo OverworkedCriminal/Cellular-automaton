@@ -4,6 +4,7 @@
 #include "engine/error/Error.hpp"
 #include "glad/glad.h"
 #include <expected>
+#include <vector>
 
 namespace engine {
 
@@ -24,10 +25,15 @@ public:
   auto bind(GLint unit) -> void;
   auto bindImageTexture(GLint unit) -> std::expected<void, Error>;
 
+  auto store(const std::vector<GLfloat>& buffer) -> std::expected<void, Error>;
+
 private:
-  Texture(GLuint texture);
+  Texture(GLuint texture, GLsizei width, GLsizei height);
 
   GLuint m_texture;
+
+  GLsizei m_width;
+  GLsizei m_height;
 };
 
 }
