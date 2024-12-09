@@ -1,0 +1,14 @@
+#ifndef APPLICATION_SIMULATION_CPU_COLORS_HPP
+#define APPLICATION_SIMULATION_CPU_COLORS_HPP
+
+#include "application/simulation/cpu/Color.hpp"
+#include <array>
+
+constexpr std::array<Color, 4> COLORS = {
+  Color { 0.0f, 0.0f, 0.0f, 1.0f }, // PADDING
+  Color { 0.0f, 0.0f, 0.0f, 1.0f }, // AIR
+  Color { 1.0f, 1.0f, 0.0f, 1.0f }, // SAND
+  Color { 0.0f, 0.0f, 1.0f, 1.0f }  // WATER
+};
+
+#endif
