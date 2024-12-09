@@ -301,6 +301,10 @@ auto GpuSimulation::paint(const EngineContext& context) -> void {
 }
 
 auto GpuSimulation::onKeyboardKeyEvent(KeyboardKey key, bool pressed) -> void {
+  if (!pressed) {
+    return;
+  }
+
   auto cell = tryMapIntoCell(key);
   if (!cell.has_value()) {
     return;
