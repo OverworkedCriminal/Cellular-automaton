@@ -2,7 +2,9 @@
 #define APPLICATION_SIMULATION_GPU_GPU_SIMULATION_HPP
 
 #include "application/drawing/TextureDrawingProgram.hpp"
+#include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/Cell.hpp"
+#include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/Program.hpp"
@@ -24,7 +26,7 @@ public:
   GpuSimulation(GpuSimulation&&) = default;
 
   auto operator=(const GpuSimulation&) -> GpuSimulation& = delete;
-  auto operator=(GpuSimulation&&) -> GpuSimulation& = default;
+  auto operator=(GpuSimulation&&) -> GpuSimulation& = delete;
 
   auto onCreate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
   auto onUpdate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
@@ -32,10 +34,13 @@ public:
 private:
   GpuSimulation(int width, int height);
 
+  auto initBuffer() -> std::expected<void, engine::Error>;
   auto initSimulation() -> std::expected<void, engine::Error>;
   auto initDrawing() -> std::expected<void, engine::Error>;
+  auto initPainting() -> void;
+  auto initKeyboardCallback(engine::EngineContext& context) -> void;
 
-  auto paint(Cell cell, const engine::EngineContext& context) -> void;
+  auto paint(const engine::EngineContext& context) -> void;
 
   auto onKeyboardKeyEvent(engine::input::KeyboardKey key, bool pressed) -> void;
 
@@ -56,7 +61,7 @@ private:
   std::optional<TextureDrawingProgram> m_drawingProgram;
 
   std::optional<std::shared_ptr<engine::input::IKeyboardKeyCallback>> m_keyboardCallback;
-  Cell m_paintCell;
+  std::optional<PaintingBrush> m_paintingBrush;
 };
 
 #endif

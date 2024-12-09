@@ -1,7 +1,7 @@
 #include "application/simulation/gpu/GpuSimulation.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
+#include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/Cell.hpp"
-#include "application/simulation/painting/painting.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/Program.hpp"
@@ -92,10 +92,15 @@ GpuSimulation::GpuSimulation(int width, int height)
   ,m_height(height)
 {}
 
-auto GpuSimulation::onCreate(EngineContext& applicationContext) -> std::expected<void, engine::Error> {
-  auto& input = applicationContext.inputSystem;
+auto GpuSimulation::onCreate(EngineContext& context) -> std::expected<void, engine::Error> {
+  auto& input = context.inputSystem;
   
   srand(time(NULL));
+
+  auto initBufferResult = initBuffer();
+  if (!initBufferResult.has_value()) {
+    return std::unexpected(error("failed to init buffer", initBufferResult.error()));
+  }
 
   auto initSimulationResult = initSimulation();
   if (!initSimulationResult.has_value()) {
@@ -107,10 +112,8 @@ auto GpuSimulation::onCreate(EngineContext& applicationContext) -> std::expected
     return std::unexpected(error("failed to init drawing", initDrawingResult.error()));
   }
 
-  m_paintCell = Cell::SAND;
-  auto keyboardCallback = KeyboardKeyCallback::create([this] (auto key, auto pressed) { onKeyboardKeyEvent(key, pressed); });
-  m_keyboardCallback = std::make_shared<KeyboardKeyCallback>(std::move(keyboardCallback));
-  input.addKeyboardKeyCallback(*m_keyboardCallback);
+  initPainting();
+  initKeyboardCallback(context);
 
   return {};
 }
@@ -120,7 +123,7 @@ auto GpuSimulation::onUpdate(EngineContext& context) -> std::expected<void, engi
 
   const bool mouseLeftPressed = input.isMouseButtonPressed(MouseButton::LEFT);
   if (mouseLeftPressed) {
-    paint(m_paintCell,context);
+    paint(context);
   }
 
   auto useSimulationProgramResult = m_simulationProgram->useProgram();
@@ -171,7 +174,7 @@ auto GpuSimulation::onUpdate(EngineContext& context) -> std::expected<void, engi
   return {};
 }
 
-auto GpuSimulation::initSimulation() -> std::expected<void, engine::Error> {
+auto GpuSimulation::initBuffer() -> std::expected<void, engine::Error> {
   auto isGpuBigEndianResult = isGpuBigEndian();
   if (!isGpuBigEndianResult.has_value()) {
     return std::unexpected(error("failed to check if gpu is big endian", isGpuBigEndianResult.error()));
@@ -193,6 +196,10 @@ auto GpuSimulation::initSimulation() -> std::expected<void, engine::Error> {
     }
   }
 
+  return {};
+}
+
+auto GpuSimulation::initSimulation() -> std::expected<void, engine::Error> {
   auto simulationShaderResult = engine::Shader::create_from_file(GL_COMPUTE_SHADER, "shaders/simulation.compute.glsl");
   if (!simulationShaderResult.has_value()) {
     return std::unexpected(error("failed to create compute shader", simulationShaderResult.error()));
@@ -210,14 +217,14 @@ auto GpuSimulation::initSimulation() -> std::expected<void, engine::Error> {
     return std::unexpected(error("failed to create input SSBO", inputSSBO.error()));
   }
   m_inputSSBO = std::move(*inputSSBO);
-  m_inputSSBO->store(buffer);
+  m_inputSSBO->store(reinterpret_cast<std::vector<uint8_t>&>(*m_buffer));
 
   auto outputSSBO = engine::ShaderStorageBuffer::create(m_width * m_height * 4);
   if (!outputSSBO.has_value()) {
     return std::unexpected(error("failed to create output SSBO", outputSSBO.error()));
   }
   m_outputSSBO = std::move(*outputSSBO);
-  m_outputSSBO->store(buffer);
+  m_outputSSBO->store(reinterpret_cast<std::vector<uint8_t>&>(*m_buffer));
 
   m_computeSpaceX = m_width - 2 * PADDING;
   m_computeSpaceY = m_height - 2 * PADDING;
@@ -264,43 +271,44 @@ auto GpuSimulation::initDrawing() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuSimulation::paint(Cell cell, const EngineContext& context) -> void {
-  const auto& input = context.inputSystem;
-  const auto& window = context.windowSystem;
+auto GpuSimulation::initPainting() -> void {
+  m_paintingBrush.emplace(
+    PaintingBrush::create(
+      static_cast<uint8_t>(Cell::SAND),
+      m_width,
+      m_height,
+      PADDING,
+      m_bufferValueOffset,
+      m_bufferValueStride
+    )
+  );
+}
 
-  const auto [mousePosX, mousePosY] = input.getMousePosition();
-  const auto [framebufferWidth, framebufferHeight] = window.getFramebufferSize();
-  
+auto GpuSimulation::initKeyboardCallback(EngineContext& context) -> void {
+  auto& input = context.inputSystem;
+
+  auto keyboardCallback = KeyboardKeyCallback::create([this] (auto key, auto pressed) { onKeyboardKeyEvent(key, pressed); });
+  m_keyboardCallback = std::make_shared<KeyboardKeyCallback>(std::move(keyboardCallback));
+  input.addKeyboardKeyCallback(*m_keyboardCallback);
+}
+
+auto GpuSimulation::paint(const EngineContext& context) -> void {
   auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
 
   m_inputSSBO->load(buffer);
-
-  auto scaleX = static_cast<float>(m_width) / static_cast<float>(framebufferWidth);
-  auto scaleY = static_cast<float>(m_height) / static_cast<float>(framebufferHeight);
-
-  auto posX = static_cast<unsigned int>(static_cast<float>(mousePosX) * scaleX);
-  auto posY = static_cast<unsigned int>(static_cast<float>(mousePosY) * scaleY);
-
-  ::paint(
-    posX,
-    posY,
-    cell,
-    *m_buffer,
-    m_width,
-    m_height,
-    PADDING,
-    m_bufferValueOffset,
-    m_bufferValueStride
-  );
-
+  m_paintingBrush->paint(context, buffer);
   m_inputSSBO->store(buffer);
 }
 
 auto GpuSimulation::onKeyboardKeyEvent(KeyboardKey key, bool pressed) -> void {
+  if (!pressed) {
+    return;
+  }
+
   auto cell = tryMapIntoCell(key);
   if (!cell.has_value()) {
     return;
   }
 
-  m_paintCell = *cell;
+  m_paintingBrush->setValue(static_cast<uint8_t>(*cell));
 }

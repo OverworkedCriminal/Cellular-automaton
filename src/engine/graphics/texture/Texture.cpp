@@ -38,25 +38,24 @@ auto Texture::create(
     GL_FLOAT,
     initialTextureState.data()
   );
-
   const GLenum glError = glGetError();
   if (glError != GL_NO_ERROR) {
     return std::unexpected(errorGL("glTexImage2D", glError));
   }
 
-  Texture outTexture(texture);
-
-  return outTexture;
+  return Texture(texture, width, height);
 }
 
-Texture::Texture(GLuint texture)
+Texture::Texture(GLuint texture, GLsizei width, GLsizei height)
   :m_texture(texture)
-{
-
-}
+  ,m_width(width)
+  ,m_height(height)
+{}
 
 Texture::Texture(Texture&& other) {
   m_texture = other.m_texture;
+  m_width = other.m_width;
+  m_height = other.m_height;
   other.m_texture = 0;
 }
 
@@ -68,6 +67,8 @@ Texture::~Texture() {
 
 auto Texture::operator=(Texture&& other) -> Texture& {
   m_texture = other.m_texture;
+  m_width = other.m_width;
+  m_height = other.m_height;
   other.m_texture = 0;
   return *this;
 }
@@ -94,6 +95,26 @@ auto Texture::bindImageTexture(GLint unit) -> std::expected<void, Error> {
   const GLenum glError = glGetError();
   if (glError != GL_NO_ERROR) {
     return std::unexpected(errorGL("glBindImageTexture", glError));
+  }
+
+  return {};
+}
+
+auto Texture::store(const std::vector<GLfloat>& buffer) -> std::expected<void, Error> {
+  glTextureSubImage2D(
+    m_texture,
+    0,
+    0,
+    0,
+    m_width,
+    m_height,
+    GL_RGBA,
+    GL_FLOAT,
+    buffer.data()
+  );
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glTextureSubImage2D", glError));
   }
 
   return {};
