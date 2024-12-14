@@ -35,8 +35,8 @@ CpuSimulator::CpuSimulator(
 {}
 
 auto CpuSimulator::run(
-  const std::vector<Cell>& bufferIn,
-  std::vector<Cell>& bufferOut
+  const std::vector<uint8_t>& bufferIn,
+  std::vector<uint8_t>& bufferOut
 ) -> void {
   constexpr int FALL_RULES[] {
     0b00000000, // PADDING

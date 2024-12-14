@@ -3,7 +3,6 @@
 
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
-#include "application/simulation/Cell.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "application/simulation/input/SimulationInputHandler.hpp"
 #include "engine/EngineContext.hpp"
@@ -42,8 +41,8 @@ private:
   CpuSimulator m_simulator;
   int m_width;
   int m_height;
-  std::vector<Cell> m_bufferIn;
-  std::vector<Cell> m_bufferOut;
+  std::vector<uint8_t> m_bufferIn;
+  std::vector<uint8_t> m_bufferOut;
   std::vector<GLfloat> m_textureBuffer;
 
   std::optional<engine::Texture> m_drawingTexture;

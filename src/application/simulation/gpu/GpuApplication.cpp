@@ -179,16 +179,16 @@ auto GpuApplication::initBuffer() -> std::expected<void, engine::Error> {
   m_bufferValueStride = 4;
   m_bufferValueOffset = 3 * *isGpuBigEndianResult;
 
-  m_buffer = std::vector<Cell>(m_width * m_height * 4, static_cast<Cell>(0));
+  m_buffer = std::vector<uint8_t>(m_width * m_height * 4, 0);
   auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
 
   for (int row = 0; row < m_height; ++row) {
     for (int col = 0; col < m_width; ++col) {
       int idx = (row * m_width + col) * m_bufferValueStride + m_bufferValueOffset;
       if (row < PADDING || row >= m_width - PADDING || col < PADDING || col >= m_width - PADDING) {
-        buffer[idx] = static_cast<uint8_t>(Cell::PADDING);
+        buffer[idx] = cell::PADDING;
       } else {
-        buffer[idx] = static_cast<uint8_t>(Cell::AIR);
+        buffer[idx] = cell::AIR;
       }
     }
   }

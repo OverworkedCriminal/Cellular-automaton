@@ -101,13 +101,13 @@ auto CpuApplication::initDrawing() -> std::expected<void, engine::Error> {
 }
 
 auto CpuApplication::initSimulation() -> void {
-  m_bufferIn = std::vector<Cell>(m_width * m_height, Cell::PADDING);
-  m_bufferOut = std::vector<Cell>(m_width * m_height, Cell::PADDING);
+  m_bufferIn = std::vector<uint8_t>(m_width * m_height, cell::PADDING);
+  m_bufferOut = std::vector<uint8_t>(m_width * m_height, cell::PADDING);
   for (int row = PADDING; row < m_height - PADDING; ++row) {
     for (int col = PADDING; col < m_width - PADDING; ++col) {
       const int idx = row * m_width + col;
-      m_bufferIn[idx] = Cell::AIR;
-      m_bufferOut[idx] = Cell::AIR;
+      m_bufferIn[idx] = cell::AIR;
+      m_bufferOut[idx] = cell::AIR;
     }
   }
 

@@ -3,11 +3,11 @@
 
 #include <cstdint>
 
-enum class Cell : uint8_t {
-  PADDING = 1,
-  AIR = 2,
-  SAND = 4,
-  WATER = 8
-};
+namespace cell {
+  constexpr uint8_t PADDING = 1;
+  constexpr uint8_t AIR = 2;
+  constexpr uint8_t SAND = 4;
+  constexpr uint8_t WATER = 8;
+}
 
 #endif

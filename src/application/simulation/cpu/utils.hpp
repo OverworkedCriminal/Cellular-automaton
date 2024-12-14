@@ -1,11 +1,11 @@
 #ifndef APPLICATION_SIMULATION_CPU_UTILS_HPP
 #define APPLICATION_SIMULATION_CPU_UTILS_HPP
 
-#include "application/simulation/Cell.hpp"
+#include <cstdint>
 #include <vector>
 
 auto mapCellsToColors(
-  const std::vector<Cell>& buffer,
+  const std::vector<uint8_t>& buffer,
   std::vector<float>& textureBuffer
 ) -> void;
 

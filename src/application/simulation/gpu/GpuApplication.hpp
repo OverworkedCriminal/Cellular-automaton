@@ -3,7 +3,6 @@
 
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
-#include "application/simulation/Cell.hpp"
 #include "application/simulation/input/SimulationInputHandler.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
@@ -44,7 +43,7 @@ private:
   unsigned int m_width;
   unsigned int m_height;
 
-  std::optional<std::vector<Cell>> m_buffer;
+  std::optional<std::vector<uint8_t>> m_buffer;
   unsigned int m_bufferValueOffset;
   unsigned int m_bufferValueStride;
 
