@@ -1,5 +1,5 @@
-#ifndef APPLICATION_SIMULATION_GPU_GPU_SIMULATION_HPP
-#define APPLICATION_SIMULATION_GPU_GPU_SIMULATION_HPP
+#ifndef APPLICATION_SIMULATION_GPU_GPU_APPLICATION_HPP
+#define APPLICATION_SIMULATION_GPU_GPU_APPLICATION_HPP
 
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"

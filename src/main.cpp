@@ -1,4 +1,4 @@
-#include "application/simulation/gpu/GpuSimulation.hpp"
+#include "application/simulation/gpu/GpuApplication.hpp"
 #include "engine/Config.hpp"
 #include "engine/engine.hpp"
 #include <iostream>

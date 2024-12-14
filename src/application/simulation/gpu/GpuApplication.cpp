@@ -1,4 +1,4 @@
-#include "application/simulation/gpu/GpuSimulation.hpp"
+#include "application/simulation/gpu/GpuApplication.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/Cell.hpp"
