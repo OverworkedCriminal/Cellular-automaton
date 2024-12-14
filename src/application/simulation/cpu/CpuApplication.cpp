@@ -1,4 +1,4 @@
-#include "application/simulation/cpu/CpuSimulation.hpp"
+#include "application/simulation/cpu/CpuApplication.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/Cell.hpp"

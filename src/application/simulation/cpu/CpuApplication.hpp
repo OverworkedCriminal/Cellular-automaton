@@ -1,5 +1,5 @@
-#ifndef APPLICATION_SIMULATION_CPU_CPU_SIMULATION_HPP
-#define APPLICATION_SIMULATION_CPU_CPU_SIMULATION_HPP
+#ifndef APPLICATION_SIMULATION_CPU_CPU_APPLICATION_HPP
+#define APPLICATION_SIMULATION_CPU_CPU_APPLICATION_HPP
 
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
