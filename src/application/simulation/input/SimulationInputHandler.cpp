@@ -20,9 +20,9 @@ auto SimulationInputHandler::onKeyEvent(KeyboardKey key, bool pressed) -> void {
   }
 
   switch (key) {
-    case KeyboardKey::_1: m_paintingBrush->setValue(1 /* AIR */);   break;
-    case KeyboardKey::_2: m_paintingBrush->setValue(2 /* SAND */);  break;
-    case KeyboardKey::_3: m_paintingBrush->setValue(4 /* WATER */); break;
+    case KeyboardKey::_1: m_paintingBrush->setValue(2 /* AIR */);   break;
+    case KeyboardKey::_2: m_paintingBrush->setValue(4 /* SAND */);  break;
+    case KeyboardKey::_3: m_paintingBrush->setValue(8 /* WATER */); break;
     default:
       break;
   }
