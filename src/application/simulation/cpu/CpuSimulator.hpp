@@ -1,7 +1,6 @@
 #ifndef APPLICATION_SIMULATION_CPU_CPU_SIMULATOR_HPP
 #define APPLICATION_SIMULATION_CPU_CPU_SIMULATOR_HPP
 
-#include "application/simulation/Cell.hpp"
 #include "engine/error/Error.hpp"
 #include <expected>
 #include <vector>
@@ -20,8 +19,8 @@ public:
   auto operator=(CpuSimulator&&) -> CpuSimulator& = default;
 
   auto run(
-    const std::vector<Cell>& bufferIn,
-    std::vector<Cell>& bufferOut
+    const std::vector<uint8_t>& bufferIn,
+    std::vector<uint8_t>& bufferOut
   ) -> void;
 
 private:

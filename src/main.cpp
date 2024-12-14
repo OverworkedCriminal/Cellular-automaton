@@ -1,4 +1,5 @@
-#include "application/simulation/gpu/GpuSimulation.hpp"
+#include "application/simulation/cpu/CpuApplication.hpp"
+#include "application/simulation/gpu/GpuApplication.hpp"
 #include "engine/Config.hpp"
 #include "engine/engine.hpp"
 #include <iostream>
@@ -17,14 +18,14 @@ int main() {
     .windowHeight = WINDOW_HEIGHT
   };
 
-  auto simulation = GpuSimulation::create(SIMULATION_WIDTH, SIMULATION_HEIGHT);
-  if (!simulation.has_value()) {
-    std::cerr << "Simulation creation failed\n\t" << simulation.error() << '\n';
+  auto application = GpuApplication::create(SIMULATION_WIDTH, SIMULATION_HEIGHT);
+  if (!application.has_value()) {
+    std::cerr << "Simulation creation failed\n\t" << application.error() << '\n';
     return -1;
   }
-  auto simulationPtr = std::make_unique<GpuSimulation>(std::move(*simulation));
+  auto applicationPtr = std::make_unique<GpuApplication>(std::move(*application));
 
-  auto result = engine::run(config, std::move(simulationPtr));
+  auto result = engine::run(config, std::move(applicationPtr));
   if (!result.has_value()) {
     std::cerr << "Engine failed:\n\t" << result.error() << '\n';
     return -1;

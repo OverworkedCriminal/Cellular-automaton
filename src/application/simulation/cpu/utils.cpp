@@ -3,11 +3,11 @@
 #include <cmath>
 
 auto mapCellsToColors(
-  const std::vector<Cell>& inCells,
+  const std::vector<uint8_t>& inCells,
   std::vector<float>& outColors
 ) -> void {
   for (int idx = 0; idx < inCells.size(); ++idx) {
-    const int colorIdx = std::log2(static_cast<uint8_t>(inCells[idx]));
+    const int colorIdx = std::log2(inCells[idx]);
     const auto& color = COLORS[colorIdx];
 
     for (int colorComponentIdx = 0; colorComponentIdx < 4; ++colorComponentIdx) {

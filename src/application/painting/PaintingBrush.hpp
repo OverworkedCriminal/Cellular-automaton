@@ -19,8 +19,8 @@ public:
   PaintingBrush(const PaintingBrush&) = default;
   PaintingBrush(PaintingBrush&&) = default;
 
-  auto operator=(const PaintingBrush&) -> PaintingBrush& = delete;
-  auto operator=(PaintingBrush&&) -> PaintingBrush& = delete;
+  auto operator=(const PaintingBrush&) -> PaintingBrush& = default;
+  auto operator=(PaintingBrush&&) -> PaintingBrush& = default;
 
   auto paint(
     const engine::EngineContext& context,
@@ -42,12 +42,12 @@ private:
   // value that will be used to update canvas
   uint8_t m_brushValue;
 
-  const uint32_t m_simulationWidth;
-  const uint32_t m_simulationHeight;
-  const uint32_t m_simulationPadding;
+  uint32_t m_simulationWidth;
+  uint32_t m_simulationHeight;
+  uint32_t m_simulationPadding;
 
-  const uint32_t m_canvasValueOffset;
-  const uint32_t m_canvasValueStride;
+  uint32_t m_canvasValueOffset;
+  uint32_t m_canvasValueStride;
 };
 
 #endif

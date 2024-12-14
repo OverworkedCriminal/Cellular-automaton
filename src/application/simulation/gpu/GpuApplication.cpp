@@ -1,27 +1,24 @@
-#include "application/simulation/gpu/GpuSimulation.hpp"
+#include "application/simulation/gpu/GpuApplication.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/Cell.hpp"
+#include "application/simulation/input/SimulationInputHandler.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/Program.hpp"
 #include "engine/graphics/shader/Shader.hpp"
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/graphics/texture/Texture.hpp"
-#include "engine/input/binding/KeyboardKey.hpp"
 #include "engine/input/binding/MouseButton.hpp"
-#include "engine/input/callback/KeyboardKeyCallback.hpp"
 #include "engine/utils/error.hpp"
 #include <ctime>
-#include <functional>
 #include <iostream>
 
+using std::make_shared;
 using engine::error;
 using engine::errorGL;
 using engine::EngineContext;
 using engine::input::MouseButton;
-using engine::input::KeyboardKey;
-using engine::input::KeyboardKeyCallback;
 
 static constexpr unsigned int PADDING = 2;
 
@@ -76,23 +73,23 @@ static auto isGpuBigEndian() -> std::expected<bool, engine::Error> {
   return isBigEndian;
 }
 
-auto GpuSimulation::create(
+auto GpuApplication::create(
   int width,
   int height
-) -> std::expected<GpuSimulation, engine::Error> {
+) -> std::expected<GpuApplication, engine::Error> {
   if (width <= PADDING * 2 || height <= PADDING * 2) {
     return std::unexpected(error("dimensions to small"));
   }
 
-  return GpuSimulation(width, height);
+  return GpuApplication(width, height);
 }
 
-GpuSimulation::GpuSimulation(int width, int height)
+GpuApplication::GpuApplication(int width, int height)
   :m_width(width)
   ,m_height(height)
 {}
 
-auto GpuSimulation::onCreate(EngineContext& context) -> std::expected<void, engine::Error> {
+auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, engine::Error> {
   auto& input = context.inputSystem;
   
   srand(time(NULL));
@@ -118,7 +115,7 @@ auto GpuSimulation::onCreate(EngineContext& context) -> std::expected<void, engi
   return {};
 }
 
-auto GpuSimulation::onUpdate(EngineContext& context) -> std::expected<void, engine::Error> {
+auto GpuApplication::onUpdate(EngineContext& context) -> std::expected<void, engine::Error> {
   const auto& input = context.inputSystem;
 
   const bool mouseLeftPressed = input.isMouseButtonPressed(MouseButton::LEFT);
@@ -174,7 +171,7 @@ auto GpuSimulation::onUpdate(EngineContext& context) -> std::expected<void, engi
   return {};
 }
 
-auto GpuSimulation::initBuffer() -> std::expected<void, engine::Error> {
+auto GpuApplication::initBuffer() -> std::expected<void, engine::Error> {
   auto isGpuBigEndianResult = isGpuBigEndian();
   if (!isGpuBigEndianResult.has_value()) {
     return std::unexpected(error("failed to check if gpu is big endian", isGpuBigEndianResult.error()));
@@ -182,16 +179,16 @@ auto GpuSimulation::initBuffer() -> std::expected<void, engine::Error> {
   m_bufferValueStride = 4;
   m_bufferValueOffset = 3 * *isGpuBigEndianResult;
 
-  m_buffer = std::vector<Cell>(m_width * m_height * 4, static_cast<Cell>(0));
+  m_buffer = std::vector<uint8_t>(m_width * m_height * 4, 0);
   auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
 
   for (int row = 0; row < m_height; ++row) {
     for (int col = 0; col < m_width; ++col) {
       int idx = (row * m_width + col) * m_bufferValueStride + m_bufferValueOffset;
       if (row < PADDING || row >= m_width - PADDING || col < PADDING || col >= m_width - PADDING) {
-        buffer[idx] = static_cast<uint8_t>(Cell::PADDING);
+        buffer[idx] = cell::PADDING;
       } else {
-        buffer[idx] = static_cast<uint8_t>(Cell::AIR);
+        buffer[idx] = cell::AIR;
       }
     }
   }
@@ -199,7 +196,7 @@ auto GpuSimulation::initBuffer() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuSimulation::initSimulation() -> std::expected<void, engine::Error> {
+auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
   auto simulationShaderResult = engine::Shader::create_from_file(GL_COMPUTE_SHADER, "shaders/simulation.compute.glsl");
   if (!simulationShaderResult.has_value()) {
     return std::unexpected(error("failed to create compute shader", simulationShaderResult.error()));
@@ -255,7 +252,7 @@ auto GpuSimulation::initSimulation() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuSimulation::initDrawing() -> std::expected<void, engine::Error> {
+auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
   auto texture = engine::Texture::create(m_width, m_height);
   if (!texture.has_value()) {
     return std::unexpected(error("failed to create texture", texture.error()));
@@ -271,44 +268,31 @@ auto GpuSimulation::initDrawing() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuSimulation::initPainting() -> void {
-  m_paintingBrush.emplace(
-    PaintingBrush::create(
-      static_cast<uint8_t>(Cell::SAND),
-      m_width,
-      m_height,
-      PADDING,
-      m_bufferValueOffset,
-      m_bufferValueStride
-    )
+auto GpuApplication::initPainting() -> void {
+  const auto paintingBrush = PaintingBrush::create(
+    4, // SAND
+    m_width,
+    m_height,
+    PADDING,
+    m_bufferValueOffset,
+    m_bufferValueStride
   );
+  m_paintingBrush = make_shared<PaintingBrush>(std::move(paintingBrush));
 }
 
-auto GpuSimulation::initKeyboardCallback(EngineContext& context) -> void {
+auto GpuApplication::initKeyboardCallback(EngineContext& context) -> void {
   auto& input = context.inputSystem;
 
-  auto keyboardCallback = KeyboardKeyCallback::create([this] (auto key, auto pressed) { onKeyboardKeyEvent(key, pressed); });
-  m_keyboardCallback = std::make_shared<KeyboardKeyCallback>(std::move(keyboardCallback));
-  input.addKeyboardKeyCallback(*m_keyboardCallback);
+  auto inputHandler = SimulationInputHandler::create(*m_paintingBrush);
+  m_inputHandler = make_shared<SimulationInputHandler>(std::move(inputHandler));
+
+  input.addKeyboardKeyCallback(*m_inputHandler);
 }
 
-auto GpuSimulation::paint(const EngineContext& context) -> void {
+auto GpuApplication::paint(const EngineContext& context) -> void {
   auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
 
   m_inputSSBO->load(buffer);
-  m_paintingBrush->paint(context, buffer);
+  (*m_paintingBrush)->paint(context, buffer);
   m_inputSSBO->store(buffer);
-}
-
-auto GpuSimulation::onKeyboardKeyEvent(KeyboardKey key, bool pressed) -> void {
-  if (!pressed) {
-    return;
-  }
-
-  auto cell = tryMapIntoCell(key);
-  if (!cell.has_value()) {
-    return;
-  }
-
-  m_paintingBrush->setValue(static_cast<uint8_t>(*cell));
 }

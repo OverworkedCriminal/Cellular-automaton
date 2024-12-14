@@ -1,38 +1,36 @@
-#ifndef APPLICATION_SIMULATION_GPU_GPU_SIMULATION_HPP
-#define APPLICATION_SIMULATION_GPU_GPU_SIMULATION_HPP
+#ifndef APPLICATION_SIMULATION_GPU_GPU_APPLICATION_HPP
+#define APPLICATION_SIMULATION_GPU_GPU_APPLICATION_HPP
 
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
-#include "application/simulation/Cell.hpp"
+#include "application/simulation/input/SimulationInputHandler.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/Program.hpp"
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/graphics/texture/Texture.hpp"
-#include "engine/input/binding/KeyboardKey.hpp"
-#include "engine/input/callback/IKeyboardKeyCallback.hpp"
 #include <expected>
 #include <memory>
 
-class GpuSimulation :public engine::IApplication {
+class GpuApplication :public engine::IApplication {
 public:
   static auto create(
     int width,
     int height
-  ) -> std::expected<GpuSimulation, engine::Error>;
+  ) -> std::expected<GpuApplication, engine::Error>;
 
-  GpuSimulation(const GpuSimulation&) = delete;
-  GpuSimulation(GpuSimulation&&) = default;
+  GpuApplication(const GpuApplication&) = delete;
+  GpuApplication(GpuApplication&&) = default;
 
-  auto operator=(const GpuSimulation&) -> GpuSimulation& = delete;
-  auto operator=(GpuSimulation&&) -> GpuSimulation& = delete;
+  auto operator=(const GpuApplication&) -> GpuApplication& = delete;
+  auto operator=(GpuApplication&&) -> GpuApplication& = delete;
 
   auto onCreate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
   auto onUpdate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
 
 private:
-  GpuSimulation(int width, int height);
+  GpuApplication(int width, int height);
 
   auto initBuffer() -> std::expected<void, engine::Error>;
   auto initSimulation() -> std::expected<void, engine::Error>;
@@ -42,12 +40,10 @@ private:
 
   auto paint(const engine::EngineContext& context) -> void;
 
-  auto onKeyboardKeyEvent(engine::input::KeyboardKey key, bool pressed) -> void;
-
   unsigned int m_width;
   unsigned int m_height;
 
-  std::optional<std::vector<Cell>> m_buffer;
+  std::optional<std::vector<uint8_t>> m_buffer;
   unsigned int m_bufferValueOffset;
   unsigned int m_bufferValueStride;
 
@@ -60,8 +56,8 @@ private:
   std::optional<engine::Texture> m_drawingTexture;
   std::optional<TextureDrawingProgram> m_drawingProgram;
 
-  std::optional<std::shared_ptr<engine::input::IKeyboardKeyCallback>> m_keyboardCallback;
-  std::optional<PaintingBrush> m_paintingBrush;
+  std::optional<std::shared_ptr<SimulationInputHandler>> m_inputHandler;
+  std::optional<std::shared_ptr<PaintingBrush>> m_paintingBrush;
 };
 
 #endif
