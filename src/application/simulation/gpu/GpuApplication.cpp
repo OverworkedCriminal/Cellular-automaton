@@ -1,7 +1,7 @@
 #include "application/simulation/gpu/GpuApplication.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
-#include "application/simulation/Cell.hpp"
+#include "application/simulation/cell.hpp"
 #include "application/simulation/input/SimulationInputHandler.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/error/Error.hpp"

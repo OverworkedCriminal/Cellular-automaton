@@ -1,7 +1,7 @@
 #include "application/simulation/cpu/CpuApplication.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
-#include "application/simulation/Cell.hpp"
+#include "application/simulation/cell.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "application/simulation/cpu/utils.hpp"
 #include "application/simulation/input/SimulationInputHandler.hpp"
