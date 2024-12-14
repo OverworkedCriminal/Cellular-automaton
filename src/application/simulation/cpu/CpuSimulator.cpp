@@ -50,11 +50,11 @@ auto CpuSimulator::run(
       int otherIdx;
       uint8_t other;
 
-      const uint8_t cell = static_cast<uint8_t>(bufferIn[cellIdx]);
+      const uint8_t cell = bufferIn[cellIdx];
 
       // Fall down
       otherIdx = cellIdx + m_widthWithPadding;
-      other = static_cast<uint8_t>(bufferIn[otherIdx]);
+      other = bufferIn[otherIdx];
       const int otherRuleIdx = std::log2(other);
       const int otherRule = FALL_RULES[otherRuleIdx];
       if ((cell & otherRule) > 0) {
@@ -67,14 +67,14 @@ auto CpuSimulator::run(
       const int cellRule = FALL_RULES[cellRuleIdx];
 
       otherIdx = cellIdx - m_widthWithPadding;
-      other = static_cast<uint8_t>(bufferIn[otherIdx]);
+      other = bufferIn[otherIdx];
       if ((other & cellRule) > 0) {
         // Can fall down
         const int otherRuleIdx = std::log2(other);
         const int otherRule = FALL_RULES[otherRuleIdx];
 
         const int otherDownIdx = otherIdx - m_widthWithPadding;
-        const int otherDown = static_cast<uint8_t>(bufferIn[otherDownIdx]);
+        const int otherDown = bufferIn[otherDownIdx];
         if ((otherDown & otherRule) == 0) {
           // Other can't fall down
           bufferOut[cellIdx] = bufferIn[otherIdx];
