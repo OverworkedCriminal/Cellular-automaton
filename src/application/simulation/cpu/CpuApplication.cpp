@@ -116,7 +116,7 @@ auto CpuApplication::initSimulation() -> void {
 
 auto CpuApplication::initPainting() -> void {
   auto paintingBrush = PaintingBrush::create(
-    4, // SAND
+    cell::SAND,
     m_width,
     m_height,
     PADDING,
