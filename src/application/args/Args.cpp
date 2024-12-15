@@ -20,7 +20,7 @@ static auto parseIntValue(
   int argc,
   const char** argv,
   uint32_t i
-) -> expected<optional<int>, Error> {
+) -> expected<int, Error> {
   if (i >= argc) {
     return unexpected(error("missing value"));
   }
@@ -38,6 +38,8 @@ auto Args::parse(
   const char **argv
 ) -> expected<optional<Args>, Error> {
   Processor processor = Processor::CPU;
+  uint32_t widthWindow = 800;
+  uint32_t heightWindow = 600;
   optional<uint32_t> widthSimulation;
   optional<uint32_t> heightSimulation;
 
@@ -47,11 +49,13 @@ auto Args::parse(
     if (std::strcmp(argv[i], "--help") == 0) {
       std::cout << "cellular-automaton [cpu|gpu] -w <width> -h <height>\n"
                 << "\nARGS:\n"
-                << '\t' << std::left << std::setw(12) << "cpu" << " run simulation on CPU (default)\n"
-                << '\t' << std::left << std::setw(12) << "gpu" << " run simulation on GPU\n"
-                << '\t' << std::left << std::setw(12) << "-w, --width" << " simulation width\n"
-                << '\t' << std::left << std::setw(12) << "-h, --height" << " simulation height\n"
-                << '\t' << std::left << std::setw(12) << "--help" << " display this message\n";
+                << '\t' << std::left << std::setw(15) << "cpu" << " run simulation on CPU (default)\n"
+                << '\t' << std::left << std::setw(15) << "gpu" << " run simulation on GPU\n"
+                << '\t' << std::left << std::setw(15) << "-w, --width" << " simulation width\n"
+                << '\t' << std::left << std::setw(15) << "-h, --height" << " simulation height\n"
+                << '\t' << std::left << std::setw(15) << "--window-width" << " simulation width\n"
+                << '\t' << std::left << std::setw(15) << "--window-height" << " simulation height\n"
+                << '\t' << std::left << std::setw(15) << "--help" << " display this message\n";
       return std::nullopt;
     }
 
@@ -83,6 +87,25 @@ auto Args::parse(
       continue;
     }
 
+    if (std::strcmp(argv[i], "--window-width") == 0) {
+      auto width = parseIntValue(argc, argv, i + 1);
+      if (!width.has_value()) {
+        return unexpected(error("failed to parse window width", width.error()));
+      }
+      widthWindow = *width;
+      i += 1; // skip next arg since it already has been parsed
+      continue;
+    }
+    if (std::strcmp(argv[i], "--window-height") == 0) {
+      auto height = parseIntValue(argc, argv, i + 1);
+      if (!height.has_value()) {
+        return unexpected(error("failed to parse window height", height.error()));
+      }
+      heightWindow = *height;
+      i += 1; // skip next arg since it already has been parsed
+      continue;
+    }
+
     return unexpected(error("unexpected option"));
   }
 
@@ -96,6 +119,8 @@ auto Args::parse(
   return Args {
     .processor = processor,
     .widthSimulation = *widthSimulation,
-    .heightSimulation = *heightSimulation
+    .heightSimulation = *heightSimulation,
+    .widthWindow = widthWindow,
+    .heightWindow = heightWindow
   };
 }
