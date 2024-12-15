@@ -16,11 +16,11 @@ Error::Error(std::string&& message)
   :m_message(message)
 {}
 
-auto Error::message() -> const std::string& {
+auto Error::message() const -> const std::string& {
   return m_message;
 }
 
-auto operator<<(std::ostream& out, Error& error) -> std::ostream& {
+auto operator<<(std::ostream& out, const Error& error) -> std::ostream& {
   out << error.message();
   return out;
 }

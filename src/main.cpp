@@ -8,25 +8,22 @@
 #include <memory>
 
 int main(int argc, const char** argv) {
-  auto argsResult = Args::parse(argc, argv);
+  const auto argsResult = Args::parse(argc, argv);
   if (!argsResult.has_value()) {
     std::cerr << "Failed to parse input arguments:\n\t" << argsResult.error() << '\n';
     return -1;
   }
-  auto argsOpt = *argsResult;
+  const auto& argsOpt = *argsResult;
   if (!argsOpt.has_value()) {
     // program was called with '--help' flag
     return 0;
   }
-  auto args = *argsOpt;
-
-  constexpr int WINDOW_WIDTH = 800;
-  constexpr int WINDOW_HEIGHT = 600;
+  const auto& args = *argsOpt;
 
   const engine::Config config = {
     .windowTitle = "Cellular automaton",
-    .windowWidth = WINDOW_WIDTH,
-    .windowHeight = WINDOW_HEIGHT
+    .windowWidth = static_cast<int>(args.widthWindow),
+    .windowHeight = static_cast<int>(args.heightWindow)
   };
 
   std::unique_ptr<engine::IApplication> applicationPtr;

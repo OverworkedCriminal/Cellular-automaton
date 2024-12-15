@@ -24,6 +24,8 @@ struct Args {
   Processor processor;
   uint32_t widthSimulation;
   uint32_t heightSimulation;
+  uint32_t widthWindow;
+  uint32_t heightWindow;
 };
 
 #endif

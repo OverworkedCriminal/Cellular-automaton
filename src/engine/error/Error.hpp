@@ -17,7 +17,7 @@ public:
   auto operator=(const Error&) -> Error& = delete;
   auto operator=(Error&&) -> Error& = default;
 
-  auto message() -> const std::string&;
+  auto message() const -> const std::string&;
 
 private:
   Error(std::string&& message);
@@ -25,7 +25,7 @@ private:
   std::string m_message;
 };
 
-auto operator<<(std::ostream& out, Error& error) -> std::ostream&;
+auto operator<<(std::ostream& out, const Error& error) -> std::ostream&;
 
 }
 
