@@ -270,7 +270,7 @@ auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
 
 auto GpuApplication::initPainting() -> void {
   const auto paintingBrush = PaintingBrush::create(
-    4, // SAND
+    cell::SAND,
     m_width,
     m_height,
     PADDING,
