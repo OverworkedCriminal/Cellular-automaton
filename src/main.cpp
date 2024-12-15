@@ -1,16 +1,27 @@
+#include "application/args/Args.hpp"
 #include "application/simulation/cpu/CpuApplication.hpp"
 #include "application/simulation/gpu/GpuApplication.hpp"
 #include "engine/Config.hpp"
+#include "engine/application/IApplication.hpp"
 #include "engine/engine.hpp"
 #include <iostream>
 #include <memory>
 
-int main() {
+int main(int argc, const char** argv) {
+  auto argsResult = Args::parse(argc, argv);
+  if (!argsResult.has_value()) {
+    std::cerr << "Failed to parse input arguments:\n\t" << argsResult.error() << '\n';
+    return -1;
+  }
+  auto argsOpt = *argsResult;
+  if (!argsOpt.has_value()) {
+    // program was called with '--help' flag
+    return 0;
+  }
+  auto args = *argsOpt;
+
   constexpr int WINDOW_WIDTH = 800;
   constexpr int WINDOW_HEIGHT = 600;
-
-  constexpr int SIMULATION_WIDTH = 100;
-  constexpr int SIMULATION_HEIGHT = 100;
 
   const engine::Config config = {
     .windowTitle = "Cellular automaton",
@@ -18,12 +29,27 @@ int main() {
     .windowHeight = WINDOW_HEIGHT
   };
 
-  auto application = GpuApplication::create(SIMULATION_WIDTH, SIMULATION_HEIGHT);
-  if (!application.has_value()) {
-    std::cerr << "Simulation creation failed\n\t" << application.error() << '\n';
-    return -1;
+  std::unique_ptr<engine::IApplication> applicationPtr;
+  switch (args.processor) {
+    case Processor::CPU: {
+      auto applicationResult = CpuApplication::create(args.widthSimulation, args.heightSimulation);
+      if (!applicationResult.has_value()) {
+        std::cerr << "CpuApplication creation failed:\n\t" << applicationResult.error() << '\n';
+        return -1;
+      }
+      applicationPtr = std::make_unique<CpuApplication>(std::move(*applicationResult));
+      break;
+    }
+    case Processor::GPU: {
+      auto applicationResult = GpuApplication::create(args.widthSimulation, args.heightSimulation);
+      if (!applicationResult.has_value()) {
+        std::cerr << "GpuApplication creation failed:\n\t" << applicationResult.error() << '\n';
+        return -1;
+      }
+      applicationPtr = std::make_unique<GpuApplication>(std::move(*applicationResult));
+      break;
+    }
   }
-  auto applicationPtr = std::make_unique<GpuApplication>(std::move(*application));
 
   auto result = engine::run(config, std::move(applicationPtr));
   if (!result.has_value()) {
