@@ -47,10 +47,10 @@ auto Args::parse(
     auto arg = argv[i];
 
     if (std::strcmp(argv[i], "--help") == 0) {
-      std::cout << "cellular-automaton [cpu|gpu] -w <width> -h <height>\n"
+      std::cout << "cellular-automaton -w <width> -h <height>\n"
                 << "\nARGS:\n"
-                << '\t' << std::left << std::setw(15) << "cpu" << " run simulation on CPU (default)\n"
-                << '\t' << std::left << std::setw(15) << "gpu" << " run simulation on GPU\n"
+                << '\t' << std::left << std::setw(15) << "--cpu" << " run simulation on CPU (default)\n"
+                << '\t' << std::left << std::setw(15) << "--gpu" << " run simulation on GPU\n"
                 << '\t' << std::left << std::setw(15) << "-w, --width" << " simulation width\n"
                 << '\t' << std::left << std::setw(15) << "-h, --height" << " simulation height\n"
                 << '\t' << std::left << std::setw(15) << "--window-width" << " simulation width\n"
@@ -59,11 +59,11 @@ auto Args::parse(
       return std::nullopt;
     }
 
-    if (std::strcmp(argv[i], "cpu") == 0) {
+    if (std::strcmp(argv[i], "--cpu") == 0) {
       processor = Processor::CPU;
       continue;
     }
-    if (std::strcmp(argv[i], "gpu") == 0) {
+    if (std::strcmp(argv[i], "--gpu") == 0) {
       processor = Processor::GPU;
       continue;
     }
