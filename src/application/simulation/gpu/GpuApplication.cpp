@@ -2,7 +2,6 @@
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/cell.hpp"
-#include "application/simulation/input/SimulationInputHandler.hpp"
 #include "application/simulation/padding.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/error/Error.hpp"
@@ -108,8 +107,7 @@ auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, eng
     return std::unexpected(error("failed to init drawing", initDrawingResult.error()));
   }
 
-  initPainting();
-  initKeyboardCallback(context);
+  initPainting(context);
 
   return {};
 }
@@ -266,29 +264,30 @@ auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuApplication::initPainting() -> void {
+auto GpuApplication::initPainting(engine::EngineContext& context) -> void {
   const auto paintingBrush = PaintingBrush::create(
-    cell::SAND,
-    m_width,
-    m_height,
-    PADDING_SIZE,
-    m_bufferValueOffset,
+    cell::SAND, 
+    {
+      .width = m_width,
+      .height = m_height
+    }, 
+    PADDING_SIZE, 
+    context.windowSystem.getFramebufferSize(),
+    m_bufferValueOffset, 
     m_bufferValueStride
   );
+
   m_paintingBrush = make_shared<PaintingBrush>(std::move(paintingBrush));
-}
 
-auto GpuApplication::initKeyboardCallback(EngineContext& context) -> void {
-  auto& input = context.inputSystem;
+  auto inputHandler = PaintingBrushCallbacksHandler::create(*m_paintingBrush);
+  m_inputHandler = make_shared<PaintingBrushCallbacksHandler>(std::move(inputHandler));
 
-  auto inputHandler = SimulationInputHandler::create(*m_paintingBrush);
-  m_inputHandler = make_shared<SimulationInputHandler>(std::move(inputHandler));
-
-  input.addKeyboardKeyCallback(*m_inputHandler);
+  context.inputSystem.addKeyboardKeyCallback(*m_inputHandler);
+  context.windowSystem.addFrabufferSizeCallback(*m_inputHandler);
 }
 
 auto GpuApplication::paint(const EngineContext& context) -> void {
   m_inputSSBO->load(m_buffer);
-  (*m_paintingBrush)->paint(context, m_buffer);
+  (*m_paintingBrush)->paint(m_buffer, context.inputSystem.getMousePosition());
   m_inputSSBO->store(m_buffer);
 }

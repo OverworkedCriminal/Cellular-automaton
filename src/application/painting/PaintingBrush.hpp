@@ -1,7 +1,8 @@
 #ifndef APPLICATION_PAINTING_PAINTING_BRUSH_HPP
 #define APPLICATION_PAINTING_PAINTING_BRUSH_HPP
 
-#include "engine/EngineContext.hpp"
+#include "engine/input/MousePosition.hpp"
+#include "engine/window/WindowSize.hpp"
 #include <cstdint>
 #include <vector>
 
@@ -9,9 +10,9 @@ class PaintingBrush {
 public:
   static auto create(
     uint8_t initialValue,
-    uint32_t simulationWidth,
-    uint32_t simulationHeight,
+    WindowSize simulationSize,
     uint32_t simulationPadding,
+    WindowSize framebufferSize,
     uint32_t canvasValueOffset,
     uint32_t canvasValueStride
   ) -> PaintingBrush;
@@ -23,18 +24,19 @@ public:
   auto operator=(PaintingBrush&&) -> PaintingBrush& = default;
 
   auto paint(
-    const engine::EngineContext& context,
-    std::vector<uint8_t>& canvas
+    std::vector<uint8_t>& canvas,
+    engine::input::MousePosition mousePosition
   ) const -> void;
 
   auto setValue(uint8_t value) -> void;
+  auto setFramebufferSize(WindowSize size) -> void;
 
 private:
   PaintingBrush(
     uint8_t initialValue,
-    uint32_t simulationWidth,
-    uint32_t simulationHeight,
+    WindowSize simulationSize,
     uint32_t simulationPadding,
+    WindowSize framebufferSize,
     uint32_t canvasValueOffset,
     uint32_t canvasValueStride
   );
@@ -42,9 +44,10 @@ private:
   // value that will be used to update canvas
   uint8_t m_brushValue;
 
-  uint32_t m_simulationWidth;
-  uint32_t m_simulationHeight;
+  WindowSize m_simulationSize;
   uint32_t m_simulationPadding;
+
+  WindowSize m_framebufferSize;
 
   uint32_t m_canvasValueOffset;
   uint32_t m_canvasValueStride;

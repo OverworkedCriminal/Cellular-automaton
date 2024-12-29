@@ -2,9 +2,9 @@
 #define APPLICATION_SIMULATION_CPU_CPU_APPLICATION_HPP
 
 #include "application/drawing/TextureDrawingProgram.hpp"
+#include "application/input/PaintingBrushCallbacksHandler.hpp"
 #include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
-#include "application/simulation/input/SimulationInputHandler.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/graphics/texture/Texture.hpp"
@@ -23,8 +23,8 @@ public:
   auto operator=(const CpuApplication&) -> CpuApplication& = delete;
   auto operator=(CpuApplication&&) -> CpuApplication& = delete;
 
-  auto onCreate(engine::EngineContext& applicationContext) -> std::expected<void, engine::Error> override;
-  auto onUpdate(engine::EngineContext& applicationContext) -> std::expected<void, engine::Error> override;
+  auto onCreate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
+  auto onUpdate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
 
 private:
   CpuApplication(
@@ -35,8 +35,7 @@ private:
 
   auto initDrawing() -> std::expected<void, engine::Error>;
   auto initSimulation() -> void;
-  auto initPainting() -> void;
-  auto initKeyboardCallback(engine::EngineContext& context) -> void;
+  auto initPainting(engine::EngineContext& context) -> void;
 
   CpuSimulator m_simulator;
   int m_width;
@@ -48,7 +47,7 @@ private:
   std::optional<engine::Texture> m_drawingTexture;
   std::optional<TextureDrawingProgram> m_drawingProgram;
 
-  std::optional<std::shared_ptr<SimulationInputHandler>> m_inputHandler;
+  std::optional<std::shared_ptr<PaintingBrushCallbacksHandler>> m_inputHandler;
   std::optional<std::shared_ptr<PaintingBrush>> m_paintingBrush;
 };
 
