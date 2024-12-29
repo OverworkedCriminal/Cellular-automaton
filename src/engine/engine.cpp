@@ -53,7 +53,9 @@ static auto framebufferSizeCallback(
   int width,
   int height
 ) -> void {
-  glViewport(0, 0, width, height);
+  void* userPointer = glfwGetWindowUserPointer(window);
+  auto* context = reinterpret_cast<GlfwWindowContext*>(userPointer);
+  context->windowSystem.framebufferSizeCallback(window, width, height);
 }
 
 static auto initGLFW(
@@ -157,7 +159,8 @@ auto run(
   };
 
   auto glfwWindowContext = GlfwWindowContext {
-    .inputSystem = inputSystem
+    .inputSystem = inputSystem,
+    .windowSystem = windowSystem
   };
 
   // Set GLFW window context to application

@@ -9,6 +9,7 @@ target_include_directories(
 target_sources(cellular-automaton-engine PUBLIC engine.cpp)
 
 add_subdirectory(application)
+add_subdirectory(callback)
 add_subdirectory(error)
 add_subdirectory(graphics)
 add_subdirectory(input)
