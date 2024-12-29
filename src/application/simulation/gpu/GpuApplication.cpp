@@ -184,9 +184,9 @@ auto GpuApplication::initBuffer() -> std::expected<void, engine::Error> {
     for (int col = 0; col < m_width; ++col) {
       int idx = (row * m_width + col) * m_bufferValueStride + m_bufferValueOffset;
       if (row < PADDING_SIZE || row >= m_width - PADDING_SIZE || col < PADDING_SIZE || col >= m_width - PADDING_SIZE) {
-        (*m_buffer)[idx] = cell::PADDING;
+        m_buffer[idx] = cell::PADDING;
       } else {
-        (*m_buffer)[idx] = cell::AIR;
+        m_buffer[idx] = cell::AIR;
       }
     }
   }
@@ -212,14 +212,14 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
     return std::unexpected(error("failed to create input SSBO", inputSSBO.error()));
   }
   m_inputSSBO = std::move(*inputSSBO);
-  m_inputSSBO->store(*m_buffer);
+  m_inputSSBO->store(m_buffer);
 
   auto outputSSBO = engine::ShaderStorageBuffer::create(m_width * m_height * 4);
   if (!outputSSBO.has_value()) {
     return std::unexpected(error("failed to create output SSBO", outputSSBO.error()));
   }
   m_outputSSBO = std::move(*outputSSBO);
-  m_outputSSBO->store(*m_buffer);
+  m_outputSSBO->store(m_buffer);
 
   m_computeSpaceX = m_width - 2 * PADDING_SIZE;
   m_computeSpaceY = m_height - 2 * PADDING_SIZE;
@@ -288,7 +288,7 @@ auto GpuApplication::initKeyboardCallback(EngineContext& context) -> void {
 }
 
 auto GpuApplication::paint(const EngineContext& context) -> void {
-  m_inputSSBO->load(*m_buffer);
-  (*m_paintingBrush)->paint(context, *m_buffer);
-  m_inputSSBO->store(*m_buffer);
+  m_inputSSBO->load(m_buffer);
+  (*m_paintingBrush)->paint(context, m_buffer);
+  m_inputSSBO->store(m_buffer);
 }

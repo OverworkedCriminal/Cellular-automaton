@@ -43,7 +43,7 @@ private:
   unsigned int m_width;
   unsigned int m_height;
 
-  std::optional<std::vector<uint8_t>> m_buffer;
+  std::vector<uint8_t> m_buffer;
   unsigned int m_bufferValueOffset;
   unsigned int m_bufferValueStride;
 
