@@ -179,15 +179,14 @@ auto GpuApplication::initBuffer() -> std::expected<void, engine::Error> {
   m_bufferValueOffset = 3 * *isGpuBigEndianResult;
 
   m_buffer = std::vector<uint8_t>(m_width * m_height * 4, 0);
-  auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
 
   for (int row = 0; row < m_height; ++row) {
     for (int col = 0; col < m_width; ++col) {
       int idx = (row * m_width + col) * m_bufferValueStride + m_bufferValueOffset;
       if (row < PADDING_SIZE || row >= m_width - PADDING_SIZE || col < PADDING_SIZE || col >= m_width - PADDING_SIZE) {
-        buffer[idx] = cell::PADDING;
+        (*m_buffer)[idx] = cell::PADDING;
       } else {
-        buffer[idx] = cell::AIR;
+        (*m_buffer)[idx] = cell::AIR;
       }
     }
   }
@@ -213,14 +212,14 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
     return std::unexpected(error("failed to create input SSBO", inputSSBO.error()));
   }
   m_inputSSBO = std::move(*inputSSBO);
-  m_inputSSBO->store(reinterpret_cast<std::vector<uint8_t>&>(*m_buffer));
+  m_inputSSBO->store(*m_buffer);
 
   auto outputSSBO = engine::ShaderStorageBuffer::create(m_width * m_height * 4);
   if (!outputSSBO.has_value()) {
     return std::unexpected(error("failed to create output SSBO", outputSSBO.error()));
   }
   m_outputSSBO = std::move(*outputSSBO);
-  m_outputSSBO->store(reinterpret_cast<std::vector<uint8_t>&>(*m_buffer));
+  m_outputSSBO->store(*m_buffer);
 
   m_computeSpaceX = m_width - 2 * PADDING_SIZE;
   m_computeSpaceY = m_height - 2 * PADDING_SIZE;
@@ -289,9 +288,7 @@ auto GpuApplication::initKeyboardCallback(EngineContext& context) -> void {
 }
 
 auto GpuApplication::paint(const EngineContext& context) -> void {
-  auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
-
-  m_inputSSBO->load(buffer);
-  (*m_paintingBrush)->paint(context, buffer);
-  m_inputSSBO->store(buffer);
+  m_inputSSBO->load(*m_buffer);
+  (*m_paintingBrush)->paint(context, *m_buffer);
+  m_inputSSBO->store(*m_buffer);
 }

@@ -64,7 +64,7 @@ auto CpuApplication::onUpdate(engine::EngineContext& context) -> std::expected<v
 
   const bool mouseLeftPressed = input.isMouseButtonPressed(MouseButton::LEFT);
   if (mouseLeftPressed) {
-    (*m_paintingBrush)->paint(context, reinterpret_cast<std::vector<uint8_t>&>(m_bufferIn));
+    (*m_paintingBrush)->paint(context, m_bufferIn);
   }
 
   m_simulator.run(m_bufferIn, m_bufferOut);
