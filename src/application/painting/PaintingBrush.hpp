@@ -1,17 +1,34 @@
 #ifndef APPLICATION_PAINTING_PAINTING_BRUSH_HPP
 #define APPLICATION_PAINTING_PAINTING_BRUSH_HPP
 
-#include "engine/EngineContext.hpp"
+#include "engine/input/MousePosition.hpp"
+#include "engine/window/WindowSize.hpp"
 #include <cstdint>
 #include <vector>
 
+/**
+ * @brief Class responsible for drawing on canvas
+ */
 class PaintingBrush {
 public:
+
+  /**
+   * @brief Constructor
+   * 
+   * By default brushValue is set to 0.
+   * By default brushSize is set to 1.
+   * 
+   * @param simulationSize 
+   * @param simulationPadding 
+   * @param framebufferSize 
+   * @param canvasValueOffset 
+   * @param canvasValueStride 
+   * @return PaintingBrush 
+   */
   static auto create(
-    uint8_t initialValue,
-    uint32_t simulationWidth,
-    uint32_t simulationHeight,
+    WindowSize simulationSize,
     uint32_t simulationPadding,
+    WindowSize framebufferSize,
     uint32_t canvasValueOffset,
     uint32_t canvasValueStride
   ) -> PaintingBrush;
@@ -23,28 +40,32 @@ public:
   auto operator=(PaintingBrush&&) -> PaintingBrush& = default;
 
   auto paint(
-    const engine::EngineContext& context,
-    std::vector<uint8_t>& canvas
+    std::vector<uint8_t>& canvas,
+    engine::input::MousePosition mousePosition
   ) const -> void;
 
   auto setValue(uint8_t value) -> void;
+  auto setSize(uint8_t size) -> void;
+  auto getSize() const -> uint8_t;
+  auto setFramebufferSize(WindowSize size) -> void;
 
 private:
   PaintingBrush(
-    uint8_t initialValue,
-    uint32_t simulationWidth,
-    uint32_t simulationHeight,
+    WindowSize simulationSize,
     uint32_t simulationPadding,
+    WindowSize framebufferSize,
     uint32_t canvasValueOffset,
     uint32_t canvasValueStride
   );
 
   // value that will be used to update canvas
   uint8_t m_brushValue;
+  uint8_t m_brushSize;
 
-  uint32_t m_simulationWidth;
-  uint32_t m_simulationHeight;
+  WindowSize m_simulationSize;
   uint32_t m_simulationPadding;
+
+  WindowSize m_framebufferSize;
 
   uint32_t m_canvasValueOffset;
   uint32_t m_canvasValueStride;

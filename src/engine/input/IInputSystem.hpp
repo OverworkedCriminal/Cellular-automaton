@@ -4,9 +4,9 @@
 #include "engine/input/MousePosition.hpp"
 #include "engine/input/binding/KeyboardKey.hpp"
 #include "engine/input/binding/MouseButton.hpp"
-#include "engine/input/callback/IKeyboardKeyCallback.hpp"
-#include "engine/input/callback/IMouseButtonCallback.hpp"
-#include "engine/input/callback/IMousePositionCallback.hpp"
+#include "engine/callback/IKeyboardKeyCallback.hpp"
+#include "engine/callback/IMouseButtonCallback.hpp"
+#include "engine/callback/IMousePositionCallback.hpp"
 #include <memory>
 
 namespace engine::input {

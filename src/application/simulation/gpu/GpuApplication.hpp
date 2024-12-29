@@ -2,8 +2,8 @@
 #define APPLICATION_SIMULATION_GPU_GPU_APPLICATION_HPP
 
 #include "application/drawing/TextureDrawingProgram.hpp"
+#include "application/input/PaintingBrushCallbacksHandler.hpp"
 #include "application/painting/PaintingBrush.hpp"
-#include "application/simulation/input/SimulationInputHandler.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/error/Error.hpp"
@@ -35,15 +35,14 @@ private:
   auto initBuffer() -> std::expected<void, engine::Error>;
   auto initSimulation() -> std::expected<void, engine::Error>;
   auto initDrawing() -> std::expected<void, engine::Error>;
-  auto initPainting() -> void;
-  auto initKeyboardCallback(engine::EngineContext& context) -> void;
+  auto initPainting(engine::EngineContext& context) -> void;
 
   auto paint(const engine::EngineContext& context) -> void;
 
   unsigned int m_width;
   unsigned int m_height;
 
-  std::optional<std::vector<uint8_t>> m_buffer;
+  std::vector<uint8_t> m_buffer;
   unsigned int m_bufferValueOffset;
   unsigned int m_bufferValueStride;
 
@@ -56,7 +55,7 @@ private:
   std::optional<engine::Texture> m_drawingTexture;
   std::optional<TextureDrawingProgram> m_drawingProgram;
 
-  std::optional<std::shared_ptr<SimulationInputHandler>> m_inputHandler;
+  std::optional<std::shared_ptr<PaintingBrushCallbacksHandler>> m_inputHandler;
   std::optional<std::shared_ptr<PaintingBrush>> m_paintingBrush;
 };
 

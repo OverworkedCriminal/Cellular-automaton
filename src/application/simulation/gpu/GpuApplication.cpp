@@ -2,7 +2,6 @@
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/cell.hpp"
-#include "application/simulation/input/SimulationInputHandler.hpp"
 #include "application/simulation/padding.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/error/Error.hpp"
@@ -108,8 +107,7 @@ auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, eng
     return std::unexpected(error("failed to init drawing", initDrawingResult.error()));
   }
 
-  initPainting();
-  initKeyboardCallback(context);
+  initPainting(context);
 
   return {};
 }
@@ -179,15 +177,14 @@ auto GpuApplication::initBuffer() -> std::expected<void, engine::Error> {
   m_bufferValueOffset = 3 * *isGpuBigEndianResult;
 
   m_buffer = std::vector<uint8_t>(m_width * m_height * 4, 0);
-  auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
 
   for (int row = 0; row < m_height; ++row) {
     for (int col = 0; col < m_width; ++col) {
       int idx = (row * m_width + col) * m_bufferValueStride + m_bufferValueOffset;
       if (row < PADDING_SIZE || row >= m_width - PADDING_SIZE || col < PADDING_SIZE || col >= m_width - PADDING_SIZE) {
-        buffer[idx] = cell::PADDING;
+        m_buffer[idx] = cell::PADDING;
       } else {
-        buffer[idx] = cell::AIR;
+        m_buffer[idx] = cell::AIR;
       }
     }
   }
@@ -213,14 +210,14 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
     return std::unexpected(error("failed to create input SSBO", inputSSBO.error()));
   }
   m_inputSSBO = std::move(*inputSSBO);
-  m_inputSSBO->store(reinterpret_cast<std::vector<uint8_t>&>(*m_buffer));
+  m_inputSSBO->store(m_buffer);
 
   auto outputSSBO = engine::ShaderStorageBuffer::create(m_width * m_height * 4);
   if (!outputSSBO.has_value()) {
     return std::unexpected(error("failed to create output SSBO", outputSSBO.error()));
   }
   m_outputSSBO = std::move(*outputSSBO);
-  m_outputSSBO->store(reinterpret_cast<std::vector<uint8_t>&>(*m_buffer));
+  m_outputSSBO->store(m_buffer);
 
   m_computeSpaceX = m_width - 2 * PADDING_SIZE;
   m_computeSpaceY = m_height - 2 * PADDING_SIZE;
@@ -267,31 +264,29 @@ auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuApplication::initPainting() -> void {
+auto GpuApplication::initPainting(engine::EngineContext& context) -> void {
   const auto paintingBrush = PaintingBrush::create(
-    cell::SAND,
-    m_width,
-    m_height,
+    {
+      .width = m_width,
+      .height = m_height
+    },
     PADDING_SIZE,
+    context.windowSystem.getFramebufferSize(),
     m_bufferValueOffset,
     m_bufferValueStride
   );
+
   m_paintingBrush = make_shared<PaintingBrush>(std::move(paintingBrush));
-}
 
-auto GpuApplication::initKeyboardCallback(EngineContext& context) -> void {
-  auto& input = context.inputSystem;
+  auto inputHandler = PaintingBrushCallbacksHandler::create(*m_paintingBrush);
+  m_inputHandler = make_shared<PaintingBrushCallbacksHandler>(std::move(inputHandler));
 
-  auto inputHandler = SimulationInputHandler::create(*m_paintingBrush);
-  m_inputHandler = make_shared<SimulationInputHandler>(std::move(inputHandler));
-
-  input.addKeyboardKeyCallback(*m_inputHandler);
+  context.inputSystem.addKeyboardKeyCallback(*m_inputHandler);
+  context.windowSystem.addFrabufferSizeCallback(*m_inputHandler);
 }
 
 auto GpuApplication::paint(const EngineContext& context) -> void {
-  auto& buffer = reinterpret_cast<std::vector<uint8_t>&>(*m_buffer);
-
-  m_inputSSBO->load(buffer);
-  (*m_paintingBrush)->paint(context, buffer);
-  m_inputSSBO->store(buffer);
+  m_inputSSBO->load(m_buffer);
+  (*m_paintingBrush)->paint(m_buffer, context.inputSystem.getMousePosition());
+  m_inputSSBO->store(m_buffer);
 }

@@ -4,7 +4,6 @@
 #include "application/simulation/cell.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "application/simulation/cpu/utils.hpp"
-#include "application/simulation/input/SimulationInputHandler.hpp"
 #include "application/simulation/padding.hpp"
 #include "engine/graphics/texture/Texture.hpp"
 #include "engine/input/binding/MouseButton.hpp"
@@ -53,8 +52,7 @@ auto CpuApplication::onCreate(engine::EngineContext& context) -> std::expected<v
   }
 
   initSimulation();
-  initPainting();
-  initKeyboardCallback(context);
+  initPainting(context);
 
   return {};
 }
@@ -64,7 +62,7 @@ auto CpuApplication::onUpdate(engine::EngineContext& context) -> std::expected<v
 
   const bool mouseLeftPressed = input.isMouseButtonPressed(MouseButton::LEFT);
   if (mouseLeftPressed) {
-    (*m_paintingBrush)->paint(context, reinterpret_cast<std::vector<uint8_t>&>(m_bufferIn));
+    (*m_paintingBrush)->paint(m_bufferIn, context.inputSystem.getMousePosition());
   }
 
   m_simulator.run(m_bufferIn, m_bufferOut);
@@ -116,23 +114,23 @@ auto CpuApplication::initSimulation() -> void {
   m_textureBuffer = std::vector<GLfloat>(m_width * m_height * 4, 0.0f);
 }
 
-auto CpuApplication::initPainting() -> void {
+auto CpuApplication::initPainting(engine::EngineContext& context) -> void {
   auto paintingBrush = PaintingBrush::create(
-    cell::SAND,
-    m_width,
-    m_height,
+    {
+      .width = static_cast<uint32_t>(m_width),
+      .height = static_cast<uint32_t>(m_height)
+    },
     PADDING_SIZE,
+    context.windowSystem.getFramebufferSize(),
     0,
     1
   );
+
   m_paintingBrush = make_shared<PaintingBrush>(std::move(paintingBrush));
-}
 
-auto CpuApplication::initKeyboardCallback(engine::EngineContext& context) -> void {
-  auto& input = context.inputSystem;
+  auto inputHandler = PaintingBrushCallbacksHandler::create(*m_paintingBrush);
+  m_inputHandler = make_shared<PaintingBrushCallbacksHandler>(std::move(inputHandler));
 
-  auto inputHandler = SimulationInputHandler::create(*m_paintingBrush);
-  m_inputHandler = make_shared<SimulationInputHandler>(std::move(inputHandler));
-
-  input.addKeyboardKeyCallback(*m_inputHandler);
+  context.inputSystem.addKeyboardKeyCallback(*m_inputHandler);
+  context.windowSystem.addFrabufferSizeCallback(*m_inputHandler);
 }

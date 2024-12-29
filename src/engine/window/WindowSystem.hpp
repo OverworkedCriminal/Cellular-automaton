@@ -4,6 +4,8 @@
 #include "engine/window/IWindowSystem.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#include <memory>
+#include <vector>
 
 namespace engine::window {
 
@@ -19,10 +21,16 @@ public:
 
   auto getFramebufferSize() const -> WindowSize override;
 
+  auto addFrabufferSizeCallback(std::weak_ptr<IFramebufferSizeCallback>) -> void override;
+
+  auto framebufferSizeCallback(GLFWwindow* window, int width, int height) -> void;
+
 private:
   WindowSystem(GLFWwindow* window);
 
   GLFWwindow* m_window;
+
+  std::vector<std::weak_ptr<IFramebufferSizeCallback>> m_framebufferSizeCallbacks;
 };
 
 }

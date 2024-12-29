@@ -1,10 +1,10 @@
 #include "engine/input/InputSystem.hpp"
+#include "engine/callback/callback.hpp"
 #include "engine/input/MousePosition.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include <cassert>
 #include <cstdint>
-#include <utility>
 
 namespace engine::input {
 
@@ -35,27 +35,6 @@ static auto processMousePosition(GLFWwindow* window, double posX, double posY) -
     .x = static_cast<uint32_t>(x),
     .y = static_cast<uint32_t>(y)
   };
-}
-
-template<typename T>
-static auto removeDeadCallbacks(std::vector<std::weak_ptr<T>>& callbacks) {
-  const auto callbackCount = callbacks.size();
-  unsigned deadCallbackCount = 0;
-
-  for (int i = 0; i < callbackCount - deadCallbackCount; ++i) {
-    const auto& callbackWeakPtr = callbacks[i];
-    if (callbackWeakPtr.expired()) {
-      std::swap(
-        callbacks[i],
-        callbacks[callbackCount - 1 - deadCallbackCount]
-      );
-
-      ++deadCallbackCount;
-      --i;
-    }
-  }
-
-  callbacks.resize(callbackCount - deadCallbackCount);
 }
 
 auto InputSystem::create(GLFWwindow *window) -> InputSystem {
@@ -126,7 +105,7 @@ auto InputSystem::mousePositionCallback(
   double posY
 ) -> void {
   assert(window == m_window);
-  
+
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
 
