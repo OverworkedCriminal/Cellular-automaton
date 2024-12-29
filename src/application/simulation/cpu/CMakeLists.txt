@@ -1,5 +1,5 @@
 target_sources(
-  cellular-automaton
+  cellular-automaton-application
   PUBLIC
   CpuApplication.cpp
   CpuSimulator.cpp

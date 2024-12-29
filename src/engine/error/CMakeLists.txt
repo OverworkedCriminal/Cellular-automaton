@@ -1,1 +1,1 @@
-target_sources(cellular-automaton PUBLIC Error.cpp)
+target_sources(cellular-automaton-engine PUBLIC Error.cpp)

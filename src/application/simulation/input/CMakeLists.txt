@@ -1,1 +1,1 @@
-target_sources(cellular-automaton PUBLIC SimulationInputHandler.cpp)
+target_sources(cellular-automaton-application PUBLIC SimulationInputHandler.cpp)

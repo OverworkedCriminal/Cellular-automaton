@@ -1,1 +1,1 @@
-target_sources(cellular-automaton PUBLIC GpuApplication.cpp)
+target_sources(cellular-automaton-application PUBLIC GpuApplication.cpp)
