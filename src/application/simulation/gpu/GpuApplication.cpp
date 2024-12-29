@@ -3,6 +3,7 @@
 #include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/cell.hpp"
 #include "application/simulation/input/SimulationInputHandler.hpp"
+#include "application/simulation/padding.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/Program.hpp"
@@ -19,8 +20,6 @@ using engine::error;
 using engine::errorGL;
 using engine::EngineContext;
 using engine::input::MouseButton;
-
-static constexpr unsigned int PADDING = 2;
 
 static auto isGpuBigEndian() -> std::expected<bool, engine::Error> {
   auto shaderResult = engine::Shader::create_from_file(GL_COMPUTE_SHADER, "shaders/endianess.compute.glsl");
@@ -77,7 +76,7 @@ auto GpuApplication::create(
   int width,
   int height
 ) -> std::expected<GpuApplication, engine::Error> {
-  if (width <= PADDING * 2 || height <= PADDING * 2) {
+  if (width <= PADDING_SIZE * 2 || height <= PADDING_SIZE * 2) {
     return std::unexpected(error("dimensions to small"));
   }
 
@@ -185,7 +184,7 @@ auto GpuApplication::initBuffer() -> std::expected<void, engine::Error> {
   for (int row = 0; row < m_height; ++row) {
     for (int col = 0; col < m_width; ++col) {
       int idx = (row * m_width + col) * m_bufferValueStride + m_bufferValueOffset;
-      if (row < PADDING || row >= m_width - PADDING || col < PADDING || col >= m_width - PADDING) {
+      if (row < PADDING_SIZE || row >= m_width - PADDING_SIZE || col < PADDING_SIZE || col >= m_width - PADDING_SIZE) {
         buffer[idx] = cell::PADDING;
       } else {
         buffer[idx] = cell::AIR;
@@ -223,8 +222,8 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
   m_outputSSBO = std::move(*outputSSBO);
   m_outputSSBO->store(reinterpret_cast<std::vector<uint8_t>&>(*m_buffer));
 
-  m_computeSpaceX = m_width - 2 * PADDING;
-  m_computeSpaceY = m_height - 2 * PADDING;
+  m_computeSpaceX = m_width - 2 * PADDING_SIZE;
+  m_computeSpaceY = m_height - 2 * PADDING_SIZE;
 
   auto useProgramResult = m_simulationProgram->useProgram();
   if (!useProgramResult.has_value()) {
@@ -240,7 +239,7 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
   if (!uniformResult.has_value()) {
     std::cerr << "failed to set uniform gridHeight\n\t" << uniformResult.error() << '\n';
   }
-  uniformResult = m_simulationProgram->setUniform("gridPadding", PADDING);
+  uniformResult = m_simulationProgram->setUniform("gridPadding", PADDING_SIZE);
   if (!uniformResult.has_value()) {
     std::cerr << "failed to set uniform gridPadding\n\t" << uniformResult.error() << '\n';
   }
@@ -273,7 +272,7 @@ auto GpuApplication::initPainting() -> void {
     cell::SAND,
     m_width,
     m_height,
-    PADDING,
+    PADDING_SIZE,
     m_bufferValueOffset,
     m_bufferValueStride
   );

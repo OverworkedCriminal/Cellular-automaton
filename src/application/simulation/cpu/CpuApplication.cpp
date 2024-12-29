@@ -5,6 +5,7 @@
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "application/simulation/cpu/utils.hpp"
 #include "application/simulation/input/SimulationInputHandler.hpp"
+#include "application/simulation/padding.hpp"
 #include "engine/graphics/texture/Texture.hpp"
 #include "engine/input/binding/MouseButton.hpp"
 #include "engine/utils/error.hpp"
@@ -16,17 +17,18 @@ using std::make_shared;
 using engine::error;
 using engine::input::MouseButton;
 
-constexpr int PADDING = 2;
-
 auto CpuApplication::create(
   int width,
   int height
 ) -> std::expected<CpuApplication, engine::Error> {
-  if (width <= PADDING * 2 || height <= PADDING * 2) {
+  if (width <= PADDING_SIZE * 2 || height <= PADDING_SIZE * 2) {
     return std::unexpected(error("too small simulation dimensions"));
   }
 
-  auto simulator = CpuSimulator::create(width, height);
+  auto simulator = CpuSimulator::create(
+    width - 2 * PADDING_SIZE,
+    height - 2 * PADDING_SIZE
+  );
   if (!simulator.has_value()) {
     return std::unexpected(error("failed to create simulator", simulator.error()));
   }
@@ -103,8 +105,8 @@ auto CpuApplication::initDrawing() -> std::expected<void, engine::Error> {
 auto CpuApplication::initSimulation() -> void {
   m_bufferIn = std::vector<uint8_t>(m_width * m_height, cell::PADDING);
   m_bufferOut = std::vector<uint8_t>(m_width * m_height, cell::PADDING);
-  for (int row = PADDING; row < m_height - PADDING; ++row) {
-    for (int col = PADDING; col < m_width - PADDING; ++col) {
+  for (int row = PADDING_SIZE; row < m_height - PADDING_SIZE; ++row) {
+    for (int col = PADDING_SIZE; col < m_width - PADDING_SIZE; ++col) {
       const int idx = row * m_width + col;
       m_bufferIn[idx] = cell::AIR;
       m_bufferOut[idx] = cell::AIR;
@@ -119,7 +121,7 @@ auto CpuApplication::initPainting() -> void {
     cell::SAND,
     m_width,
     m_height,
-    PADDING,
+    PADDING_SIZE,
     0,
     1
   );
