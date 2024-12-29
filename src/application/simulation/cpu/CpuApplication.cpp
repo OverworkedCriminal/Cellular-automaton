@@ -116,7 +116,6 @@ auto CpuApplication::initSimulation() -> void {
 
 auto CpuApplication::initPainting(engine::EngineContext& context) -> void {
   auto paintingBrush = PaintingBrush::create(
-    cell::SAND, 
     {
       .width = static_cast<uint32_t>(m_width),
       .height = static_cast<uint32_t>(m_height)

@@ -6,10 +6,26 @@
 #include <cstdint>
 #include <vector>
 
+/**
+ * @brief Class responsible for drawing on canvas
+ */
 class PaintingBrush {
 public:
+
+  /**
+   * @brief Constructor
+   * 
+   * By default brushValue is set to 0.
+   * By default brushSize is set to 1.
+   * 
+   * @param simulationSize 
+   * @param simulationPadding 
+   * @param framebufferSize 
+   * @param canvasValueOffset 
+   * @param canvasValueStride 
+   * @return PaintingBrush 
+   */
   static auto create(
-    uint8_t initialValue,
     WindowSize simulationSize,
     uint32_t simulationPadding,
     WindowSize framebufferSize,
@@ -29,11 +45,12 @@ public:
   ) const -> void;
 
   auto setValue(uint8_t value) -> void;
+  auto setSize(uint8_t size) -> void;
+  auto getSize() const -> uint8_t;
   auto setFramebufferSize(WindowSize size) -> void;
 
 private:
   PaintingBrush(
-    uint8_t initialValue,
     WindowSize simulationSize,
     uint32_t simulationPadding,
     WindowSize framebufferSize,
@@ -43,6 +60,7 @@ private:
 
   // value that will be used to update canvas
   uint8_t m_brushValue;
+  uint8_t m_brushSize;
 
   WindowSize m_simulationSize;
   uint32_t m_simulationPadding;

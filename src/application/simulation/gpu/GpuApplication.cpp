@@ -266,14 +266,13 @@ auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
 
 auto GpuApplication::initPainting(engine::EngineContext& context) -> void {
   const auto paintingBrush = PaintingBrush::create(
-    cell::SAND, 
     {
       .width = m_width,
       .height = m_height
-    }, 
-    PADDING_SIZE, 
+    },
+    PADDING_SIZE,
     context.windowSystem.getFramebufferSize(),
-    m_bufferValueOffset, 
+    m_bufferValueOffset,
     m_bufferValueStride
   );
 

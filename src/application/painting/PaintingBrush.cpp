@@ -1,7 +1,7 @@
 #include "application/painting/PaintingBrush.hpp"
+#include <algorithm>
 
 auto PaintingBrush::create(
-  uint8_t initialValue,
   WindowSize simulationSize,
   uint32_t simulationPadding,
   WindowSize framebufferSize,
@@ -9,7 +9,6 @@ auto PaintingBrush::create(
   uint32_t canvasValueStride
 ) -> PaintingBrush {
   return PaintingBrush(
-    initialValue,
     simulationSize,
     simulationPadding,
     framebufferSize,
@@ -19,14 +18,14 @@ auto PaintingBrush::create(
 }
 
 PaintingBrush::PaintingBrush(
-  uint8_t initialValue,
   WindowSize simulationSize,
   uint32_t simulationPadding,
   WindowSize framebufferSize,
   uint32_t canvasValueOffset,
   uint32_t canvasValueStride
 )
-  :m_brushValue(initialValue)
+  :m_brushValue(0)
+  ,m_brushSize(1)
   ,m_simulationSize(simulationSize)
   ,m_simulationPadding(simulationPadding)
   ,m_framebufferSize(framebufferSize)
@@ -45,16 +44,16 @@ auto PaintingBrush::paint(
   const uint32_t mouseScaledPosX = (static_cast<float>(simulationWidth) / framebufferWidth) * mousePosX;
   const uint32_t mouseScaledPosY = (static_cast<float>(simulationHeight) / framebufferHeight) * mousePosY;
 
-  constexpr int BRUSH_SIZE = 2;
-
   const int32_t lBoundX = m_simulationPadding;
   const int32_t uBoundX = simulationWidth - m_simulationPadding;
 
   const int32_t lBoundY = m_simulationPadding;
   const int32_t uBoundY = simulationHeight - m_simulationPadding;
 
-  for (int32_t row = -BRUSH_SIZE; row <= BRUSH_SIZE; ++row) {
-    for (int32_t col = -BRUSH_SIZE; col <= BRUSH_SIZE; ++col) {
+  const int32_t radius = m_brushSize - 1;
+
+  for (int32_t row = -radius; row <= radius; ++row) {
+    for (int32_t col = -radius; col <= radius; ++col) {
       int32_t x = mouseScaledPosX + col;
       int32_t y = mouseScaledPosY + row;
       if (x < lBoundX || x >= uBoundX || y < lBoundY || y >= uBoundY) {
@@ -69,6 +68,14 @@ auto PaintingBrush::paint(
 
 auto PaintingBrush::setValue(uint8_t value) -> void {
   m_brushValue = value;
+}
+
+auto PaintingBrush::setSize(uint8_t size) -> void {
+  m_brushSize = std::max(size, static_cast<uint8_t>(1));
+}
+
+auto PaintingBrush::getSize() const -> uint8_t {
+  return m_brushSize;
 }
 
 auto PaintingBrush::setFramebufferSize(WindowSize size) -> void {
