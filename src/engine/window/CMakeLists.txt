@@ -1,1 +1,1 @@
-target_sources(cellular-automaton PUBLIC WindowSystem.cpp)
+target_sources(cellular-automaton-engine PUBLIC WindowSystem.cpp)

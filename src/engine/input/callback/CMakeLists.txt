@@ -1,5 +1,5 @@
 target_sources(
-  cellular-automaton
+  cellular-automaton-engine
   PUBLIC
   KeyboardKeyCallback.cpp
   MouseButtonCallback.cpp

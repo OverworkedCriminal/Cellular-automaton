@@ -1,1 +1,1 @@
-target_sources(cellular-automaton PUBLIC Args.cpp)
+target_sources(cellular-automaton-application PUBLIC Args.cpp)

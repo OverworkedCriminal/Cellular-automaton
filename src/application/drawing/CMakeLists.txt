@@ -1,1 +1,1 @@
-target_sources(cellular-automaton PUBLIC TextureDrawingProgram.cpp)
+target_sources(cellular-automaton-application PUBLIC TextureDrawingProgram.cpp)
