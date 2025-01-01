@@ -1,6 +1,5 @@
 #include "engine/input/InputSystem.hpp"
 #include "engine/callback/callback.hpp"
-#include "engine/input/MousePosition.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include <cassert>
@@ -17,7 +16,7 @@ namespace engine::input {
  * @param posY 
  * @return MousePosition 
  */
-static auto processMousePosition(GLFWwindow* window, double posX, double posY) -> MousePosition {
+static auto processMousePosition(GLFWwindow* window, double posX, double posY) -> Position2D<uint32_t> {
   int x = static_cast<int>(posX);
   int y = static_cast<int>(posY);
 
@@ -31,7 +30,7 @@ static auto processMousePosition(GLFWwindow* window, double posX, double posY) -
   // with this change it will be relative to lower left corner
   y = height - 1 - y;
 
-  return MousePosition {
+  return Position2D<uint32_t> {
     .x = static_cast<uint32_t>(x),
     .y = static_cast<uint32_t>(y)
   };
@@ -55,11 +54,11 @@ auto InputSystem::isMouseButtonPressed(MouseButton button) const -> bool {
   return state == GLFW_PRESS;
 }
 
-auto InputSystem::getMousePosition() const -> MousePosition {
+auto InputSystem::getMousePosition() const -> Position2D<uint32_t> {
   double posX, posY;
   glfwGetCursorPos(m_window, &posX, &posY);
 
-  const MousePosition mousePosition = processMousePosition(m_window, posX, posY);
+  const Position2D<uint32_t> mousePosition = processMousePosition(m_window, posX, posY);
 
   return mousePosition;
 }
@@ -109,7 +108,7 @@ auto InputSystem::mousePositionCallback(
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
 
-  MousePosition position = processMousePosition(window, posX, posY);
+  Position2D<uint32_t> position = processMousePosition(window, posX, posY);
 
   removeDeadCallbacks(m_mousePositionCallbacks);
   for (const auto& callbackWeakPtr : m_mousePositionCallbacks) {

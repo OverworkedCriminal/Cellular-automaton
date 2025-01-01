@@ -1,66 +1,51 @@
 #include "application/painting/PaintingBrush.hpp"
+#include "application/painting/PaintingCanvasDescription.hpp"
+#include "engine/utils/dto/Position2D.hpp"
+#include "engine/utils/dto/Size2D.hpp"
 #include <algorithm>
+#include <cassert>
 
-auto PaintingBrush::create(
-  WindowSize simulationSize,
-  uint32_t simulationPadding,
-  WindowSize framebufferSize,
-  uint32_t canvasValueOffset,
-  uint32_t canvasValueStride
-) -> PaintingBrush {
+using engine::Position2D;
+
+auto PaintingBrush::create(uint8_t size, uint8_t value) -> PaintingBrush {
   return PaintingBrush(
-    simulationSize,
-    simulationPadding,
-    framebufferSize,
-    canvasValueOffset,
-    canvasValueStride
+    size,
+    value
   );
 }
 
-PaintingBrush::PaintingBrush(
-  WindowSize simulationSize,
-  uint32_t simulationPadding,
-  WindowSize framebufferSize,
-  uint32_t canvasValueOffset,
-  uint32_t canvasValueStride
-)
-  :m_brushValue(0)
-  ,m_brushSize(1)
-  ,m_simulationSize(simulationSize)
-  ,m_simulationPadding(simulationPadding)
-  ,m_framebufferSize(framebufferSize)
-  ,m_canvasValueOffset(canvasValueOffset)
-  ,m_canvasValueStride(canvasValueStride)
+PaintingBrush::PaintingBrush(uint8_t size, uint8_t value)
+  :m_brushValue(value)
+  ,m_brushSize(size)
 {}
 
 auto PaintingBrush::paint(
   std::vector<uint8_t>& canvas,
-  engine::input::MousePosition mousePosition
+  PaintingCanvasDescription& canvasDescription,
+  Position2D<uint32_t> position
 ) const -> void {
-  const auto [simulationWidth, simulationHeight] = m_simulationSize;
-  const auto [framebufferWidth, framebufferHeight] = m_framebufferSize;
-  const auto [mousePosX, mousePosY] = mousePosition;
+  const auto [size, padding, valueOffset, valueStride] = canvasDescription;
+  const auto [posX, posY] = position;
 
-  const uint32_t mouseScaledPosX = (static_cast<float>(simulationWidth) / framebufferWidth) * mousePosX;
-  const uint32_t mouseScaledPosY = (static_cast<float>(simulationHeight) / framebufferHeight) * mousePosY;
+  assert(canvas.size() == (size.width * size.height * valueStride));
 
-  const int32_t lBoundX = m_simulationPadding;
-  const int32_t uBoundX = simulationWidth - m_simulationPadding;
+  const int32_t lowerBoundX = padding;
+  const int32_t upperBoundX = size.width - padding;
 
-  const int32_t lBoundY = m_simulationPadding;
-  const int32_t uBoundY = simulationHeight - m_simulationPadding;
+  const int32_t lowerBoundY = padding;
+  const int32_t upperBoundY = size.height - padding;
 
   const int32_t radius = m_brushSize - 1;
 
   for (int32_t row = -radius; row <= radius; ++row) {
     for (int32_t col = -radius; col <= radius; ++col) {
-      int32_t x = mouseScaledPosX + col;
-      int32_t y = mouseScaledPosY + row;
-      if (x < lBoundX || x >= uBoundX || y < lBoundY || y >= uBoundY) {
+      const int32_t x = posX + col;
+      const int32_t y = posY + row;
+      if (x < lowerBoundX || x >= upperBoundX || y < lowerBoundY || y >= upperBoundY) {
         continue;
       }
 
-      int32_t idx = (y * simulationWidth + x) * m_canvasValueStride + m_canvasValueOffset;
+      const int32_t idx = (y * size.width + x) * valueStride + valueOffset;
       canvas[idx] = m_brushValue;
     }
   }
@@ -76,8 +61,4 @@ auto PaintingBrush::setSize(uint8_t size) -> void {
 
 auto PaintingBrush::getSize() const -> uint8_t {
   return m_brushSize;
-}
-
-auto PaintingBrush::setFramebufferSize(WindowSize size) -> void {
-  m_framebufferSize = size;
 }

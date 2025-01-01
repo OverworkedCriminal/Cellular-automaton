@@ -4,6 +4,7 @@
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/input/PaintingBrushCallbacksHandler.hpp"
 #include "application/painting/PaintingBrush.hpp"
+#include "application/painting/PaintingCanvasDescription.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/error/Error.hpp"
@@ -30,7 +31,7 @@ public:
   auto onUpdate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
 
 private:
-  GpuApplication(int width, int height);
+  GpuApplication(uint32_t width, uint32_t height);
 
   auto initBuffer() -> std::expected<void, engine::Error>;
   auto initSimulation() -> std::expected<void, engine::Error>;
@@ -39,12 +40,7 @@ private:
 
   auto paint(const engine::EngineContext& context) -> void;
 
-  unsigned int m_width;
-  unsigned int m_height;
-
   std::vector<uint8_t> m_buffer;
-  unsigned int m_bufferValueOffset;
-  unsigned int m_bufferValueStride;
 
   std::optional<engine::Program> m_simulationProgram;
   std::optional<engine::ShaderStorageBuffer> m_inputSSBO;
@@ -56,7 +52,9 @@ private:
   std::optional<TextureDrawingProgram> m_drawingProgram;
 
   std::optional<std::shared_ptr<PaintingBrushCallbacksHandler>> m_inputHandler;
+
   std::optional<std::shared_ptr<PaintingBrush>> m_paintingBrush;
+  PaintingCanvasDescription m_canvasDescription;
 };
 
 #endif

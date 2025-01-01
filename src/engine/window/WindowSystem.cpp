@@ -1,6 +1,5 @@
 #include "engine/window/WindowSystem.hpp"
 #include "engine/callback/callback.hpp"
-#include "engine/window/WindowSize.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include <cassert>
@@ -15,11 +14,11 @@ WindowSystem::WindowSystem(GLFWwindow* window)
   :m_window(window)
 {}
 
-auto WindowSystem::getFramebufferSize() const -> WindowSize {
+auto WindowSystem::getFramebufferSize() const -> Size2D<uint32_t> {
   int width, height;
   glfwGetFramebufferSize(m_window, &width, &height);
 
-  return WindowSize {
+  return Size2D<uint32_t> {
     .width = static_cast<uint32_t>(width),
     .height = static_cast<uint32_t>(height)
   };
@@ -34,7 +33,7 @@ auto WindowSystem::framebufferSizeCallback(GLFWwindow* window, int width, int he
 
   glViewport(0, 0, width, height);
 
-  const auto size = WindowSize {
+  const auto size = Size2D<uint32_t> {
     .width = static_cast<uint32_t>(width),
     .height = static_cast<uint32_t>(height)
   };

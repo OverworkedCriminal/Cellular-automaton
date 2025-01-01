@@ -4,6 +4,7 @@
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/input/PaintingBrushCallbacksHandler.hpp"
 #include "application/painting/PaintingBrush.hpp"
+#include "application/painting/PaintingCanvasDescription.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
@@ -29,17 +30,18 @@ public:
 private:
   CpuApplication(
     CpuSimulator&& simulator,
-    int width,
-    int height
+    uint32_t width,
+    uint32_t height
   );
 
   auto initDrawing() -> std::expected<void, engine::Error>;
   auto initSimulation() -> void;
   auto initPainting(engine::EngineContext& context) -> void;
 
+  auto paint(const engine::EngineContext& context) -> void;
+
   CpuSimulator m_simulator;
-  int m_width;
-  int m_height;
+
   std::vector<uint8_t> m_bufferIn;
   std::vector<uint8_t> m_bufferOut;
   std::vector<GLfloat> m_textureBuffer;
@@ -48,7 +50,9 @@ private:
   std::optional<TextureDrawingProgram> m_drawingProgram;
 
   std::optional<std::shared_ptr<PaintingBrushCallbacksHandler>> m_inputHandler;
+
   std::optional<std::shared_ptr<PaintingBrush>> m_paintingBrush;
+  PaintingCanvasDescription m_canvasDescription;
 };
 
 #endif

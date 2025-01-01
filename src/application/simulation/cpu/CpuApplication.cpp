@@ -1,6 +1,7 @@
 #include "application/simulation/cpu/CpuApplication.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
+#include "application/painting/painting.hpp"
 #include "application/simulation/cell.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "application/simulation/cpu/utils.hpp"
@@ -37,12 +38,19 @@ auto CpuApplication::create(
 
 CpuApplication::CpuApplication(
   CpuSimulator&& simulator,
-  int width,
-  int height
+  uint32_t width,
+  uint32_t height
 )
   :m_simulator(std::move(simulator))
-  ,m_width(width)
-  ,m_height(height)
+  ,m_canvasDescription({
+    .size = {
+      .width = width,
+      .height = height
+    },
+    .paddingSize = PADDING_SIZE,
+    .valueOffset = 0,
+    .valueStride = 1
+  })
 {}
 
 auto CpuApplication::onCreate(engine::EngineContext& context) -> std::expected<void, engine::Error> {
@@ -58,11 +66,9 @@ auto CpuApplication::onCreate(engine::EngineContext& context) -> std::expected<v
 }
 
 auto CpuApplication::onUpdate(engine::EngineContext& context) -> std::expected<void, engine::Error> {
-  const auto& input = context.inputSystem;
-
-  const bool mouseLeftPressed = input.isMouseButtonPressed(MouseButton::LEFT);
+  const bool mouseLeftPressed = context.inputSystem.isMouseButtonPressed(MouseButton::LEFT);
   if (mouseLeftPressed) {
-    (*m_paintingBrush)->paint(m_bufferIn, context.inputSystem.getMousePosition());
+    paint(context);
   }
 
   m_simulator.run(m_bufferIn, m_bufferOut);
@@ -85,7 +91,9 @@ auto CpuApplication::onUpdate(engine::EngineContext& context) -> std::expected<v
 }
 
 auto CpuApplication::initDrawing() -> std::expected<void, engine::Error> {
-  auto texture = engine::Texture::create(m_width, m_height);
+  const auto [width, height] = m_canvasDescription.size;
+
+  auto texture = engine::Texture::create(width, height);
   if (!texture.has_value()) {
     return std::unexpected(error("failed to create texture", texture.error()));
   }
@@ -101,36 +109,36 @@ auto CpuApplication::initDrawing() -> std::expected<void, engine::Error> {
 }
 
 auto CpuApplication::initSimulation() -> void {
-  m_bufferIn = std::vector<uint8_t>(m_width * m_height, cell::PADDING);
-  m_bufferOut = std::vector<uint8_t>(m_width * m_height, cell::PADDING);
-  for (int row = PADDING_SIZE; row < m_height - PADDING_SIZE; ++row) {
-    for (int col = PADDING_SIZE; col < m_width - PADDING_SIZE; ++col) {
-      const int idx = row * m_width + col;
+  const auto [width, height] = m_canvasDescription.size;
+
+  m_bufferIn = std::vector<uint8_t>(width * height, cell::PADDING);
+  m_bufferOut = std::vector<uint8_t>(width * height, cell::PADDING);
+  for (int row = PADDING_SIZE; row < height - PADDING_SIZE; ++row) {
+    for (int col = PADDING_SIZE; col < width - PADDING_SIZE; ++col) {
+      const int idx = row * width + col;
       m_bufferIn[idx] = cell::AIR;
       m_bufferOut[idx] = cell::AIR;
     }
   }
 
-  m_textureBuffer = std::vector<GLfloat>(m_width * m_height * 4, 0.0f);
+  m_textureBuffer = std::vector<GLfloat>(width * height * 4, 0.0f);
 }
 
 auto CpuApplication::initPainting(engine::EngineContext& context) -> void {
-  auto paintingBrush = PaintingBrush::create(
-    {
-      .width = static_cast<uint32_t>(m_width),
-      .height = static_cast<uint32_t>(m_height)
-    },
-    PADDING_SIZE,
-    context.windowSystem.getFramebufferSize(),
-    0,
-    1
-  );
-
+  auto paintingBrush = PaintingBrush::create(1, cell::SAND);
   m_paintingBrush = make_shared<PaintingBrush>(std::move(paintingBrush));
 
   auto inputHandler = PaintingBrushCallbacksHandler::create(*m_paintingBrush);
   m_inputHandler = make_shared<PaintingBrushCallbacksHandler>(std::move(inputHandler));
 
   context.inputSystem.addKeyboardKeyCallback(*m_inputHandler);
-  context.windowSystem.addFrabufferSizeCallback(*m_inputHandler);
+}
+
+auto CpuApplication::paint(const engine::EngineContext& context) -> void {
+  auto position = mapWindowPositionToSimulationPosition(
+    context.inputSystem.getMousePosition(),
+    context.windowSystem.getFramebufferSize(),
+    m_canvasDescription.size
+  );
+  (*m_paintingBrush)->paint(m_bufferIn, m_canvasDescription, position);
 }

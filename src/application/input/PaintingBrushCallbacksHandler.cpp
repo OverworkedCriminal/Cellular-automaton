@@ -47,7 +47,3 @@ auto PaintingBrushCallbacksHandler::onKeyEvent(KeyboardKey key, bool pressed) ->
       break;
   }
 }
-
-auto PaintingBrushCallbacksHandler::onSizeEvent(WindowSize size) -> void {
-  m_paintingBrush->setFramebufferSize(size);
-}

@@ -19,7 +19,7 @@ public:
   auto operator=(const WindowSystem&) -> WindowSystem& = delete;
   auto operator=(WindowSystem&&) -> WindowSystem& = default;
 
-  auto getFramebufferSize() const -> WindowSize override;
+  auto getFramebufferSize() const -> Size2D<uint32_t> override;
 
   auto addFrabufferSizeCallback(std::weak_ptr<IFramebufferSizeCallback>) -> void override;
 
