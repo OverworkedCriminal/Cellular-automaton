@@ -6,7 +6,7 @@
 
 struct PaintingCanvasDescription {
   /**
-   * @brief Size of the canvas (not including padding)
+   * @brief Size of the canvas (including padding)
    */
   engine::Size2D<uint32_t> size;
 
