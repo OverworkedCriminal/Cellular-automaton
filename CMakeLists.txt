@@ -25,6 +25,15 @@ add_executable(cellular-automaton)
 target_include_directories(cellular-automaton PUBLIC src)
 
 #
+# Testing
+#
+add_subdirectory(lib/Catch2)
+include(CTest)
+include(Catch)
+enable_testing()
+
+#
 # Source files
 #
 add_subdirectory(src)
+
