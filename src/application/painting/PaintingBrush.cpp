@@ -1,10 +1,13 @@
 #include "application/painting/PaintingBrush.hpp"
+#include "engine/utils/dto/Size2D.hpp"
 #include <algorithm>
 
+using engine::Size2D;
+
 auto PaintingBrush::create(
-  WindowSize simulationSize,
+  Size2D<uint32_t> simulationSize,
   uint32_t simulationPadding,
-  WindowSize framebufferSize,
+  Size2D<uint32_t> framebufferSize,
   uint32_t canvasValueOffset,
   uint32_t canvasValueStride
 ) -> PaintingBrush {
@@ -18,9 +21,9 @@ auto PaintingBrush::create(
 }
 
 PaintingBrush::PaintingBrush(
-  WindowSize simulationSize,
+  Size2D<uint32_t> simulationSize,
   uint32_t simulationPadding,
-  WindowSize framebufferSize,
+  Size2D<uint32_t> framebufferSize,
   uint32_t canvasValueOffset,
   uint32_t canvasValueStride
 )
@@ -78,6 +81,6 @@ auto PaintingBrush::getSize() const -> uint8_t {
   return m_brushSize;
 }
 
-auto PaintingBrush::setFramebufferSize(WindowSize size) -> void {
+auto PaintingBrush::setFramebufferSize(Size2D<uint32_t> size) -> void {
   m_framebufferSize = size;
 }

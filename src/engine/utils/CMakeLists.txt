@@ -4,3 +4,5 @@ target_sources(
   error.cpp
   file.cpp
 )
+
+add_subdirectory(dto)

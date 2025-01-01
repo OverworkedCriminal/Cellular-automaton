@@ -2,7 +2,7 @@
 #define APPLICATION_PAINTING_PAINTING_BRUSH_HPP
 
 #include "engine/input/MousePosition.hpp"
-#include "engine/window/WindowSize.hpp"
+#include "engine/utils/dto/Size2D.hpp"
 #include <cstdint>
 #include <vector>
 
@@ -26,9 +26,9 @@ public:
    * @return PaintingBrush 
    */
   static auto create(
-    WindowSize simulationSize,
+    engine::Size2D<uint32_t> simulationSize,
     uint32_t simulationPadding,
-    WindowSize framebufferSize,
+    engine::Size2D<uint32_t> framebufferSize,
     uint32_t canvasValueOffset,
     uint32_t canvasValueStride
   ) -> PaintingBrush;
@@ -47,13 +47,13 @@ public:
   auto setValue(uint8_t value) -> void;
   auto setSize(uint8_t size) -> void;
   auto getSize() const -> uint8_t;
-  auto setFramebufferSize(WindowSize size) -> void;
+  auto setFramebufferSize(engine::Size2D<uint32_t> size) -> void;
 
 private:
   PaintingBrush(
-    WindowSize simulationSize,
+    engine::Size2D<uint32_t> simulationSize,
     uint32_t simulationPadding,
-    WindowSize framebufferSize,
+    engine::Size2D<uint32_t> framebufferSize,
     uint32_t canvasValueOffset,
     uint32_t canvasValueStride
   );
@@ -62,10 +62,10 @@ private:
   uint8_t m_brushValue;
   uint8_t m_brushSize;
 
-  WindowSize m_simulationSize;
+  engine::Size2D<uint32_t> m_simulationSize;
   uint32_t m_simulationPadding;
 
-  WindowSize m_framebufferSize;
+  engine::Size2D<uint32_t> m_framebufferSize;
 
   uint32_t m_canvasValueOffset;
   uint32_t m_canvasValueStride;

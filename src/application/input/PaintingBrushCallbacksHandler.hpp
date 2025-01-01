@@ -20,7 +20,7 @@ public:
   auto operator=(PaintingBrushCallbacksHandler&&) -> PaintingBrushCallbacksHandler& = default;
 
   auto onKeyEvent(engine::input::KeyboardKey key, bool pressed) -> void override;
-  auto onSizeEvent(WindowSize size) -> void override;
+  auto onSizeEvent(engine::Size2D<uint32_t> size) -> void override;
 
 private:
   PaintingBrushCallbacksHandler(std::shared_ptr<PaintingBrush> paintingBrush);
