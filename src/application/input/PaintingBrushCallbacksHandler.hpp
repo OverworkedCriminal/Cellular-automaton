@@ -3,12 +3,9 @@
 
 #include "application/painting/PaintingBrush.hpp"
 #include "engine/callback/IKeyboardKeyCallback.hpp"
-#include "engine/callback/IFramebufferSizeCallback.hpp"
 #include <memory>
 
-class PaintingBrushCallbacksHandler
-  :public engine::IKeyboardKeyCallback
-  ,public engine::IFramebufferSizeCallback 
+class PaintingBrushCallbacksHandler :public engine::IKeyboardKeyCallback
 {
 public:
   static auto create(std::shared_ptr<PaintingBrush> paintingBrush) -> PaintingBrushCallbacksHandler;
@@ -20,7 +17,6 @@ public:
   auto operator=(PaintingBrushCallbacksHandler&&) -> PaintingBrushCallbacksHandler& = default;
 
   auto onKeyEvent(engine::input::KeyboardKey key, bool pressed) -> void override;
-  auto onSizeEvent(engine::Size2D<uint32_t> size) -> void override;
 
 private:
   PaintingBrushCallbacksHandler(std::shared_ptr<PaintingBrush> paintingBrush);

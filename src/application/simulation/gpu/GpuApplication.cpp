@@ -1,6 +1,7 @@
 #include "application/simulation/gpu/GpuApplication.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/PaintingBrush.hpp"
+#include "application/painting/painting.hpp"
 #include "application/simulation/cell.hpp"
 #include "application/simulation/padding.hpp"
 #include "engine/EngineContext.hpp"
@@ -82,9 +83,14 @@ auto GpuApplication::create(
   return GpuApplication(width, height);
 }
 
-GpuApplication::GpuApplication(int width, int height)
-  :m_width(width)
-  ,m_height(height)
+GpuApplication::GpuApplication(uint32_t width, uint32_t height)
+  :m_canvasDescription({
+    .size = {
+      .width = width,
+      .height = height
+    },
+    .paddingSize = PADDING_SIZE
+  })
 {}
 
 auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, engine::Error> {
@@ -173,15 +179,19 @@ auto GpuApplication::initBuffer() -> std::expected<void, engine::Error> {
   if (!isGpuBigEndianResult.has_value()) {
     return std::unexpected(error("failed to check if gpu is big endian", isGpuBigEndianResult.error()));
   }
-  m_bufferValueStride = 4;
-  m_bufferValueOffset = 3 * *isGpuBigEndianResult;
 
-  m_buffer = std::vector<uint8_t>(m_width * m_height * 4, 0);
+  const auto [width, height] = m_canvasDescription.size;
+  const uint32_t offset = 3 * *isGpuBigEndianResult;
+  const uint32_t stride = 4;
+  m_canvasDescription.valueOffset = offset;
+  m_canvasDescription.valueStride = stride;
 
-  for (int row = 0; row < m_height; ++row) {
-    for (int col = 0; col < m_width; ++col) {
-      int idx = (row * m_width + col) * m_bufferValueStride + m_bufferValueOffset;
-      if (row < PADDING_SIZE || row >= m_width - PADDING_SIZE || col < PADDING_SIZE || col >= m_width - PADDING_SIZE) {
+  m_buffer = std::vector<uint8_t>(width * height * 4, 0);
+
+  for (int row = 0; row < height; ++row) {
+    for (int col = 0; col < width; ++col) {
+      int idx = (row * width + col) * stride + offset;
+      if (row < PADDING_SIZE || row >= width - PADDING_SIZE || col < PADDING_SIZE || col >= width - PADDING_SIZE) {
         m_buffer[idx] = cell::PADDING;
       } else {
         m_buffer[idx] = cell::AIR;
@@ -205,22 +215,24 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
   }
   m_simulationProgram = std::move(*simulationProgram);
 
-  auto inputSSBO = engine::ShaderStorageBuffer::create(m_width * m_height * 4);
+  const auto [width, height] = m_canvasDescription.size;
+
+  auto inputSSBO = engine::ShaderStorageBuffer::create(width * height * 4);
   if (!inputSSBO.has_value()) {
     return std::unexpected(error("failed to create input SSBO", inputSSBO.error()));
   }
   m_inputSSBO = std::move(*inputSSBO);
   m_inputSSBO->store(m_buffer);
 
-  auto outputSSBO = engine::ShaderStorageBuffer::create(m_width * m_height * 4);
+  auto outputSSBO = engine::ShaderStorageBuffer::create(width * height * 4);
   if (!outputSSBO.has_value()) {
     return std::unexpected(error("failed to create output SSBO", outputSSBO.error()));
   }
   m_outputSSBO = std::move(*outputSSBO);
   m_outputSSBO->store(m_buffer);
 
-  m_computeSpaceX = m_width - 2 * PADDING_SIZE;
-  m_computeSpaceY = m_height - 2 * PADDING_SIZE;
+  m_computeSpaceX = width - 2 * PADDING_SIZE;
+  m_computeSpaceY = height - 2 * PADDING_SIZE;
 
   auto useProgramResult = m_simulationProgram->useProgram();
   if (!useProgramResult.has_value()) {
@@ -228,11 +240,11 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
   }
 
   std::expected<void, engine::Error> uniformResult;
-  uniformResult = m_simulationProgram->setUniform("gridWidth", m_width);
+  uniformResult = m_simulationProgram->setUniform("gridWidth", width);
   if (!uniformResult.has_value()) {
     std::cerr << "failed to set uniform gridWidth\n\t" << uniformResult.error() << '\n';
   }
-  uniformResult = m_simulationProgram->setUniform("gridHeight", m_height);
+  uniformResult = m_simulationProgram->setUniform("gridHeight", height);
   if (!uniformResult.has_value()) {
     std::cerr << "failed to set uniform gridHeight\n\t" << uniformResult.error() << '\n';
   }
@@ -249,7 +261,9 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
 }
 
 auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
-  auto texture = engine::Texture::create(m_width, m_height);
+  const auto [width, height] = m_canvasDescription.size;
+  
+  auto texture = engine::Texture::create(width, height);
   if (!texture.has_value()) {
     return std::unexpected(error("failed to create texture", texture.error()));
   }
@@ -265,28 +279,24 @@ auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
 }
 
 auto GpuApplication::initPainting(engine::EngineContext& context) -> void {
-  const auto paintingBrush = PaintingBrush::create(
-    {
-      .width = m_width,
-      .height = m_height
-    },
-    PADDING_SIZE,
-    context.windowSystem.getFramebufferSize(),
-    m_bufferValueOffset,
-    m_bufferValueStride
-  );
-
+  const auto paintingBrush = PaintingBrush::create(1, cell::SAND);
   m_paintingBrush = make_shared<PaintingBrush>(std::move(paintingBrush));
 
   auto inputHandler = PaintingBrushCallbacksHandler::create(*m_paintingBrush);
   m_inputHandler = make_shared<PaintingBrushCallbacksHandler>(std::move(inputHandler));
 
   context.inputSystem.addKeyboardKeyCallback(*m_inputHandler);
-  context.windowSystem.addFrabufferSizeCallback(*m_inputHandler);
 }
 
 auto GpuApplication::paint(const EngineContext& context) -> void {
   m_inputSSBO->load(m_buffer);
-  (*m_paintingBrush)->paint(m_buffer, context.inputSystem.getMousePosition());
+
+  auto position = mapWindowPositionToSimulationPosition(
+    context.inputSystem.getMousePosition(),
+    context.windowSystem.getFramebufferSize(),
+    m_canvasDescription.size
+  );
+  (*m_paintingBrush)->paint(m_buffer, m_canvasDescription, position);
+
   m_inputSSBO->store(m_buffer);
 }

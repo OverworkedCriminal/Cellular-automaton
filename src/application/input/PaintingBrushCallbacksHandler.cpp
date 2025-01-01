@@ -2,13 +2,11 @@
 #include "application/painting/PaintingBrush.hpp"
 #include "application/simulation/cell.hpp"
 #include "engine/input/binding/KeyboardKey.hpp"
-#include "engine/utils/dto/Size2D.hpp"
 #include <algorithm>
 #include <iostream>
 #include <utility>
 
 using engine::input::KeyboardKey;
-using engine::Size2D;
 using std::shared_ptr;
 
 auto PaintingBrushCallbacksHandler::create(shared_ptr<PaintingBrush> paintingBrush) -> PaintingBrushCallbacksHandler {
@@ -48,8 +46,4 @@ auto PaintingBrushCallbacksHandler::onKeyEvent(KeyboardKey key, bool pressed) ->
     default:
       break;
   }
-}
-
-auto PaintingBrushCallbacksHandler::onSizeEvent(Size2D<uint32_t> size) -> void {
-  m_paintingBrush->setFramebufferSize(size);
 }
