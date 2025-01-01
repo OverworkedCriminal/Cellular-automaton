@@ -3,6 +3,7 @@
 #include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
 #include <algorithm>
+#include <cassert>
 
 using engine::Position2D;
 
@@ -25,6 +26,8 @@ auto PaintingBrush::paint(
 ) const -> void {
   const auto [size, padding, valueOffset, valueStride] = canvasDescription;
   const auto [posX, posY] = position;
+
+  assert(canvas.size() == (size.width * size.height * valueStride));
 
   const int32_t lowerBoundX = padding;
   const int32_t upperBoundX = size.width - padding;
