@@ -1,7 +1,7 @@
 #ifndef APPLICATION_PAINTING_PAINTING_BRUSH_HPP
 #define APPLICATION_PAINTING_PAINTING_BRUSH_HPP
 
-#include "engine/input/MousePosition.hpp"
+#include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
 #include <cstdint>
 #include <vector>
@@ -41,7 +41,7 @@ public:
 
   auto paint(
     std::vector<uint8_t>& canvas,
-    engine::input::MousePosition mousePosition
+    engine::Position2D<uint32_t> mousePosition
   ) const -> void;
 
   auto setValue(uint8_t value) -> void;

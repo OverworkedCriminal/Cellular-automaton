@@ -20,7 +20,7 @@ public:
 
   auto isKeyboardKeyPressed(KeyboardKey key) const -> bool override;
   auto isMouseButtonPressed(MouseButton button) const -> bool override;
-  auto getMousePosition() const -> MousePosition override;
+  auto getMousePosition() const -> Position2D<uint32_t> override;
 
   auto addKeyboardKeyCallback(std::weak_ptr<IKeyboardKeyCallback>) -> void override;
   auto addMousePositionCallback(std::weak_ptr<IMousePositionCallback>) -> void override;

@@ -1,8 +1,10 @@
 #include "application/painting/PaintingBrush.hpp"
+#include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
 #include <algorithm>
 
 using engine::Size2D;
+using engine::Position2D;
 
 auto PaintingBrush::create(
   Size2D<uint32_t> simulationSize,
@@ -38,7 +40,7 @@ PaintingBrush::PaintingBrush(
 
 auto PaintingBrush::paint(
   std::vector<uint8_t>& canvas,
-  engine::input::MousePosition mousePosition
+  Position2D<uint32_t> mousePosition
 ) const -> void {
   const auto [simulationWidth, simulationHeight] = m_simulationSize;
   const auto [framebufferWidth, framebufferHeight] = m_framebufferSize;
