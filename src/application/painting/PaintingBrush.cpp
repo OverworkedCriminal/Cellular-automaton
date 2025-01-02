@@ -21,7 +21,7 @@ PaintingBrush::PaintingBrush(uint8_t size, uint8_t value)
 
 auto PaintingBrush::paint(
   std::vector<uint8_t>& canvas,
-  PaintingCanvasDescription& canvasDescription,
+  const PaintingCanvasDescription& canvasDescription,
   Position2D<uint32_t> position
 ) const -> void {
   const auto [size, padding, valueOffset, valueStride] = canvasDescription;
