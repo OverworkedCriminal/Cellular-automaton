@@ -1,6 +1,6 @@
 #include "application/simulation/cpu/CpuSimulator.hpp"
-#include "application/painting/PaintingBrush.hpp"
 #include "application/painting/PaintingCanvasDescription.hpp"
+#include "application/painting/brush/SquarePaintingBrush.hpp"
 #include "application/painting/painting.hpp"
 #include "application/simulation/cell.hpp"
 #include "application/simulation/padding.hpp"
@@ -37,10 +37,31 @@ TEST_CASE("Fall straight down", "[falling-down]") {
     .valueOffset = 0,
     .valueStride = 1
   };
-  auto paintingBrush = PaintingBrush::create(1, cell::PADDING);
+  auto paintingBrush = SquarePaintingBrush::create();
   auto bufferIn = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride);
   auto bufferOut = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride);
-  // TODO: fill bufferIn bufferOut
+
+  for (uint32_t row = 0; row < canvasDescription.size.height; ++row) {
+    for (uint32_t col = 0; col < canvasDescription.size.width; ++col) {
+      paintingBrush.paint(
+        {
+          .size = 1,
+          .cell = cell::PADDING
+        },
+        {
+          .x = col,
+          .y = row
+        },
+        {
+          .size = canvasDescription.size,
+          .paddingSize = 0,
+          .valueOffset = canvasDescription.valueOffset,
+          .valueStride = canvasDescription.valueStride
+        },
+        bufferIn
+      );
+    }
+  }
 
   const auto simulator = *CpuSimulator::create(size);
 
@@ -56,10 +77,31 @@ TEST_CASE("Fall straight down", "[falling-down]") {
     };
 
     for (const auto fallThroughCell : fallThroughCells) {
-      paintingBrush.setValue(cell::SAND);
-      paintingBrush.paint(bufferIn, canvasDescription, { .x = 0 + PADDING_SIZE, .y = 1 + PADDING_SIZE });
-      paintingBrush.setValue(fallThroughCell);
-      paintingBrush.paint(bufferIn, canvasDescription, { .x = 0 + PADDING_SIZE, .y = 0 + PADDING_SIZE });
+      paintingBrush.paint(
+        {
+          .size = 1,
+          .cell = cell::SAND
+        },
+        {
+          .x = 0 + PADDING_SIZE,
+          .y = 1 + PADDING_SIZE
+        },
+        canvasDescription,
+        bufferIn
+      );
+
+      paintingBrush.paint(
+        {
+          .size = 1,
+          .cell = fallThroughCell
+        },
+        {
+          .x = 0 + PADDING_SIZE,
+          .y = 0 + PADDING_SIZE
+        },
+        canvasDescription,
+        bufferIn
+      );
 
       simulator.run(bufferIn, bufferOut);
 
