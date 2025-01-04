@@ -2,14 +2,13 @@
 #define APPLICATION_SIMULATION_CPU_CPU_APPLICATION_HPP
 
 #include "application/drawing/TextureDrawingProgram.hpp"
-#include "application/input/PaintingBrushCallbacksHandler.hpp"
-#include "application/painting/PaintingBrush.hpp"
-#include "application/painting/PaintingCanvasDescription.hpp"
+#include "application/painting/ApplicationPainting.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/graphics/texture/Texture.hpp"
-#include <memory>
+#include "engine/utils/dto/Size2D.hpp"
+#include <cstdint>
 
 class CpuApplication :public engine::IApplication {
 public:
@@ -40,6 +39,10 @@ private:
 
   auto paint(const engine::EngineContext& context) -> void;
 
+  /**
+   * @brief includes padding
+   */
+  engine::Size2D<uint32_t> m_size;
   CpuSimulator m_simulator;
 
   std::vector<uint8_t> m_bufferIn;
@@ -49,10 +52,7 @@ private:
   std::optional<engine::Texture> m_drawingTexture;
   std::optional<TextureDrawingProgram> m_drawingProgram;
 
-  std::optional<std::shared_ptr<PaintingBrushCallbacksHandler>> m_inputHandler;
-
-  std::optional<std::shared_ptr<PaintingBrush>> m_paintingBrush;
-  PaintingCanvasDescription m_canvasDescription;
+  std::optional<ApplicationPainting> m_applicationPainting;
 };
 
 #endif

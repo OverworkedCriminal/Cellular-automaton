@@ -1,29 +1,23 @@
-#include "application/painting/PaintingBrush.hpp"
+#include "application/painting/brush/SquarePaintingBrush.hpp"
 #include "application/painting/PaintingCanvasDescription.hpp"
 #include "application/painting/painting.hpp"
 #include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
-#include <algorithm>
 #include <cassert>
 
 using engine::Position2D;
 
-auto PaintingBrush::create(uint8_t size, uint8_t value) -> PaintingBrush {
-  return PaintingBrush(
-    size,
-    value
-  );
+auto SquarePaintingBrush::create() -> SquarePaintingBrush {
+  return SquarePaintingBrush();
 }
 
-PaintingBrush::PaintingBrush(uint8_t size, uint8_t value)
-  :m_brushValue(value)
-  ,m_brushSize(size)
-{}
+SquarePaintingBrush::SquarePaintingBrush() {}
 
-auto PaintingBrush::paint(
-  std::vector<uint8_t>& canvas,
+auto SquarePaintingBrush::paint(
+  const PaintingBrushDescription brushDescription,
+  const engine::Position2D<uint32_t> position,
   const PaintingCanvasDescription& canvasDescription,
-  Position2D<uint32_t> position
+  std::vector<uint8_t>& canvas
 ) const -> void {
   const auto [size, padding, valueOffset, valueStride] = canvasDescription;
   const auto [posX, posY] = position;
@@ -36,7 +30,7 @@ auto PaintingBrush::paint(
   const int32_t lowerBoundY = padding;
   const int32_t upperBoundY = size.height - padding;
 
-  const int32_t radius = m_brushSize - 1;
+  const int32_t radius = brushDescription.size - 1;
 
   for (int32_t row = -radius; row <= radius; ++row) {
     for (int32_t col = -radius; col <= radius; ++col) {
@@ -54,19 +48,7 @@ auto PaintingBrush::paint(
         canvasDescription
       );
 
-      canvas[idx] = m_brushValue;
+      canvas[idx] = brushDescription.cell;
     }
   }
-}
-
-auto PaintingBrush::setValue(uint8_t value) -> void {
-  m_brushValue = value;
-}
-
-auto PaintingBrush::setSize(uint8_t size) -> void {
-  m_brushSize = std::max(size, static_cast<uint8_t>(1));
-}
-
-auto PaintingBrush::getSize() const -> uint8_t {
-  return m_brushSize;
 }

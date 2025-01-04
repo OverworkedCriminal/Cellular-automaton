@@ -1,7 +1,6 @@
 #include "application/simulation/gpu/GpuApplication.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
-#include "application/painting/PaintingBrush.hpp"
-#include "application/painting/painting.hpp"
+#include "application/painting/ApplicationPainting.hpp"
 #include "application/simulation/cell.hpp"
 #include "application/simulation/padding.hpp"
 #include "engine/EngineContext.hpp"
@@ -15,7 +14,6 @@
 #include <ctime>
 #include <iostream>
 
-using std::make_shared;
 using engine::error;
 using engine::errorGL;
 using engine::EngineContext;
@@ -84,12 +82,9 @@ auto GpuApplication::create(
 }
 
 GpuApplication::GpuApplication(uint32_t width, uint32_t height)
-  :m_canvasDescription({
-    .size = {
-      .width = width,
-      .height = height
-    },
-    .paddingSize = PADDING_SIZE
+  :m_size({
+    .width = width,
+    .height = height
   })
 {}
 
@@ -98,7 +93,12 @@ auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, eng
   
   srand(time(NULL));
 
-  auto initBufferResult = initBuffer();
+  auto isGpuBigEndianResult = isGpuBigEndian();
+  if (!isGpuBigEndianResult.has_value()) {
+    return std::unexpected(error("failed to check GPU endianess", isGpuBigEndianResult.error()));
+  }
+
+  auto initBufferResult = initBuffer(*isGpuBigEndianResult);
   if (!initBufferResult.has_value()) {
     return std::unexpected(error("failed to init buffer", initBufferResult.error()));
   }
@@ -113,7 +113,7 @@ auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, eng
     return std::unexpected(error("failed to init drawing", initDrawingResult.error()));
   }
 
-  initPainting(context);
+  initPainting(context, *isGpuBigEndianResult);
 
   return {};
 }
@@ -174,17 +174,10 @@ auto GpuApplication::onUpdate(EngineContext& context) -> std::expected<void, eng
   return {};
 }
 
-auto GpuApplication::initBuffer() -> std::expected<void, engine::Error> {
-  auto isGpuBigEndianResult = isGpuBigEndian();
-  if (!isGpuBigEndianResult.has_value()) {
-    return std::unexpected(error("failed to check if gpu is big endian", isGpuBigEndianResult.error()));
-  }
-
-  const auto [width, height] = m_canvasDescription.size;
-  const uint32_t offset = 3 * *isGpuBigEndianResult;
+auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, engine::Error> {
+  const auto [width, height] = m_size;
+  const uint32_t offset = 3 * isGpuBigEndian;
   const uint32_t stride = 4;
-  m_canvasDescription.valueOffset = offset;
-  m_canvasDescription.valueStride = stride;
 
   m_buffer = std::vector<uint8_t>(width * height * 4, 0);
 
@@ -215,7 +208,7 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
   }
   m_simulationProgram = std::move(*simulationProgram);
 
-  const auto [width, height] = m_canvasDescription.size;
+  const auto [width, height] = m_size;
 
   auto inputSSBO = engine::ShaderStorageBuffer::create(width * height * 4);
   if (!inputSSBO.has_value()) {
@@ -261,8 +254,8 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
 }
 
 auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
-  const auto [width, height] = m_canvasDescription.size;
-  
+  const auto [width, height] = m_size;
+
   auto texture = engine::Texture::create(width, height);
   if (!texture.has_value()) {
     return std::unexpected(error("failed to create texture", texture.error()));
@@ -278,25 +271,23 @@ auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuApplication::initPainting(engine::EngineContext& context) -> void {
-  const auto paintingBrush = PaintingBrush::create(1, cell::SAND);
-  m_paintingBrush = make_shared<PaintingBrush>(std::move(paintingBrush));
-
-  auto inputHandler = PaintingBrushCallbacksHandler::create(*m_paintingBrush);
-  m_inputHandler = make_shared<PaintingBrushCallbacksHandler>(std::move(inputHandler));
-
-  context.inputSystem.addKeyboardKeyCallback(*m_inputHandler);
+auto GpuApplication::initPainting(
+  engine::EngineContext& context,
+  bool isGpuBigEndian
+) -> void {
+  m_applicationPainting = ApplicationPainting::create(
+    context,
+    {
+      .size = m_size,
+      .paddingSize = PADDING_SIZE,
+      .valueOffset = static_cast<uint8_t>(3 * isGpuBigEndian),
+      .valueStride = 4
+    }
+  );
 }
 
 auto GpuApplication::paint(const EngineContext& context) -> void {
   m_inputSSBO->load(m_buffer);
-
-  auto position = mapWindowPositionToSimulationPosition(
-    context.inputSystem.getMousePosition(),
-    context.windowSystem.getFramebufferSize(),
-    m_canvasDescription.size
-  );
-  (*m_paintingBrush)->paint(m_buffer, m_canvasDescription, position);
-
+  m_applicationPainting->paint(context, m_buffer);
   m_inputSSBO->store(m_buffer);
 }
