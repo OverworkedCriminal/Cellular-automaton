@@ -28,7 +28,7 @@ public:
    */
   auto paint(
     std::vector<uint8_t>& canvas,
-    PaintingCanvasDescription& canvasDescription,
+    const PaintingCanvasDescription& canvasDescription,
     engine::Position2D<uint32_t> position
   ) const -> void;
 

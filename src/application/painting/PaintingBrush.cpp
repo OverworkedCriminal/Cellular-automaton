@@ -1,5 +1,6 @@
 #include "application/painting/PaintingBrush.hpp"
 #include "application/painting/PaintingCanvasDescription.hpp"
+#include "application/painting/painting.hpp"
 #include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
 #include <algorithm>
@@ -21,7 +22,7 @@ PaintingBrush::PaintingBrush(uint8_t size, uint8_t value)
 
 auto PaintingBrush::paint(
   std::vector<uint8_t>& canvas,
-  PaintingCanvasDescription& canvasDescription,
+  const PaintingCanvasDescription& canvasDescription,
   Position2D<uint32_t> position
 ) const -> void {
   const auto [size, padding, valueOffset, valueStride] = canvasDescription;
@@ -45,7 +46,14 @@ auto PaintingBrush::paint(
         continue;
       }
 
-      const int32_t idx = (y * size.width + x) * valueStride + valueOffset;
+      const uint32_t idx = mapPositionToCanvasIndex(
+        { 
+          .x = static_cast<uint32_t>(x),
+          .y = static_cast<uint32_t>(y)
+        },
+        canvasDescription
+      );
+
       canvas[idx] = m_brushValue;
     }
   }

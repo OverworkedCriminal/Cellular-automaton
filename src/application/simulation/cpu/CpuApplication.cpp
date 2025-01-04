@@ -25,10 +25,10 @@ auto CpuApplication::create(
     return std::unexpected(error("too small simulation dimensions"));
   }
 
-  auto simulator = CpuSimulator::create(
-    width - 2 * PADDING_SIZE,
-    height - 2 * PADDING_SIZE
-  );
+  auto simulator = CpuSimulator::create({
+    .width = width - 2 * PADDING_SIZE,
+    .height = height - 2 * PADDING_SIZE
+  });
   if (!simulator.has_value()) {
     return std::unexpected(error("failed to create simulator", simulator.error()));
   }

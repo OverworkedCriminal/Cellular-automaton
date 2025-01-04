@@ -3,42 +3,37 @@
 #include "engine/utils/error.hpp"
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 
 using engine::error;
+using engine::Size2D;
 
-auto CpuSimulator::create(
-  uint32_t width,
-  uint32_t height
-) -> std::expected<CpuSimulator, engine::Error> {
-  if (width < 1 || height < 1) {
+auto CpuSimulator::create(Size2D<uint32_t> size) -> std::expected<CpuSimulator, engine::Error> {
+  if (size.width < 1 || size.height < 1) {
     return std::unexpected(error("invalid simulation dimensions"));
   }
 
-  return CpuSimulator(
-    width,
-    height,
-    width + 2 * PADDING_SIZE,
-    height + 2 * PADDING_SIZE
-  );
+  const Size2D<uint32_t> sizeWithPadding = {
+    .width = size.width + 2 * PADDING_SIZE,
+    .height = size.height + 2 * PADDING_SIZE
+  };
+
+  return CpuSimulator(size, sizeWithPadding);
 }
 
 CpuSimulator::CpuSimulator(
-  uint32_t width,
-  uint32_t height,
-  uint32_t widthWithPadding,
-  uint32_t heightWithPadding
-) 
-  :m_width(width)
-  ,m_height(height)
-  ,m_widthWithPadding(widthWithPadding)
-  ,m_heightWithPadding(heightWithPadding)
+  Size2D<uint32_t> size,
+  Size2D<uint32_t> sizeWithPadding
+)
+  :m_size(size)
+  ,m_sizeWithPadding(sizeWithPadding)
 {}
 
 auto CpuSimulator::run(
   const std::vector<uint8_t>& bufferIn,
   std::vector<uint8_t>& bufferOut
-) -> void {
-  assert(bufferIn.size() == m_widthWithPadding * m_heightWithPadding);
+) const -> void {
+  assert(bufferIn.size() == m_sizeWithPadding.width * m_sizeWithPadding.height);
   assert(bufferIn.size() == bufferOut.size());
 
   constexpr uint8_t FALL_RULES[] {
@@ -47,16 +42,16 @@ auto CpuSimulator::run(
     0b00000010  // SAND
   };
 
-  for (uint32_t row = 0; row < m_height; ++row) {
-    for (uint32_t col = 0; col < m_width; ++col) {
-      const uint32_t cellIdx = (row + PADDING_SIZE) * m_widthWithPadding + col + PADDING_SIZE;
+  for (uint32_t row = 0; row < m_size.height; ++row) {
+    for (uint32_t col = 0; col < m_size.width; ++col) {
+      const uint32_t cellIdx = (row + PADDING_SIZE) * m_sizeWithPadding.width + col + PADDING_SIZE;
       uint32_t otherIdx;
       uint8_t other;
 
       const uint8_t cell = bufferIn[cellIdx];
 
       // Fall down
-      otherIdx = cellIdx + m_widthWithPadding;
+      otherIdx = cellIdx + m_sizeWithPadding.width;
       other = bufferIn[otherIdx];
       const uint32_t otherRuleIdx = std::log2(other);
       const uint8_t otherRule = FALL_RULES[otherRuleIdx];
@@ -69,14 +64,14 @@ auto CpuSimulator::run(
       const uint32_t cellRuleIdx = std::log2(cell);
       const uint8_t cellRule = FALL_RULES[cellRuleIdx];
 
-      otherIdx = cellIdx - m_widthWithPadding;
+      otherIdx = cellIdx - m_sizeWithPadding.width;
       other = bufferIn[otherIdx];
       if ((other & cellRule) > 0) {
         // Can fall down
         const uint32_t otherRuleIdx = std::log2(other);
         const uint8_t otherRule = FALL_RULES[otherRuleIdx];
 
-        const uint32_t otherDownIdx = otherIdx - m_widthWithPadding;
+        const uint32_t otherDownIdx = otherIdx - m_sizeWithPadding.width;
         const uint8_t otherDown = bufferIn[otherDownIdx];
         if ((otherDown & otherRule) == 0) {
           // Other can't fall down
