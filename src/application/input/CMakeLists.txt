@@ -1,1 +1,0 @@
-target_sources(cellular-automaton-application PUBLIC PaintingBrushCallbacksHandler.cpp)

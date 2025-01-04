@@ -2,9 +2,7 @@
 #define APPLICATION_SIMULATION_GPU_GPU_APPLICATION_HPP
 
 #include "application/drawing/TextureDrawingProgram.hpp"
-#include "application/input/PaintingBrushCallbacksHandler.hpp"
-#include "application/painting/PaintingBrush.hpp"
-#include "application/painting/PaintingCanvasDescription.hpp"
+#include "application/painting/ApplicationPainting.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/error/Error.hpp"
@@ -12,7 +10,6 @@
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/graphics/texture/Texture.hpp"
 #include <expected>
-#include <memory>
 
 class GpuApplication :public engine::IApplication {
 public:
@@ -33,13 +30,17 @@ public:
 private:
   GpuApplication(uint32_t width, uint32_t height);
 
-  auto initBuffer() -> std::expected<void, engine::Error>;
+  auto initBuffer(bool isGpuBigEndian) -> std::expected<void, engine::Error>;
   auto initSimulation() -> std::expected<void, engine::Error>;
   auto initDrawing() -> std::expected<void, engine::Error>;
-  auto initPainting(engine::EngineContext& context) -> void;
+  auto initPainting(engine::EngineContext& context, bool isGpuBigEndian) -> void;
 
   auto paint(const engine::EngineContext& context) -> void;
 
+  /**
+   * @brief includes padding
+   */
+  engine::Size2D<uint32_t> m_size;
   std::vector<uint8_t> m_buffer;
 
   std::optional<engine::Program> m_simulationProgram;
@@ -51,10 +52,7 @@ private:
   std::optional<engine::Texture> m_drawingTexture;
   std::optional<TextureDrawingProgram> m_drawingProgram;
 
-  std::optional<std::shared_ptr<PaintingBrushCallbacksHandler>> m_inputHandler;
-
-  std::optional<std::shared_ptr<PaintingBrush>> m_paintingBrush;
-  PaintingCanvasDescription m_canvasDescription;
+  std::optional<ApplicationPainting> m_applicationPainting;
 };
 
 #endif

@@ -1,7 +1,6 @@
 #include "application/simulation/cpu/CpuApplication.hpp"
 #include "application/drawing/TextureDrawingProgram.hpp"
-#include "application/painting/PaintingBrush.hpp"
-#include "application/painting/painting.hpp"
+#include "application/painting/ApplicationPainting.hpp"
 #include "application/simulation/cell.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "application/simulation/cpu/utils.hpp"
@@ -13,7 +12,6 @@
 #include <cstdint>
 #include <vector>
 
-using std::make_shared;
 using engine::error;
 using engine::input::MouseButton;
 
@@ -41,16 +39,8 @@ CpuApplication::CpuApplication(
   uint32_t width,
   uint32_t height
 )
-  :m_simulator(std::move(simulator))
-  ,m_canvasDescription({
-    .size = {
-      .width = width,
-      .height = height
-    },
-    .paddingSize = PADDING_SIZE,
-    .valueOffset = 0,
-    .valueStride = 1
-  })
+  :m_size({ .width = width, .height = height })
+  ,m_simulator(std::move(simulator))
 {}
 
 auto CpuApplication::onCreate(engine::EngineContext& context) -> std::expected<void, engine::Error> {
@@ -91,7 +81,7 @@ auto CpuApplication::onUpdate(engine::EngineContext& context) -> std::expected<v
 }
 
 auto CpuApplication::initDrawing() -> std::expected<void, engine::Error> {
-  const auto [width, height] = m_canvasDescription.size;
+  const auto [width, height] = m_size;
 
   auto texture = engine::Texture::create(width, height);
   if (!texture.has_value()) {
@@ -109,7 +99,7 @@ auto CpuApplication::initDrawing() -> std::expected<void, engine::Error> {
 }
 
 auto CpuApplication::initSimulation() -> void {
-  const auto [width, height] = m_canvasDescription.size;
+  const auto [width, height] = m_size;
 
   m_bufferIn = std::vector<uint8_t>(width * height, cell::PADDING);
   m_bufferOut = std::vector<uint8_t>(width * height, cell::PADDING);
@@ -125,20 +115,17 @@ auto CpuApplication::initSimulation() -> void {
 }
 
 auto CpuApplication::initPainting(engine::EngineContext& context) -> void {
-  auto paintingBrush = PaintingBrush::create(1, cell::SAND);
-  m_paintingBrush = make_shared<PaintingBrush>(std::move(paintingBrush));
-
-  auto inputHandler = PaintingBrushCallbacksHandler::create(*m_paintingBrush);
-  m_inputHandler = make_shared<PaintingBrushCallbacksHandler>(std::move(inputHandler));
-
-  context.inputSystem.addKeyboardKeyCallback(*m_inputHandler);
+  m_applicationPainting = ApplicationPainting::create(
+    context,
+    {
+      .size = m_size,
+      .paddingSize = PADDING_SIZE,
+      .valueOffset = 0,
+      .valueStride = 1
+    }
+  );
 }
 
 auto CpuApplication::paint(const engine::EngineContext& context) -> void {
-  auto position = mapWindowPositionToSimulationPosition(
-    context.inputSystem.getMousePosition(),
-    context.windowSystem.getFramebufferSize(),
-    m_canvasDescription.size
-  );
-  (*m_paintingBrush)->paint(m_bufferIn, m_canvasDescription, position);
+  m_applicationPainting->paint(context, m_bufferIn);
 }
