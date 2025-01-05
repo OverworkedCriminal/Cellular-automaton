@@ -39,7 +39,8 @@ auto CpuSimulator::run(
   constexpr uint8_t FALL_RULES[] {
     0b00000000, // PADDING
     0b00000000, // AIR
-    0b00000010  // SAND
+    0b00001010, // SAND
+    0b00000010  // WATER
   };
 
   for (uint32_t row = 0; row < m_size.height; ++row) {

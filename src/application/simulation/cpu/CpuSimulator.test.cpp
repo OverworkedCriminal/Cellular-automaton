@@ -57,7 +57,16 @@ protected:
   vector<uint8_t> bufferIn;
   vector<uint8_t> bufferOut;
 
-  auto testFallStraightDown(uint8_t topCell, uint8_t botCell) -> void {
+  /**
+   * @brief Parametrized test that checks falling straight down
+   * 
+   * @param topCell 
+   * @param botCell 
+   * 
+   * @return true when cells swapped positions
+   * @return false when cells didn't swap position
+   */
+  auto fallStraightDown(uint8_t topCell, uint8_t botCell) -> bool {
     const Position2D<uint32_t> topPosition = { .x = 0 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
     const Position2D<uint32_t> botPosition = { .x = 0 + PADDING_SIZE, .y = 0 + PADDING_SIZE };
     const uint32_t topIndex = mapSimulationPositionToCanvasIndex(topPosition, canvasDescription);
@@ -68,16 +77,41 @@ protected:
 
     simulator.run(bufferIn, bufferOut);
 
-    CHECK(bufferOut[topIndex] == botCell);
-    CHECK(bufferOut[botIndex] == topCell);
+    const bool topCorrect = bufferOut[topIndex] == botCell;
+    const bool botCorrect = bufferOut[botIndex] == topCell;
+
+    return topCorrect && botCorrect;
   }
 };
 
 TEST_CASE_METHOD(FallStraightDownFixture, "Fall straight down", "[fall-down]") {
-  SECTION("sand through air") {
-    testFallStraightDown(cell::SAND, cell::AIR);
+  SECTION("sand") {
+    SECTION("should not fall through padding") {
+      CHECK_FALSE(fallStraightDown(cell::SAND, cell::PADDING));
+    }
+    SECTION("should fall through air") {
+      CHECK(fallStraightDown(cell::SAND, cell::AIR));
+    }
+    SECTION("should remain unchanged") {
+      CHECK(fallStraightDown(cell::SAND, cell::SAND));
+    }
+    SECTION("should fall through water") {
+      CHECK(fallStraightDown(cell::SAND, cell::WATER));
+    }
   }
-  SECTION("sand through water") {
-    testFallStraightDown(cell::SAND, cell::WATER);
+
+  SECTION("water") {
+    SECTION("should not fall through padding") {
+      CHECK_FALSE(fallStraightDown(cell::WATER, cell::PADDING));
+    }
+    SECTION("should fall through air") {
+      CHECK(fallStraightDown(cell::WATER, cell::AIR));
+    }
+    SECTION("should not fall through sand") {
+      CHECK_FALSE(fallStraightDown(cell::WATER, cell::SAND));
+    }
+    SECTION("should remain unchanged") {
+      CHECK(fallStraightDown(cell::WATER, cell::WATER));
+    }
   }
 }
