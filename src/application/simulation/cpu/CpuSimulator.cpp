@@ -5,8 +5,24 @@
 #include <cmath>
 #include <cstdint>
 
+using std::vector;
+using std::optional;
 using engine::error;
 using engine::Size2D;
+
+static constexpr uint8_t FALL_DOWN_RULES[] = {
+  0b00000000, // PADDING
+  0b00000000, // AIR
+  0b00001010, // SAND
+  0b00000010  // WATER
+};
+
+static constexpr uint8_t FALL_DIAG_RULES[] = {
+  0b00000000, // PADDING
+  0b00000000, // AIR
+  0b00000010, // SAND
+  0b00000000  // WATER
+};
 
 auto CpuSimulator::create(Size2D<uint32_t> size) -> std::expected<CpuSimulator, engine::Error> {
   if (size.width < 1 || size.height < 1) {
@@ -30,58 +46,53 @@ CpuSimulator::CpuSimulator(
 {}
 
 auto CpuSimulator::run(
-  const std::vector<uint8_t>& bufferIn,
-  std::vector<uint8_t>& bufferOut
+  const vector<uint8_t>& bufferIn,
+  vector<uint8_t>& bufferOut
 ) const -> void {
   assert(bufferIn.size() == m_sizeWithPadding.width * m_sizeWithPadding.height);
   assert(bufferIn.size() == bufferOut.size());
 
-  constexpr uint8_t FALL_RULES[] {
-    0b00000000, // PADDING
-    0b00000000, // AIR
-    0b00001010, // SAND
-    0b00000010  // WATER
-  };
-
   for (uint32_t row = 0; row < m_size.height; ++row) {
     for (uint32_t col = 0; col < m_size.width; ++col) {
       const uint32_t cellIdx = (row + PADDING_SIZE) * m_sizeWithPadding.width + col + PADDING_SIZE;
-      uint32_t otherIdx;
-      uint8_t other;
 
-      const uint8_t cell = bufferIn[cellIdx];
-
-      // Fall down
-      otherIdx = cellIdx + m_sizeWithPadding.width;
-      other = bufferIn[otherIdx];
-      const uint32_t otherRuleIdx = std::log2(other);
-      const uint8_t otherRule = FALL_RULES[otherRuleIdx];
-      if ((cell & otherRule) > 0) {
-        // Other can fall here
-        bufferOut[cellIdx] = bufferIn[otherIdx];
-        continue;
-      }
-
-      const uint32_t cellRuleIdx = std::log2(cell);
-      const uint8_t cellRule = FALL_RULES[cellRuleIdx];
-
-      otherIdx = cellIdx - m_sizeWithPadding.width;
-      other = bufferIn[otherIdx];
-      if ((other & cellRule) > 0) {
+      if (const auto otherCell = fallStraight(bufferIn, cellIdx)) {
         // Can fall down
-        const uint32_t otherRuleIdx = std::log2(other);
-        const uint8_t otherRule = FALL_RULES[otherRuleIdx];
-
-        const uint32_t otherDownIdx = otherIdx - m_sizeWithPadding.width;
-        const uint8_t otherDown = bufferIn[otherDownIdx];
-        if ((otherDown & otherRule) == 0) {
-          // Other can't fall down
-          bufferOut[cellIdx] = bufferIn[otherIdx];
+        if (!fallStraight(bufferIn, cellIdx - m_sizeWithPadding.width)) {
+          // Cell below can't fall down
+          bufferOut[cellIdx] = *otherCell;
           continue;
         }
       }
 
+      // Can't fall down
+      if (fallStraight(bufferIn, cellIdx + m_sizeWithPadding.width)) {
+        // Cell above can fall here
+        bufferOut[cellIdx] = bufferIn[cellIdx + m_sizeWithPadding.width];
+        continue;
+      }
+
+      // If no rule applies to cell at cellIdx
+      // just copy it to the bufferOut
       bufferOut[cellIdx] = bufferIn[cellIdx];
     }
+  }
+}
+
+auto CpuSimulator::fallStraight(
+  const vector<uint8_t>& bufferIn,
+  uint32_t cellIdx
+) const -> optional<uint8_t> {
+  const uint8_t cell = bufferIn[cellIdx];
+  const uint8_t cellRuleIdx = std::log2(cell);
+  const uint8_t cellRule = FALL_DOWN_RULES[cellRuleIdx];
+
+  const uint32_t otherIdx = cellIdx - m_sizeWithPadding.width;
+  const uint8_t other = bufferIn[otherIdx];
+
+  if ((other & cellRule) > 0) {
+    return other;
+  } else {
+    return std::nullopt;
   }
 }

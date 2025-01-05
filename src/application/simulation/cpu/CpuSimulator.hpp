@@ -43,6 +43,8 @@ private:
 
   engine::Size2D<uint32_t> m_size;
   engine::Size2D<uint32_t> m_sizeWithPadding;
+
+  auto fallStraight(const std::vector<uint8_t>& bufferIn, uint32_t cellIdx) const -> std::optional<uint8_t>;
 };
 
 #endif
