@@ -1,16 +1,13 @@
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "application/painting/PaintingCanvasDescription.hpp"
-#include "application/painting/brush/SquarePaintingBrush.hpp"
 #include "application/painting/utils/position_mapping.hpp"
 #include "application/simulation/cell.hpp"
 #include "application/simulation/padding.hpp"
 #include "engine/utils/dto/Position2D.hpp"
-#include "engine/utils/dto/Size2D.hpp"
-#include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 
-using engine::Size2D;
+using std::vector;
 using engine::Position2D;
 
 TEST_CASE("Invalid width", "[constructor]") {
@@ -23,90 +20,64 @@ TEST_CASE("Invalid height", "[constructor]") {
   REQUIRE_FALSE(simulator.has_value());
 }
 
-TEST_CASE("Fall straight down", "[falling-down]") {
-  const auto size = Size2D<uint32_t> {
-    .width = 1,
-    .height = 2
-  };
-  const auto canvasDescription = PaintingCanvasDescription {
-    .size = {
-      .width = size.width + 2 * PADDING_SIZE,
-      .height = size.height + 2 * PADDING_SIZE
-    },
-    .paddingSize = PADDING_SIZE,
-    .valueOffset = 0,
-    .valueStride = 1
-  };
-  auto paintingBrush = SquarePaintingBrush::create();
-  auto bufferIn = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride);
-  auto bufferOut = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride);
-
-  for (uint32_t row = 0; row < canvasDescription.size.height; ++row) {
-    for (uint32_t col = 0; col < canvasDescription.size.width; ++col) {
-      paintingBrush.paint(
-        {
-          .size = 1,
-          .cell = cell::PADDING
-        },
-        {
-          .x = col,
-          .y = row
-        },
-        {
-          .size = canvasDescription.size,
-          .paddingSize = 0,
-          .valueOffset = canvasDescription.valueOffset,
-          .valueStride = canvasDescription.valueStride
-        },
-        bufferIn
-      );
+class FallStraightDownFixture {
+public:
+  FallStraightDownFixture()
+    :simulator(*CpuSimulator::create({ .width = 1, .height = 2 }))
+    ,canvasDescription({
+      .size = {
+        .width = 1 + 2 * PADDING_SIZE,
+        .height = 2 + 2 * PADDING_SIZE
+      },
+      .paddingSize = PADDING_SIZE,
+      .valueOffset = 0,
+      .valueStride = 1
+    })
+    ,bufferIn(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0)
+    ,bufferOut(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0)
+  {
+    for (uint32_t row = 0; row < canvasDescription.size.height; ++row) {
+      for (uint32_t col = 0; col < canvasDescription.size.width; ++col) {
+        const uint32_t idx = mapSimulationPositionToCanvasIndex(
+          {
+            .x = col,
+            .y = row
+          },
+          canvasDescription
+        );
+        bufferIn[idx] = cell::PADDING;
+        bufferOut[idx] = cell::PADDING;
+      }
     }
   }
 
-  const auto simulator = *CpuSimulator::create(size);
+protected:
+  CpuSimulator simulator;
+  PaintingCanvasDescription canvasDescription;
+  vector<uint8_t> bufferIn;
+  vector<uint8_t> bufferOut;
 
-  const auto topPosition = Position2D<uint32_t>{ .x = 0 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
-  const auto botPosition = Position2D<uint32_t>{ .x = 0 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
-  const auto topIndex = mapSimulationPositionToCanvasIndex(topPosition, canvasDescription);
-  const auto botIndex = mapSimulationPositionToCanvasIndex(botPosition, canvasDescription);
+  auto testFallStraightDown(uint8_t topCell, uint8_t botCell) -> void {
+    const Position2D<uint32_t> topPosition = { .x = 0 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
+    const Position2D<uint32_t> botPosition = { .x = 0 + PADDING_SIZE, .y = 0 + PADDING_SIZE };
+    const uint32_t topIndex = mapSimulationPositionToCanvasIndex(topPosition, canvasDescription);
+    const uint32_t botIndex = mapSimulationPositionToCanvasIndex(botPosition, canvasDescription);
 
-  SECTION("sand") {
-    const auto fallThroughCells = std::array<uint8_t, 2> {
-      cell::AIR,
-      cell::WATER
-    };
+    bufferIn[topIndex] = topCell;
+    bufferIn[botIndex] = botCell;
 
-    for (const auto fallThroughCell : fallThroughCells) {
-      paintingBrush.paint(
-        {
-          .size = 1,
-          .cell = cell::SAND
-        },
-        {
-          .x = 0 + PADDING_SIZE,
-          .y = 1 + PADDING_SIZE
-        },
-        canvasDescription,
-        bufferIn
-      );
+    simulator.run(bufferIn, bufferOut);
 
-      paintingBrush.paint(
-        {
-          .size = 1,
-          .cell = fallThroughCell
-        },
-        {
-          .x = 0 + PADDING_SIZE,
-          .y = 0 + PADDING_SIZE
-        },
-        canvasDescription,
-        bufferIn
-      );
+    CHECK(bufferOut[topIndex] == botCell);
+    CHECK(bufferOut[botIndex] == topCell);
+  }
+};
 
-      simulator.run(bufferIn, bufferOut);
-
-      CHECK(bufferOut[topIndex] == fallThroughCell);
-      CHECK(bufferOut[botIndex] == cell::SAND);
-    }
+TEST_CASE_METHOD(FallStraightDownFixture, "Fall straight down", "[fall-down]") {
+  SECTION("sand through air") {
+    testFallStraightDown(cell::SAND, cell::AIR);
+  }
+  SECTION("sand through water") {
+    testFallStraightDown(cell::SAND, cell::WATER);
   }
 }
