@@ -65,7 +65,7 @@ struct TestFixture {
   }
 };
 
-class FallStraightDownFixture {
+class FallStraightFixture {
 protected:
   TestFixture fixture = TestFixture::create({ .width = 1, .height = 2 });
 
@@ -78,7 +78,7 @@ protected:
    * @return true when cells swapped positions
    * @return false when cells didn't swap position
    */
-  auto fallStraightDown(uint8_t topCell, uint8_t botCell) -> bool {
+  auto fallStraight(uint8_t topCell, uint8_t botCell) -> bool {
     auto& [simulator, canvasDescription, bufferIn, bufferOut] = fixture;
 
     const Position2D<uint32_t> topPosition = { .x = 0 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
@@ -98,34 +98,34 @@ protected:
   }
 };
 
-TEST_CASE_METHOD(FallStraightDownFixture, "Fall straight down", "[fall-down]") {
+TEST_CASE_METHOD(FallStraightFixture, "Fall straight down", "[fall-down]") {
   SECTION("sand") {
     SECTION("should not fall through padding") {
-      CHECK_FALSE(fallStraightDown(cell::SAND, cell::PADDING));
+      CHECK_FALSE(fallStraight(cell::SAND, cell::PADDING));
     }
     SECTION("should fall through air") {
-      CHECK(fallStraightDown(cell::SAND, cell::AIR));
+      CHECK(fallStraight(cell::SAND, cell::AIR));
     }
     SECTION("should remain unchanged") {
-      CHECK(fallStraightDown(cell::SAND, cell::SAND));
+      CHECK(fallStraight(cell::SAND, cell::SAND));
     }
     SECTION("should fall through water") {
-      CHECK(fallStraightDown(cell::SAND, cell::WATER));
+      CHECK(fallStraight(cell::SAND, cell::WATER));
     }
   }
 
   SECTION("water") {
     SECTION("should not fall through padding") {
-      CHECK_FALSE(fallStraightDown(cell::WATER, cell::PADDING));
+      CHECK_FALSE(fallStraight(cell::WATER, cell::PADDING));
     }
     SECTION("should fall through air") {
-      CHECK(fallStraightDown(cell::WATER, cell::AIR));
+      CHECK(fallStraight(cell::WATER, cell::AIR));
     }
     SECTION("should not fall through sand") {
-      CHECK_FALSE(fallStraightDown(cell::WATER, cell::SAND));
+      CHECK_FALSE(fallStraight(cell::WATER, cell::SAND));
     }
     SECTION("should remain unchanged") {
-      CHECK(fallStraightDown(cell::WATER, cell::WATER));
+      CHECK(fallStraight(cell::WATER, cell::WATER));
     }
   }
 }
