@@ -1,7 +1,7 @@
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "application/painting/PaintingCanvasDescription.hpp"
 #include "application/painting/brush/SquarePaintingBrush.hpp"
-#include "application/painting/painting.hpp"
+#include "application/painting/utils/position_mapping.hpp"
 #include "application/simulation/cell.hpp"
 #include "application/simulation/padding.hpp"
 #include "engine/utils/dto/Position2D.hpp"
@@ -67,8 +67,8 @@ TEST_CASE("Fall straight down", "[falling-down]") {
 
   const auto topPosition = Position2D<uint32_t>{ .x = 0 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
   const auto botPosition = Position2D<uint32_t>{ .x = 0 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
-  const auto topIndex = mapPositionToCanvasIndex(topPosition, canvasDescription);
-  const auto botIndex = mapPositionToCanvasIndex(botPosition, canvasDescription);
+  const auto topIndex = mapSimulationPositionToCanvasIndex(topPosition, canvasDescription);
+  const auto botIndex = mapSimulationPositionToCanvasIndex(botPosition, canvasDescription);
 
   SECTION("sand") {
     const auto fallThroughCells = std::array<uint8_t, 2> {

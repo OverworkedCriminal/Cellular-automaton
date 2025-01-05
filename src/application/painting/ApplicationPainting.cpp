@@ -4,6 +4,7 @@
 #include "application/painting/brush/IPaintingBrush.hpp"
 #include "application/painting/brush/PaintingBrushDescription.hpp"
 #include "application/painting/brush/SquarePaintingBrush.hpp"
+#include "application/painting/utils/position_mapping.hpp"
 #include "application/simulation/cell.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/callback/IKeyboardKeyCallback.hpp"
@@ -17,36 +18,6 @@ using std::shared_ptr;
 using std::unique_ptr;
 using engine::EngineContext;
 using engine::IKeyboardKeyCallback;
-
-/**
- * @brief Maps position from window space to simulation space
- * 
- * @param windowPosition 
- * @param framebufferSize 
- * @param simulationSize (including padding added to each side of the simulation canvas)
- * 
- * @return engine::Position2D<uint32_t> 
- */
-static auto mapWindowPositionToSimulationPosition(
-  engine::Position2D<uint32_t> windowPosition,
-  engine::Size2D<uint32_t> framebufferSize,
-  engine::Size2D<uint32_t> simulationSize
-) -> engine::Position2D<uint32_t> {
-  const auto [posX, posY] = windowPosition;
-  const auto [framebufferWidth, framebufferHeight] = framebufferSize;
-  const auto [simulationWidth, simulationHeight] = simulationSize;
-
-  const float scaleWidth = static_cast<float>(simulationWidth) / framebufferWidth;
-  const float scaleHeight = static_cast<float>(simulationHeight) / framebufferHeight;
-
-  const uint32_t mappedPosX = scaleWidth * posX;
-  const uint32_t mappedPosY = scaleHeight * posY;
-
-  return {
-    .x = mappedPosX,
-    .y = mappedPosY
-  };
-}
 
 auto ApplicationPainting::create(
   engine::EngineContext& context,
