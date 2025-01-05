@@ -1,6 +1,6 @@
 #include "application/painting/brush/SquarePaintingBrush.hpp"
 #include "application/painting/PaintingCanvasDescription.hpp"
-#include "application/painting/painting.hpp"
+#include "application/painting/utils/position_mapping.hpp"
 #include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
 #include <cassert>
@@ -40,7 +40,7 @@ auto SquarePaintingBrush::paint(
         continue;
       }
 
-      const uint32_t idx = mapPositionToCanvasIndex(
+      const uint32_t idx = mapSimulationPositionToCanvasIndex(
         { 
           .x = static_cast<uint32_t>(x),
           .y = static_cast<uint32_t>(y)

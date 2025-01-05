@@ -1,5 +1,5 @@
-#ifndef APPLICATION_PAINTING_PAINTING_BRUSH_HPP
-#define APPLICATION_PAINTING_PAINTING_BRUSH_HPP
+#ifndef APPLICATION_PAINTING_BRUSH_SQUARE_PAINTING_BRUSH_HPP
+#define APPLICATION_PAINTING_BRUSH_SQUARE_PAINTING_BRUSH_HPP
 
 #include "application/painting/PaintingCanvasDescription.hpp"
 #include "application/painting/brush/IPaintingBrush.hpp"
