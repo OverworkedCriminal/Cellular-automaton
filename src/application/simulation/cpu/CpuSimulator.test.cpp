@@ -129,3 +129,77 @@ TEST_CASE_METHOD(FallStraightFixture, "Fall straight down", "[fall-down]") {
     }
   }
 }
+
+/**
+ * @brief Parametrized test that checks falling diagonally down
+ * 
+ * @param topCell 
+ * @param diagCell 
+ * @param direction (-1 for left, 1 for right)
+ * 
+ * @return true when cells swapped positions
+ * @return false when cells didn't swap position
+ */
+class FallDiagTestFixture {
+protected:
+  TestFixture fixture = TestFixture::create({ .width = 3, .height = 2 });
+
+  auto fallDiag(uint8_t topCell, uint8_t diagCell, int8_t direction) -> bool {
+    auto& [simulator, canvasDescription, bufferIn, bufferOut] = fixture;
+
+    const Position2D<uint32_t> topPosition = { .x = 1 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
+    const Position2D<uint32_t> diagPosition = { .x = topPosition.x + direction, .y = 0 + PADDING_SIZE };
+    const uint32_t topIndex = mapSimulationPositionToCanvasIndex(topPosition, canvasDescription);
+    const uint32_t diagIndex = mapSimulationPositionToCanvasIndex(diagPosition, canvasDescription);
+
+    bufferIn[topIndex] = topCell;
+    bufferIn[diagIndex] = diagCell;
+
+    simulator.run(bufferIn, bufferOut);
+
+    const bool topCorrect = bufferOut[topIndex] == diagCell;
+    const bool diagCorrect = bufferOut[diagIndex] == topCell;
+
+    return topCorrect && diagCorrect;
+  }
+};
+
+TEST_CASE_METHOD(FallDiagTestFixture, "Fall diagonally down", "[fall-diag]") {
+  SECTION("sand") {
+    SECTION("should not fall through padding") {
+      CHECK_FALSE(fallDiag(cell::SAND, cell::PADDING, -1));
+      CHECK_FALSE(fallDiag(cell::SAND, cell::PADDING,  1));
+    }
+    SECTION("should fall through air") {
+      CHECK(fallDiag(cell::SAND, cell::AIR, -1));
+      CHECK(fallDiag(cell::SAND, cell::AIR,  1));
+    }
+    SECTION("should remain unchanged") {
+      CHECK(fallDiag(cell::SAND, cell::SAND, -1));
+      CHECK(fallDiag(cell::SAND, cell::SAND,  1));
+    }
+    SECTION("should not fall through water") {
+      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER, -1));
+      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER,  1));
+    }
+  }
+
+  SECTION("water") {
+    SECTION("should not fall through padding") {
+      CHECK_FALSE(fallDiag(cell::WATER, cell::PADDING, -1));
+      CHECK_FALSE(fallDiag(cell::WATER, cell::PADDING,  1));
+    }
+    SECTION("should not fall through air") {
+      CHECK_FALSE(fallDiag(cell::WATER, cell::AIR, -1));
+      CHECK_FALSE(fallDiag(cell::WATER, cell::AIR,  1));
+    }
+    SECTION("should not fall through sand") {
+      CHECK_FALSE(fallDiag(cell::WATER, cell::SAND, -1));
+      CHECK_FALSE(fallDiag(cell::WATER, cell::SAND,  1));
+    }
+    SECTION("should remain unchanged") {
+      CHECK(fallDiag(cell::WATER, cell::WATER, -1));
+      CHECK(fallDiag(cell::WATER, cell::WATER,  1));
+    }
+  }
+}
