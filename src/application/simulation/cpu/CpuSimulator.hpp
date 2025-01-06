@@ -2,6 +2,7 @@
 #define APPLICATION_SIMULATION_CPU_CPU_SIMULATOR_HPP
 
 #include "engine/error/Error.hpp"
+#include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
 #include <cstdint>
 #include <expected>
@@ -44,7 +45,12 @@ private:
   engine::Size2D<uint32_t> m_size;
   engine::Size2D<uint32_t> m_sizeWithPadding;
 
-  auto fallStraight(const std::vector<uint8_t>& bufferIn, uint32_t cellIdx) const -> std::optional<uint8_t>;
+  auto canMoveCell(
+    const std::vector<uint8_t>& bufferIn,
+    uint32_t cellIdx,
+    engine::Position2D<int32_t> direction,
+    const std::array<uint8_t, 4>& rules
+  ) const -> bool;
 };
 
 #endif

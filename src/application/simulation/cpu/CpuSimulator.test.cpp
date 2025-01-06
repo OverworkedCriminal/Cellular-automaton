@@ -149,11 +149,14 @@ protected:
 
     const Position2D<uint32_t> topPosition = { .x = 1 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
     const Position2D<uint32_t> diagPosition = { .x = topPosition.x + direction, .y = 0 + PADDING_SIZE };
+    const Position2D<uint32_t> otherDiagPosition = { .x = topPosition.x - direction, .y = 0 + PADDING_SIZE };
     const uint32_t topIndex = mapSimulationPositionToCanvasIndex(topPosition, canvasDescription);
     const uint32_t diagIndex = mapSimulationPositionToCanvasIndex(diagPosition, canvasDescription);
+    const uint32_t otherDiagIndex = mapSimulationPositionToCanvasIndex(otherDiagPosition, canvasDescription);
 
     bufferIn[topIndex] = topCell;
     bufferIn[diagIndex] = diagCell;
+    bufferIn[otherDiagIndex] = cell::PADDING;
 
     simulator.run(bufferIn, bufferOut);
 
