@@ -227,3 +227,95 @@ TEST_CASE_METHOD(FallDiagTestFixture, "Fall diagonally down", "[fall-diag]") {
     }
   }
 }
+
+class MoveHorizontalyTestFixture {
+protected:
+  TestFixture fixture = TestFixture::create({ .width = 3, .height = 1 });
+
+  /**
+   * @brief Parametrized test that checks moving horizontaly
+   * 
+   * @param centerCell 
+   * @param sideCell 
+   * @param direction (-1 for left, 1 for right)
+   * 
+   * @return true when cells swapped positions
+   * @return false when cells didn't swap position
+   */
+  auto moveHorizontaly(uint8_t centerCell, uint8_t sideCell, int8_t direction) -> bool {
+    auto& [simulator, canvasDescription, bufferIn, bufferOut] = fixture;
+
+    const Position2D<uint32_t> centerPosition = { .x = 1 + PADDING_SIZE, .y = 0 + PADDING_SIZE };
+    const Position2D<uint32_t> sidePosition = { .x = centerPosition.x + direction, .y = centerPosition.y };
+    const Position2D<uint32_t> otherSidePosition = { .x = centerPosition.x - direction, .y = centerPosition.y };
+
+    const uint32_t centerIndex = mapSimulationPositionToCanvasIndex(centerPosition, canvasDescription);
+    const uint32_t sideIndex = mapSimulationPositionToCanvasIndex(sidePosition, canvasDescription);
+    const uint32_t otherSideIndex = mapSimulationPositionToCanvasIndex(otherSidePosition, canvasDescription);
+
+    bufferIn[centerIndex] = centerCell;
+    bufferIn[sideIndex] = sideCell;
+    bufferIn[otherSideIndex] = cell::PADDING;
+
+    simulator.run(bufferIn, bufferOut);
+
+    const bool topCorrect = bufferOut[centerIndex] == sideCell;
+    const bool diagCorrect = bufferOut[sideIndex] == centerCell;
+
+    return topCorrect && diagCorrect;
+  }
+};
+
+TEST_CASE_METHOD(MoveHorizontalyTestFixture, "Move horizontaly", "[move-horizontaly]") {
+  SECTION("sand") {
+    SECTION("should not move through padding") {
+      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::PADDING, -1));
+      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::PADDING,  1));
+    }
+    SECTION("should not move through air") {
+      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::AIR, -1));
+      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::AIR,  1));
+    }
+    SECTION("should remain unchanged") {
+      CHECK(moveHorizontaly(cell::SAND, cell::SAND, -1));
+      CHECK(moveHorizontaly(cell::SAND, cell::SAND,  1));
+    }
+    SECTION("should not move through water") {
+      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::WATER_L, -1));
+      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::WATER_L,  1));
+      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::WATER_R, -1));
+      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::WATER_R,  1));
+    }
+  }
+
+  SECTION("water") {
+    SECTION("should not move through padding") {
+      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::PADDING, -1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::PADDING,  1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::PADDING, -1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::PADDING,  1));
+    }
+    SECTION("should move through air") {
+      CHECK(moveHorizontaly(cell::WATER_L, cell::AIR, -1));
+      CHECK(moveHorizontaly(cell::WATER_L, cell::AIR,  1));
+      CHECK(moveHorizontaly(cell::WATER_R, cell::AIR, -1));
+      CHECK(moveHorizontaly(cell::WATER_R, cell::AIR,  1));
+    }
+    SECTION("should not move through sand") {
+      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::SAND, -1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::SAND,  1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::SAND, -1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::SAND,  1));
+    }
+    SECTION("should remain unchanged") {
+      CHECK(moveHorizontaly(cell::WATER_L, cell::WATER_L, -1));
+      CHECK(moveHorizontaly(cell::WATER_L, cell::WATER_L,  1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::WATER_R, -1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::WATER_R,  1));
+      CHECK(moveHorizontaly(cell::WATER_R, cell::WATER_R, -1));
+      CHECK(moveHorizontaly(cell::WATER_R, cell::WATER_R,  1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::WATER_L, -1));
+      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::WATER_L,  1));
+    }
+  }
+}
