@@ -137,20 +137,20 @@ TEST_CASE_METHOD(FallStraightFixture, "Fall straight down", "[fall-down]") {
   }
 }
 
-/**
- * @brief Parametrized test that checks falling diagonally down
- * 
- * @param topCell 
- * @param diagCell 
- * @param direction (-1 for left, 1 for right)
- * 
- * @return true when cells swapped positions
- * @return false when cells didn't swap position
- */
 class FallDiagTestFixture {
 protected:
   TestFixture fixture = TestFixture::create({ .width = 3, .height = 2 });
 
+  /**
+   * @brief Parametrized test that checks falling diagonally down
+   * 
+   * @param topCell 
+   * @param diagCell 
+   * @param direction (-1 for left, 1 for right)
+   * 
+   * @return true when cells swapped positions
+   * @return false when cells didn't swap position
+   */
   auto fallDiag(uint8_t topCell, uint8_t diagCell, int8_t direction) -> bool {
     auto& [simulator, canvasDescription, bufferIn, bufferOut] = fixture;
 
