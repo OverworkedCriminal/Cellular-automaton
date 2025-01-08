@@ -12,18 +12,20 @@ using engine::error;
 using engine::Size2D;
 using engine::Position2D;
 
-static constexpr array<uint8_t, 4> FALL_DOWN_RULES = {
+static constexpr array<uint8_t, 5> FALL_DOWN_RULES = {
   0b00000000, // PADDING
   0b00000000, // AIR
-  0b00001010, // SAND
-  0b00000010  // WATER
+  0b00011010, // SAND
+  0b00000010, // WATER_L
+  0b00000010  // WATER_R
 };
 
-static constexpr array<uint8_t, 4> FALL_DIAG_RULES = {
+static constexpr array<uint8_t, 5> FALL_DIAG_RULES = {
   0b00000000, // PADDING
   0b00000000, // AIR
   0b00000010, // SAND
-  0b00000000  // WATER
+  0b00000000, // WATER_L
+  0b00000000  // WATER_R
 };
 
 auto CpuSimulator::create(Size2D<uint32_t> size) -> std::expected<CpuSimulator, engine::Error> {
@@ -148,7 +150,7 @@ auto CpuSimulator::canMoveCell(
   const vector<uint8_t>& bufferIn,
   uint32_t cellIdx,
   Position2D<int32_t> direction,
-  const array<uint8_t, 4>& rules
+  const array<uint8_t, 5>& rules
 ) const -> bool {
   const uint8_t cell = bufferIn[cellIdx];
   const uint8_t cellRuleIdx = std::log2(cell);

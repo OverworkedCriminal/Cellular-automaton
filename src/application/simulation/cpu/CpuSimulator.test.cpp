@@ -110,22 +110,29 @@ TEST_CASE_METHOD(FallStraightFixture, "Fall straight down", "[fall-down]") {
       CHECK(fallStraight(cell::SAND, cell::SAND));
     }
     SECTION("should fall through water") {
-      CHECK(fallStraight(cell::SAND, cell::WATER));
+      CHECK(fallStraight(cell::SAND, cell::WATER_L));
+      CHECK(fallStraight(cell::SAND, cell::WATER_R));
     }
   }
 
   SECTION("water") {
     SECTION("should not fall through padding") {
-      CHECK_FALSE(fallStraight(cell::WATER, cell::PADDING));
+      CHECK_FALSE(fallStraight(cell::WATER_L, cell::PADDING));
+      CHECK_FALSE(fallStraight(cell::WATER_R, cell::PADDING));
     }
     SECTION("should fall through air") {
-      CHECK(fallStraight(cell::WATER, cell::AIR));
+      CHECK(fallStraight(cell::WATER_L, cell::AIR));
+      CHECK(fallStraight(cell::WATER_R, cell::AIR));
     }
     SECTION("should not fall through sand") {
-      CHECK_FALSE(fallStraight(cell::WATER, cell::SAND));
+      CHECK_FALSE(fallStraight(cell::WATER_L, cell::SAND));
+      CHECK_FALSE(fallStraight(cell::WATER_R, cell::SAND));
     }
     SECTION("should remain unchanged") {
-      CHECK(fallStraight(cell::WATER, cell::WATER));
+      CHECK(fallStraight(cell::WATER_L, cell::WATER_L));
+      CHECK_FALSE(fallStraight(cell::WATER_R, cell::WATER_L));
+      CHECK_FALSE(fallStraight(cell::WATER_L, cell::WATER_R));
+      CHECK(fallStraight(cell::WATER_R, cell::WATER_R));
     }
   }
 }
@@ -182,27 +189,41 @@ TEST_CASE_METHOD(FallDiagTestFixture, "Fall diagonally down", "[fall-diag]") {
       CHECK(fallDiag(cell::SAND, cell::SAND,  1));
     }
     SECTION("should not fall through water") {
-      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER, -1));
-      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER,  1));
+      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER_L, -1));
+      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER_L,  1));
+      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER_R, -1));
+      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER_R,  1));
     }
   }
 
   SECTION("water") {
     SECTION("should not fall through padding") {
-      CHECK_FALSE(fallDiag(cell::WATER, cell::PADDING, -1));
-      CHECK_FALSE(fallDiag(cell::WATER, cell::PADDING,  1));
+      CHECK_FALSE(fallDiag(cell::WATER_L, cell::PADDING, -1));
+      CHECK_FALSE(fallDiag(cell::WATER_L, cell::PADDING,  1));
+      CHECK_FALSE(fallDiag(cell::WATER_R, cell::PADDING, -1));
+      CHECK_FALSE(fallDiag(cell::WATER_R, cell::PADDING,  1));
     }
     SECTION("should not fall through air") {
-      CHECK_FALSE(fallDiag(cell::WATER, cell::AIR, -1));
-      CHECK_FALSE(fallDiag(cell::WATER, cell::AIR,  1));
+      CHECK_FALSE(fallDiag(cell::WATER_L, cell::AIR, -1));
+      CHECK_FALSE(fallDiag(cell::WATER_L, cell::AIR,  1));
+      CHECK_FALSE(fallDiag(cell::WATER_R, cell::AIR, -1));
+      CHECK_FALSE(fallDiag(cell::WATER_R, cell::AIR,  1));
     }
     SECTION("should not fall through sand") {
-      CHECK_FALSE(fallDiag(cell::WATER, cell::SAND, -1));
-      CHECK_FALSE(fallDiag(cell::WATER, cell::SAND,  1));
+      CHECK_FALSE(fallDiag(cell::WATER_L, cell::SAND, -1));
+      CHECK_FALSE(fallDiag(cell::WATER_L, cell::SAND,  1));
+      CHECK_FALSE(fallDiag(cell::WATER_R, cell::SAND, -1));
+      CHECK_FALSE(fallDiag(cell::WATER_R, cell::SAND,  1));
     }
     SECTION("should remain unchanged") {
-      CHECK(fallDiag(cell::WATER, cell::WATER, -1));
-      CHECK(fallDiag(cell::WATER, cell::WATER,  1));
+      CHECK(fallDiag(cell::WATER_L, cell::WATER_L, -1));
+      CHECK(fallDiag(cell::WATER_L, cell::WATER_L,  1));
+      CHECK_FALSE(fallDiag(cell::WATER_L, cell::WATER_R, -1));
+      CHECK_FALSE(fallDiag(cell::WATER_L, cell::WATER_R,  1));
+      CHECK(fallDiag(cell::WATER_R, cell::WATER_R, -1));
+      CHECK(fallDiag(cell::WATER_R, cell::WATER_R,  1));
+      CHECK_FALSE(fallDiag(cell::WATER_R, cell::WATER_L, -1));
+      CHECK_FALSE(fallDiag(cell::WATER_R, cell::WATER_L,  1));
     }
   }
 }
