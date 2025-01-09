@@ -6,11 +6,11 @@
 #include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
 #include <vector>
 
 using std::vector;
 using engine::Position2D;
-using engine::Size2D;
 
 TEST_CASE("Invalid width", "[constructor]") {
   const auto simulator = CpuSimulator::create({ .width = 0, .height = 1 });
@@ -22,300 +22,517 @@ TEST_CASE("Invalid height", "[constructor]") {
   REQUIRE_FALSE(simulator.has_value());
 }
 
-struct TestFixture {
-  CpuSimulator simulator;
-  PaintingCanvasDescription canvasDescription;
-  vector<uint8_t> bufferIn;
-  vector<uint8_t> bufferOut;
+struct Expectation {
+  Position2D<int32_t> position;
+  uint8_t cell;
+};
 
-  static auto create(Size2D<uint32_t> simulationSize) -> TestFixture {
-    CpuSimulator simulator = *CpuSimulator::create(simulationSize);
-    PaintingCanvasDescription canvasDescription = {
+class TestFixture {
+public:
+  TestFixture()
+    :canvasDescription({
       .size = {
-        .width = simulationSize.width + 2 * PADDING_SIZE,
-        .height = simulationSize.height + 2 * PADDING_SIZE
+        .width = 5 + 2 * PADDING_SIZE,
+        .height = 5 + 2 * PADDING_SIZE
       },
       .paddingSize = PADDING_SIZE,
       .valueOffset = 0,
       .valueStride = 1
-    };
-    vector<uint8_t> bufferIn(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0);
-    vector<uint8_t> bufferOut(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0);
+    })
+    ,input(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0)
+    ,output(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0)
+  {
+    reset();
+  }
 
-    for (uint32_t row = 0; row < canvasDescription.size.height; ++row) {
-      for (uint32_t col = 0; col < canvasDescription.size.width; ++col) {
-        const uint32_t idx = mapSimulationPositionToCanvasIndex(
-          {
-            .x = col,
-            .y = row
-          },
-          canvasDescription
-        );
-        bufferIn[idx] = cell::PADDING;
-        bufferOut[idx] = cell::PADDING;
+protected:
+  /**
+   * @brief Set input value at position
+   * 
+   * @param position { .x = 0, .y = 0 } means centre of 5x5 grid
+   * @param cell 
+   */
+  auto set(Position2D<int32_t> position, uint8_t cell) -> void {
+    const uint32_t idx = mapSimulationPositionToCanvasIndex(
+      {
+        .x = PADDING_SIZE + 2 + position.x,
+        .y = PADDING_SIZE + 2 + position.y
+      },
+      canvasDescription
+    );
+
+    input[idx] = cell;
+  }
+
+  /**
+   * @brief Resets input and output to default state
+   */
+  auto reset() -> void {
+    Position2D<uint32_t> position;
+    for (position.y = 0; position.y < canvasDescription.size.height; ++position.y) {
+      for (position.x = 0; position.x < canvasDescription.size.width; ++position.x) {
+        const auto idx = mapSimulationPositionToCanvasIndex(position, canvasDescription);
+        input[idx] = cell::PADDING;
+        output[idx] = cell::PADDING;
       }
     }
-
-    return {
-      .simulator = std::move(simulator),
-      .canvasDescription = std::move(canvasDescription),
-      .bufferIn = std::move(bufferIn),
-      .bufferOut = std::move(bufferOut)
-    };
   }
-};
-
-class FallStraightFixture {
-protected:
-  TestFixture fixture = TestFixture::create({ .width = 1, .height = 2 });
 
   /**
-   * @brief Parametrized test that checks falling straight down
+   * @brief Set expected value at position
    * 
-   * @param topCell 
-   * @param botCell 
-   * 
-   * @return true when cells swapped positions
-   * @return false when cells didn't swap position
+   * @param position { .x = 0, .y = 0 } means centre of 5x5 grid
+   * @param cell 
    */
-  auto fallStraight(uint8_t topCell, uint8_t botCell) -> bool {
-    auto& [simulator, canvasDescription, bufferIn, bufferOut] = fixture;
-
-    const Position2D<uint32_t> topPosition = { .x = 0 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
-    const Position2D<uint32_t> botPosition = { .x = 0 + PADDING_SIZE, .y = 0 + PADDING_SIZE };
-    const uint32_t topIndex = mapSimulationPositionToCanvasIndex(topPosition, canvasDescription);
-    const uint32_t botIndex = mapSimulationPositionToCanvasIndex(botPosition, canvasDescription);
-
-    bufferIn[topIndex] = topCell;
-    bufferIn[botIndex] = botCell;
-
-    simulator.run(bufferIn, bufferOut);
-
-    const bool topCorrect = bufferOut[topIndex] == botCell;
-    const bool botCorrect = bufferOut[botIndex] == topCell;
-
-    return topCorrect && botCorrect;
+  auto expect(Position2D<int32_t> position, uint8_t cell) -> void {
+    expectations.emplace_back(Expectation {
+      .position = position,
+      .cell = cell
+    });
   }
+
+  auto runTest() -> void {
+    const CpuSimulator simulator = *CpuSimulator::create({
+      .width = canvasDescription.size.width - 2 * PADDING_SIZE,
+      .height = canvasDescription.size.height - 2 * PADDING_SIZE
+    });
+
+    simulator.run(input, output);
+
+    for (const auto [position, cell] : expectations) {
+      const Position2D<uint32_t> absolutePosition = {
+        .x = PADDING_SIZE + 2 + position.x,
+        .y = PADDING_SIZE + 2 + position.y
+      };
+      const uint32_t idx = mapSimulationPositionToCanvasIndex(absolutePosition, canvasDescription);
+      CHECK(output[idx] == cell);
+    }
+  }
+
+private:
+  PaintingCanvasDescription canvasDescription;
+
+  vector<uint8_t> input;
+  vector<uint8_t> output;
+  vector<Expectation> expectations;
 };
 
-TEST_CASE_METHOD(FallStraightFixture, "Fall straight down", "[fall-down]") {
-  SECTION("sand") {
-    SECTION("should not fall through padding") {
-      CHECK_FALSE(fallStraight(cell::SAND, cell::PADDING));
+TEST_CASE_METHOD(TestFixture, "Air should not fall down through sand") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 0, 0 }, cell::SAND);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 0, 0 }, cell::SAND);
+  runTest();
+}
+
+TEST_CASE_METHOD(TestFixture, "Air should not fall down through water") {
+  SECTION("water L") {
+    set({ 0, 1 }, cell::AIR);
+    set({ 0, 0 }, cell::WATER_L);
+    expect({ 0, 1 }, cell::AIR);
+    expect({ 0, 0 }, cell::WATER_L);
+    runTest();
+  }
+
+  reset();
+
+  SECTION("water R") {
+    set({ 0, 1 }, cell::AIR);
+    set({ 0, 0 }, cell::WATER_R);
+    expect({ 0, 1 }, cell::AIR);
+    expect({ 0, 0 }, cell::WATER_R);
+    runTest();
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Sand should fall down through air") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 0, 0 }, cell::AIR);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 0, 0 }, cell::SAND);
+  runTest();
+}
+
+TEST_CASE_METHOD(TestFixture, "Sand should fall down through water") {
+  SECTION("water L") {
+    set({ 0, 1 }, cell::SAND);
+    set({ 0, 0 }, cell::WATER_L);
+    expect({ 0, 1 }, cell::WATER_L);
+    expect({ 0, 0 }, cell::SAND);
+    runTest();
+  }
+
+  reset();
+
+  SECTION("water R") {
+    set({ 0, 1 }, cell::SAND);
+    set({ 0, 0 }, cell::WATER_R);
+    expect({ 0, 1 }, cell::WATER_R);
+    expect({ 0, 0 }, cell::SAND);
+    runTest();
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Water should fall down through air") {
+  SECTION("water L") {
+    set({ 0, 1 }, cell::WATER_L);
+    set({ 0, 0 }, cell::AIR);
+    expect({ 0, 1 }, cell::AIR);
+    expect({ 0, 0 }, cell::WATER_L);
+    runTest();
+  }
+
+  reset();
+
+  SECTION("water R") {
+    set({ 0, 1 }, cell::WATER_R);
+    set({ 0, 0 }, cell::AIR);
+    expect({ 0, 1 }, cell::AIR);
+    expect({ 0, 0 }, cell::WATER_R);
+    runTest();
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Water should not fall down through sand") {
+  SECTION("water L") {
+    set({ 0, 1 }, cell::WATER_L);
+    set({ 0, 0 }, cell::SAND);
+    expect({ 0, 1 }, cell::WATER_L);
+    expect({ 0, 0 }, cell::SAND);
+    runTest();
+  }
+
+  reset();
+
+  SECTION("water R") {
+    set({ 0, 1 }, cell::WATER_R);
+    set({ 0, 0 }, cell::SAND);
+    expect({ 0, 1 }, cell::WATER_R);
+    expect({ 0, 0 }, cell::SAND);
+    runTest();
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Air should not fall diagonally through sand") {
+  SECTION("left") {
+    set({ 0, 1 }, cell::AIR);
+    set({ -1, 0 }, cell::SAND);
+    expect({ 0, 1 }, cell::AIR);
+    expect({ -1, 0 }, cell::SAND);
+    runTest();
+  }
+
+  reset();
+
+  SECTION("right") {
+    set({ 0, 1 }, cell::AIR);
+    set({ 1, 0 }, cell::SAND);
+    expect({ 0, 1 }, cell::AIR);
+    expect({ 1, 0 }, cell::SAND);
+    runTest();
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Air should not fall diagonally through water") {
+  SECTION("left") {
+    SECTION("water L") {
+      set({ 0, 1 }, cell::AIR);
+      set({ -1, 0, }, cell::WATER_L);
+      expect({ 0, 1 }, cell::AIR);
+      expect({ -1, 0, }, cell::WATER_L);
+      runTest();
     }
-    SECTION("should fall through air") {
-      CHECK(fallStraight(cell::SAND, cell::AIR));
-    }
-    SECTION("should remain unchanged") {
-      CHECK(fallStraight(cell::SAND, cell::SAND));
-    }
-    SECTION("should fall through water") {
-      CHECK(fallStraight(cell::SAND, cell::WATER_L));
-      CHECK(fallStraight(cell::SAND, cell::WATER_R));
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 1 }, cell::AIR);
+      set({ -1, 0, }, cell::WATER_R);
+      expect({ 0, 1 }, cell::AIR);
+      expect({ -1, 0, }, cell::WATER_R);
+      runTest();
     }
   }
 
-  SECTION("water") {
-    SECTION("should not fall through padding") {
-      CHECK_FALSE(fallStraight(cell::WATER_L, cell::PADDING));
-      CHECK_FALSE(fallStraight(cell::WATER_R, cell::PADDING));
+  reset();
+
+  SECTION("right") {
+    SECTION("water L") {
+      set({ 0, 1 }, cell::AIR);
+      set({ 1, 0, }, cell::WATER_L);
+      expect({ 0, 1 }, cell::AIR);
+      expect({ 1, 0, }, cell::WATER_L);
+      runTest();
     }
-    SECTION("should fall through air") {
-      CHECK(fallStraight(cell::WATER_L, cell::AIR));
-      CHECK(fallStraight(cell::WATER_R, cell::AIR));
-    }
-    SECTION("should not fall through sand") {
-      CHECK_FALSE(fallStraight(cell::WATER_L, cell::SAND));
-      CHECK_FALSE(fallStraight(cell::WATER_R, cell::SAND));
-    }
-    SECTION("should remain unchanged") {
-      CHECK(fallStraight(cell::WATER_L, cell::WATER_L));
-      CHECK_FALSE(fallStraight(cell::WATER_R, cell::WATER_L));
-      CHECK_FALSE(fallStraight(cell::WATER_L, cell::WATER_R));
-      CHECK(fallStraight(cell::WATER_R, cell::WATER_R));
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 1 }, cell::AIR);
+      set({ 1, 0, }, cell::WATER_R);
+      expect({ 0, 1 }, cell::AIR);
+      expect({ 1, 0, }, cell::WATER_R);
+      runTest();
     }
   }
 }
 
-class FallDiagTestFixture {
-protected:
-  TestFixture fixture = TestFixture::create({ .width = 3, .height = 2 });
-
-  /**
-   * @brief Parametrized test that checks falling diagonally down
-   * 
-   * @param topCell 
-   * @param diagCell 
-   * @param direction (-1 for left, 1 for right)
-   * 
-   * @return true when cells swapped positions
-   * @return false when cells didn't swap position
-   */
-  auto fallDiag(uint8_t topCell, uint8_t diagCell, int8_t direction) -> bool {
-    auto& [simulator, canvasDescription, bufferIn, bufferOut] = fixture;
-
-    const Position2D<uint32_t> topPosition = { .x = 1 + PADDING_SIZE, .y = 1 + PADDING_SIZE };
-    const Position2D<uint32_t> diagPosition = { .x = topPosition.x + direction, .y = 0 + PADDING_SIZE };
-    const Position2D<uint32_t> otherDiagPosition = { .x = topPosition.x - direction, .y = 0 + PADDING_SIZE };
-    const uint32_t topIndex = mapSimulationPositionToCanvasIndex(topPosition, canvasDescription);
-    const uint32_t diagIndex = mapSimulationPositionToCanvasIndex(diagPosition, canvasDescription);
-    const uint32_t otherDiagIndex = mapSimulationPositionToCanvasIndex(otherDiagPosition, canvasDescription);
-
-    bufferIn[topIndex] = topCell;
-    bufferIn[diagIndex] = diagCell;
-    bufferIn[otherDiagIndex] = cell::PADDING;
-
-    simulator.run(bufferIn, bufferOut);
-
-    const bool topCorrect = bufferOut[topIndex] == diagCell;
-    const bool diagCorrect = bufferOut[diagIndex] == topCell;
-
-    return topCorrect && diagCorrect;
+TEST_CASE_METHOD(TestFixture, "Sand should fall diagonally through air") {
+  SECTION("left") {
+    set({ 0, 1 }, cell::SAND);
+    set({ -1, 0 }, cell::AIR);
+    expect({ 0, 1 }, cell::AIR);
+    expect({ -1, 0 }, cell::SAND);
+    runTest();
   }
-};
 
-TEST_CASE_METHOD(FallDiagTestFixture, "Fall diagonally down", "[fall-diag]") {
-  SECTION("sand") {
-    SECTION("should not fall through padding") {
-      CHECK_FALSE(fallDiag(cell::SAND, cell::PADDING, -1));
-      CHECK_FALSE(fallDiag(cell::SAND, cell::PADDING,  1));
+  reset();
+
+  SECTION("right") {
+    set({ 0, 1 }, cell::SAND);
+    set({ 1, 0 }, cell::AIR);
+    expect({ 0, 1 }, cell::AIR);
+    expect({ 1, 0 }, cell::SAND);
+    runTest();
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Sand should not fall diagonally through water") {
+  SECTION("left") {
+    SECTION("water L") {
+      set({ 0, 1 }, cell::SAND);
+      set({ -1, 0 }, cell::WATER_L);
+      expect({ 0, 1 }, cell::SAND);
+      expect({ -1, 0 }, cell::WATER_L);
+      runTest();
     }
-    SECTION("should fall through air") {
-      CHECK(fallDiag(cell::SAND, cell::AIR, -1));
-      CHECK(fallDiag(cell::SAND, cell::AIR,  1));
-    }
-    SECTION("should remain unchanged") {
-      CHECK(fallDiag(cell::SAND, cell::SAND, -1));
-      CHECK(fallDiag(cell::SAND, cell::SAND,  1));
-    }
-    SECTION("should not fall through water") {
-      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER_L, -1));
-      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER_L,  1));
-      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER_R, -1));
-      CHECK_FALSE(fallDiag(cell::SAND, cell::WATER_R,  1));
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 1 }, cell::SAND);
+      set({ -1, 0 }, cell::WATER_R);
+      expect({ 0, 1 }, cell::SAND);
+      expect({ -1, 0 }, cell::WATER_R);
+      runTest();
     }
   }
 
-  SECTION("water") {
-    SECTION("should not fall through padding") {
-      CHECK_FALSE(fallDiag(cell::WATER_L, cell::PADDING, -1));
-      CHECK_FALSE(fallDiag(cell::WATER_L, cell::PADDING,  1));
-      CHECK_FALSE(fallDiag(cell::WATER_R, cell::PADDING, -1));
-      CHECK_FALSE(fallDiag(cell::WATER_R, cell::PADDING,  1));
+  reset();
+
+  SECTION("right") {
+    SECTION("water L") {
+      set({ 0, 1 }, cell::SAND);
+      set({ 1, 0 }, cell::WATER_L);
+      expect({ 0, 1 }, cell::SAND);
+      expect({ 1, 0 }, cell::WATER_L);
+      runTest();
     }
-    SECTION("should not fall through air") {
-      CHECK_FALSE(fallDiag(cell::WATER_L, cell::AIR, -1));
-      CHECK_FALSE(fallDiag(cell::WATER_L, cell::AIR,  1));
-      CHECK_FALSE(fallDiag(cell::WATER_R, cell::AIR, -1));
-      CHECK_FALSE(fallDiag(cell::WATER_R, cell::AIR,  1));
-    }
-    SECTION("should not fall through sand") {
-      CHECK_FALSE(fallDiag(cell::WATER_L, cell::SAND, -1));
-      CHECK_FALSE(fallDiag(cell::WATER_L, cell::SAND,  1));
-      CHECK_FALSE(fallDiag(cell::WATER_R, cell::SAND, -1));
-      CHECK_FALSE(fallDiag(cell::WATER_R, cell::SAND,  1));
-    }
-    SECTION("should remain unchanged") {
-      CHECK(fallDiag(cell::WATER_L, cell::WATER_L, -1));
-      CHECK(fallDiag(cell::WATER_L, cell::WATER_L,  1));
-      CHECK_FALSE(fallDiag(cell::WATER_L, cell::WATER_R, -1));
-      CHECK_FALSE(fallDiag(cell::WATER_L, cell::WATER_R,  1));
-      CHECK(fallDiag(cell::WATER_R, cell::WATER_R, -1));
-      CHECK(fallDiag(cell::WATER_R, cell::WATER_R,  1));
-      CHECK_FALSE(fallDiag(cell::WATER_R, cell::WATER_L, -1));
-      CHECK_FALSE(fallDiag(cell::WATER_R, cell::WATER_L,  1));
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 1 }, cell::SAND);
+      set({ 1, 0 }, cell::WATER_R);
+      expect({ 0, 1 }, cell::SAND);
+      expect({ 1, 0 }, cell::WATER_R);
+      runTest();
     }
   }
 }
 
-class MoveHorizontalyTestFixture {
-protected:
-  TestFixture fixture = TestFixture::create({ .width = 3, .height = 1 });
-
-  /**
-   * @brief Parametrized test that checks moving horizontaly
-   * 
-   * @param centerCell 
-   * @param sideCell 
-   * @param direction (-1 for left, 1 for right)
-   * 
-   * @return true when cells swapped positions
-   * @return false when cells didn't swap position
-   */
-  auto moveHorizontaly(uint8_t centerCell, uint8_t sideCell, int8_t direction) -> bool {
-    auto& [simulator, canvasDescription, bufferIn, bufferOut] = fixture;
-
-    const Position2D<uint32_t> centerPosition = { .x = 1 + PADDING_SIZE, .y = 0 + PADDING_SIZE };
-    const Position2D<uint32_t> sidePosition = { .x = centerPosition.x + direction, .y = centerPosition.y };
-    const Position2D<uint32_t> otherSidePosition = { .x = centerPosition.x - direction, .y = centerPosition.y };
-
-    const uint32_t centerIndex = mapSimulationPositionToCanvasIndex(centerPosition, canvasDescription);
-    const uint32_t sideIndex = mapSimulationPositionToCanvasIndex(sidePosition, canvasDescription);
-    const uint32_t otherSideIndex = mapSimulationPositionToCanvasIndex(otherSidePosition, canvasDescription);
-
-    bufferIn[centerIndex] = centerCell;
-    bufferIn[sideIndex] = sideCell;
-    bufferIn[otherSideIndex] = cell::PADDING;
-
-    simulator.run(bufferIn, bufferOut);
-
-    const bool topCorrect = bufferOut[centerIndex] == sideCell;
-    const bool diagCorrect = bufferOut[sideIndex] == centerCell;
-
-    return topCorrect && diagCorrect;
-  }
-};
-
-TEST_CASE_METHOD(MoveHorizontalyTestFixture, "Move horizontaly", "[move-horizontaly]") {
-  SECTION("sand") {
-    SECTION("should not move through padding") {
-      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::PADDING, -1));
-      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::PADDING,  1));
+TEST_CASE_METHOD(TestFixture, "Water should not fall diagonally through air") {
+  SECTION("left") {
+    SECTION("water L") {
+      set({ 0, 1 }, cell::WATER_L);
+      set({ -1, 0 }, cell::AIR);
+      expect({ 0, 1 }, cell::WATER_L);
+      expect({ -1, 0 }, cell::AIR);
+      runTest();
     }
-    SECTION("should not move through air") {
-      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::AIR, -1));
-      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::AIR,  1));
-    }
-    SECTION("should remain unchanged") {
-      CHECK(moveHorizontaly(cell::SAND, cell::SAND, -1));
-      CHECK(moveHorizontaly(cell::SAND, cell::SAND,  1));
-    }
-    SECTION("should not move through water") {
-      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::WATER_L, -1));
-      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::WATER_L,  1));
-      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::WATER_R, -1));
-      CHECK_FALSE(moveHorizontaly(cell::SAND, cell::WATER_R,  1));
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 1 }, cell::WATER_R);
+      set({ -1, 0 }, cell::AIR);
+      expect({ 0, 1 }, cell::WATER_R);
+      expect({ -1, 0 }, cell::AIR);
+      runTest();
     }
   }
 
-  SECTION("water") {
-    SECTION("should not move through padding") {
-      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::PADDING, -1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::PADDING,  1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::PADDING, -1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::PADDING,  1));
+  reset();
+
+  SECTION("right") {
+    SECTION("water L") {
+      set({ 0, 1 }, cell::WATER_L);
+      set({ 1, 0 }, cell::AIR);
+      expect({ 0, 1 }, cell::WATER_L);
+      expect({ 1, 0 }, cell::AIR);
+      runTest();
     }
-    SECTION("should move through air") {
-      CHECK(moveHorizontaly(cell::WATER_L, cell::AIR, -1));
-      CHECK(moveHorizontaly(cell::WATER_L, cell::AIR,  1));
-      CHECK(moveHorizontaly(cell::WATER_R, cell::AIR, -1));
-      CHECK(moveHorizontaly(cell::WATER_R, cell::AIR,  1));
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 1 }, cell::WATER_R);
+      set({ 1, 0 }, cell::AIR);
+      expect({ 0, 1 }, cell::WATER_R);
+      expect({ 1, 0 }, cell::AIR);
+      runTest();
     }
-    SECTION("should not move through sand") {
-      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::SAND, -1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::SAND,  1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::SAND, -1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::SAND,  1));
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Water should not fall diagonally through sand") {
+  SECTION("left") {
+    SECTION("water L") {
+      set({ 0, 1 }, cell::WATER_L);
+      set({ -1, 0 }, cell::SAND);
+      expect({ 0, 1 }, cell::WATER_L);
+      expect({ -1, 0 }, cell::SAND);
+      runTest();
     }
-    SECTION("should remain unchanged") {
-      CHECK(moveHorizontaly(cell::WATER_L, cell::WATER_L, -1));
-      CHECK(moveHorizontaly(cell::WATER_L, cell::WATER_L,  1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::WATER_R, -1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_L, cell::WATER_R,  1));
-      CHECK(moveHorizontaly(cell::WATER_R, cell::WATER_R, -1));
-      CHECK(moveHorizontaly(cell::WATER_R, cell::WATER_R,  1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::WATER_L, -1));
-      CHECK_FALSE(moveHorizontaly(cell::WATER_R, cell::WATER_L,  1));
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 1 }, cell::WATER_R);
+      set({ -1, 0 }, cell::SAND);
+      expect({ 0, 1 }, cell::WATER_R);
+      expect({ -1, 0 }, cell::SAND);
+      runTest();
+    }
+  }
+
+  reset();
+
+  SECTION("right") {
+    SECTION("water L") {
+      set({ 0, 1 }, cell::WATER_L);
+      set({ 1, 0 }, cell::SAND);
+      expect({ 0, 1 }, cell::WATER_L);
+      expect({ 1, 0 }, cell::SAND);
+      runTest();
+    }
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 1 }, cell::WATER_R);
+      set({ 1, 0 }, cell::SAND);
+      expect({ 0, 1 }, cell::WATER_R);
+      expect({ 1, 0 }, cell::SAND);
+      runTest();
+    }
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Sand should not move horizontaly through air") {
+  SECTION("left") {
+    set({ 0, 0 }, cell::SAND);
+    set({ -1, 0 }, cell::AIR);
+    expect({ 0, 0 }, cell::SAND);
+    expect({ -1, 0 }, cell::AIR);
+    runTest();
+  }
+
+  reset();
+
+  SECTION("right") {
+    set({ 0, 0 }, cell::SAND);
+    set({ 1, 0 }, cell::AIR);
+    expect({ 0, 0 }, cell::SAND);
+    expect({ 1, 0 }, cell::AIR);
+    runTest();
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Water should move horizontaly through air") {
+  SECTION("left") {
+    SECTION("water L") {
+      set({ 0, 0 }, cell::WATER_L);
+      set({ -1, 0 }, cell::AIR);
+      expect({ 0, 0 }, cell::AIR);
+      expect({ -1, 0 }, cell::WATER_L);
+      runTest();
+    }
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 0 }, cell::WATER_R);
+      set({ -1, 0 }, cell::AIR);
+      expect({ 0, 0 }, cell::AIR);
+      expect({ -1, 0 }, cell::WATER_L); // After moving to left direction of water is changed
+      runTest();
+    }
+  }
+
+  reset();
+
+  SECTION("right") {
+    SECTION("water L") {
+      set({ 0, 0 }, cell::WATER_L);
+      set({ 1, 0 }, cell::AIR);
+      expect({ 0, 0 }, cell::AIR);
+      expect({ 1, 0 }, cell::WATER_R); // After moving to right direction of water is changed
+      runTest();
+    }
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 0 }, cell::WATER_R);
+      set({ 1, 0 }, cell::AIR);
+      expect({ 0, 0 }, cell::AIR);
+      expect({ 1, 0 }, cell::WATER_R);
+      runTest();
+    }
+  }
+}
+
+TEST_CASE_METHOD(TestFixture, "Water should not move horizontaly through sand") {
+  SECTION("left") {
+    SECTION("water L") {
+      set({ 0, 0 }, cell::WATER_L);
+      set({ -1, 0 }, cell::SAND);
+      expect({ 0, 0 }, cell::WATER_L);
+      expect({ -1, 0 }, cell::SAND);
+      runTest();
+    }
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 0 }, cell::WATER_R);
+      set({ -1, 0 }, cell::SAND);
+      expect({ 0, 0 }, cell::WATER_R);
+      expect({ -1, 0 }, cell::SAND);
+      runTest();
+    }
+  }
+
+  reset();
+
+  SECTION("right") {
+    SECTION("water L") {
+      set({ 0, 0 }, cell::WATER_L);
+      set({ 1, 0 }, cell::SAND);
+      expect({ 0, 0 }, cell::WATER_L);
+      expect({ 1, 0 }, cell::SAND);
+      runTest();
+    }
+
+    reset();
+
+    SECTION("water R") {
+      set({ 0, 0 }, cell::WATER_R);
+      set({ 1, 0 }, cell::SAND);
+      expect({ 0, 0 }, cell::WATER_R);
+      expect({ 1, 0 }, cell::SAND);
+      runTest();
     }
   }
 }
