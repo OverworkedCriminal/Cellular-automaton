@@ -538,3 +538,52 @@ TEST_CASE_METHOD(TestFixture, "Water should not move horizontaly through sand") 
     }
   }
 }
+
+TEST_CASE_METHOD(TestFixture, "Water should flow from one side to another") {
+  SECTION("0 <- W -- 0 ") {
+    set({ -1, 0 }, cell::AIR);
+    set({  0, 0 }, cell::WATER_L);
+    set({  1, 0 }, cell::AIR);
+    expect({ -1, 0 }, cell::WATER_L);
+    expect({  0, 0 }, cell::AIR);
+    expect({  1, 0 }, cell::AIR);
+    runTest();
+  }
+
+  reset();
+
+  SECTION("W -> 0 -- 0") {
+    set({ -1, 0 }, cell::WATER_L);
+    set({  0, 0 }, cell::AIR);
+    set({  1, 0 }, cell::AIR);
+    expect({ -1, 0 }, cell::AIR);
+    expect({  0, 0 }, cell::WATER_R);
+    expect({  1, 0 }, cell::AIR);
+    runTest();
+  }
+
+  reset();
+
+  SECTION("0 -- W -> 0") {
+    set({ -1, 0 }, cell::AIR);
+    set({  0, 0 }, cell::WATER_R);
+    set({  1, 0 }, cell::AIR);
+    expect({ -1, 0 }, cell::AIR);
+    expect({  0, 0 }, cell::AIR);
+    expect({  1, 0 }, cell::WATER_R);
+    runTest();
+  }
+
+  reset();
+
+  SECTION("0 -- 0 <- W") {
+    set({ -1, 0 }, cell::AIR);
+    set({  0, 0 }, cell::AIR);
+    set({  1, 0 }, cell::WATER_R);
+    expect({ -1, 0 }, cell::AIR);
+    expect({  0, 0 }, cell::WATER_L);
+    expect({  1, 0 }, cell::AIR);
+    runTest();
+  }
+}
+
