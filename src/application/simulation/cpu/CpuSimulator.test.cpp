@@ -68,6 +68,8 @@ protected:
    * @brief Resets input and output to default state
    */
   auto reset() -> void {
+    expectations.clear();
+
     Position2D<uint32_t> position;
     for (position.y = 0; position.y < canvasDescription.size.height; ++position.y) {
       for (position.x = 0; position.x < canvasDescription.size.width; ++position.x) {
