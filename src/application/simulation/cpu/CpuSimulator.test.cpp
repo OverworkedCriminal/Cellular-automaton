@@ -7,9 +7,11 @@
 #include "engine/utils/dto/Size2D.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 using std::vector;
+using std::function;
 using engine::Position2D;
 
 TEST_CASE("Invalid width", "[constructor]") {
@@ -87,10 +89,22 @@ protected:
    * @param cell 
    */
   auto expect(Position2D<int32_t> position, uint8_t cell) -> void {
-    expectations.emplace_back(Expectation {
-      .position = position,
-      .cell = cell
-    });
+    const uint32_t idx = positionToIndex(position);
+
+    auto expectation = [idx, cell](const vector<uint8_t>& output) {
+      CHECK(output[idx] == cell);
+    };
+
+    expectations.push_back(expectation);
+  }
+
+  /**
+   * @brief Set expectation. Allows to freely specify conditions
+   * 
+   * @param expectation 
+   */
+  auto expect(function<void(const vector<uint8_t>&)> expectation) -> void {
+    expectations.push_back(expectation);
   }
 
   auto runTest() -> void {
@@ -101,14 +115,25 @@ protected:
 
     simulator.run(input, output);
 
-    for (const auto [position, cell] : expectations) {
-      const Position2D<uint32_t> absolutePosition = {
-        .x = PADDING_SIZE + 2 + position.x,
-        .y = PADDING_SIZE + 2 + position.y
-      };
-      const uint32_t idx = mapSimulationPositionToCanvasIndex(absolutePosition, canvasDescription);
-      CHECK(output[idx] == cell);
+    for (const auto& expectation : expectations) {
+      expectation(output);
     }
+  }
+
+  /**
+   * @brief Maps relative position to bufferIndex
+   * 
+   * @param position 
+   * @return uint32_t 
+   */
+  auto positionToIndex(Position2D<int32_t> position) -> uint32_t {
+    const Position2D<uint32_t> absolutePosition = {
+      .x = PADDING_SIZE + 2 + position.x,
+      .y = PADDING_SIZE + 2 + position.y
+    };
+    const uint32_t idx = mapSimulationPositionToCanvasIndex(absolutePosition, canvasDescription);
+
+    return idx;
   }
 
 private:
@@ -116,7 +141,7 @@ private:
 
   vector<uint8_t> input;
   vector<uint8_t> output;
-  vector<Expectation> expectations;
+  vector<function<void(const vector<uint8_t>&)>> expectations;
 };
 
 TEST_CASE_METHOD(TestFixture, "Air should not fall down through sand") {
@@ -577,4 +602,44 @@ TEST_CASE_METHOD(TestFixture, "Water R should flow left if right is impossible")
   expect({  0, 0 }, cell::WATER_L);
   expect({  1, 0 }, cell::AIR);
   runTest();
+}
+
+TEST_CASE_METHOD(TestFixture, "Water L and R race for center position") {
+  bool waterR = true;
+  bool waterL = true;
+
+  const uint32_t leftIdx = positionToIndex({ -1, 0 });
+  const uint32_t centerIdx = positionToIndex({ 0, 0 });
+  const uint32_t rightIdx = positionToIndex({ 1, 0 });
+
+  SECTION("WATER_R moving from left to center") {
+    set({ -1, 0 }, cell::WATER_R);
+    set({  0, 0 }, cell::AIR);
+    set({  1, 0 }, cell::WATER_L);
+    expect([&waterR, leftIdx](const auto& output) {
+      waterR = waterR && (output[leftIdx] == cell::AIR);
+    });
+    expect([&waterR, centerIdx](const auto& output) {
+      waterR = waterR && (output[centerIdx] == cell::WATER_R);
+    });
+    runTest();
+  }
+
+  reset();
+
+  SECTION("WATER_L moving from right to center") {
+    set({ -1, 0 }, cell::WATER_R);
+    set({  0, 0 }, cell::AIR);
+    set({  1, 0 }, cell::WATER_L);
+    expect([&waterL, centerIdx](const auto& output) {
+      waterL = waterL && (output[centerIdx] == cell::WATER_L);
+    });
+    expect([&waterL, rightIdx](const auto& output) {
+      waterL = waterL && (output[rightIdx] == cell::AIR);
+    });
+  }
+
+  bool testSuccessful = waterR || waterL;
+
+  REQUIRE(testSuccessful);
 }
