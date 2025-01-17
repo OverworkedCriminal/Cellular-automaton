@@ -4,11 +4,12 @@
 #include "application/simulation/cpu/Color.hpp"
 #include <array>
 
-constexpr std::array<Color, 4> COLORS = {
+constexpr std::array<Color, 5> COLORS = {
   Color { 0.0f, 0.0f, 0.0f, 1.0f }, // PADDING
   Color { 0.0f, 0.0f, 0.0f, 1.0f }, // AIR
   Color { 1.0f, 1.0f, 0.0f, 1.0f }, // SAND
-  Color { 0.0f, 0.0f, 1.0f, 1.0f }  // WATER
+  Color { 0.0f, 0.0f, 1.0f, 1.0f }, // WATER_L
+  Color { 0.0f, 0.0f, 1.0f, 1.0f }  // WATER_R
 };
 
 #endif
