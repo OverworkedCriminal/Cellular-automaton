@@ -34,7 +34,7 @@ public:
   auto run(
     const std::vector<uint8_t>& bufferIn,
     std::vector<uint8_t>& bufferOut
-  ) const -> void;
+  ) -> void;
 
 private:
   CpuSimulator(
@@ -44,6 +44,8 @@ private:
 
   engine::Size2D<uint32_t> m_size;
   engine::Size2D<uint32_t> m_sizeWithPadding;
+
+  int32_t m_priorityDirection;
 
   auto canMoveCell(
     const std::vector<uint8_t>& bufferIn,
