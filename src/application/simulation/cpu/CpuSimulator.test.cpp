@@ -5,13 +5,12 @@
 #include "application/simulation/padding.hpp"
 #include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
+#include <bitset>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
-#include <functional>
 #include <vector>
 
 using std::vector;
-using std::function;
 using engine::Position2D;
 
 TEST_CASE("Invalid width", "[constructor]") {
@@ -26,13 +25,23 @@ TEST_CASE("Invalid height", "[constructor]") {
 
 struct Expectation {
   Position2D<int32_t> position;
+  uint8_t cellMask;
+};
+
+struct Error {
+  Position2D<int32_t> position;
   uint8_t cell;
+  uint8_t expectedMask;
 };
 
 class TestFixture {
 public:
   TestFixture()
-    :canvasDescription({
+    :simulator(*CpuSimulator::create({
+      .width = 5,
+      .height = 5
+    }))
+    ,canvasDescription({
       .size = {
         .width = 5 + 2 * PADDING_SIZE,
         .height = 5 + 2 * PADDING_SIZE
@@ -44,7 +53,8 @@ public:
     ,input(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0)
     ,output(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0)
   {
-    reset();
+    resetBuffer(input);
+    resetBuffer(output);
   }
 
 protected:
@@ -67,56 +77,66 @@ protected:
   }
 
   /**
-   * @brief Resets input and output to default state
-   */
-  auto reset() -> void {
-    expectations.clear();
-
-    Position2D<uint32_t> position;
-    for (position.y = 0; position.y < canvasDescription.size.height; ++position.y) {
-      for (position.x = 0; position.x < canvasDescription.size.width; ++position.x) {
-        const auto idx = mapSimulationPositionToCanvasIndex(position, canvasDescription);
-        input[idx] = cell::PADDING;
-        output[idx] = cell::PADDING;
-      }
-    }
-  }
-
-  /**
    * @brief Set expected value at position
    * 
    * @param position { .x = 0, .y = 0 } means centre of 5x5 grid
    * @param cell 
    */
-  auto expect(Position2D<int32_t> position, uint8_t cell) -> void {
-    const uint32_t idx = positionToIndex(position);
-
-    auto expectation = [idx, cell](const vector<uint8_t>& output) {
-      CHECK(output[idx] == cell);
-    };
-
-    expectations.push_back(expectation);
+  auto expect(Position2D<int32_t> position, uint8_t cellMask) -> void {
+    expectations.push_back({
+      .position = position,
+      .cellMask = cellMask
+    });
   }
+
+  auto runTestExpectAnySuccess(uint32_t tries = 1) -> void {
+    vector<vector<Error>> allErrors;
+
+    for (uint32_t i = 0; i < tries; ++i) {
+      vector<Error> errors = runTest();
+      if (errors.empty()) {
+        SUCCEED("All expectations matched");
+        return;
+      }
+
+      allErrors.emplace_back(std::move(errors));
+    }
+
+    for (uint32_t i = 0; i < tries; ++i) {
+      INFO("Try " << i);
+      checkErrors(allErrors[i]);
+    }
+  }
+
+  auto runTestExpectAllSuccess(uint32_t tries = 1) -> void {
+    for (uint32_t i = 0; i < tries; ++i) {
+      INFO("Try " << i);
+
+      vector<Error> errors = runTest();
+      CHECK(errors.empty());
+
+      checkErrors(errors);
+    }
+  }
+
+private:
+  CpuSimulator simulator;
+  PaintingCanvasDescription canvasDescription;
+
+  vector<uint8_t> input;
+  vector<uint8_t> output;
+  vector<Expectation> expectations;
 
   /**
-   * @brief Set expectation. Allows to freely specify conditions
-   * 
-   * @param expectation 
+   * @brief Resets input and output to default state
    */
-  auto expect(function<void(const vector<uint8_t>&)> expectation) -> void {
-    expectations.push_back(expectation);
-  }
-
-  auto runTest() -> void {
-    const CpuSimulator simulator = *CpuSimulator::create({
-      .width = canvasDescription.size.width - 2 * PADDING_SIZE,
-      .height = canvasDescription.size.height - 2 * PADDING_SIZE
-    });
-
-    simulator.run(input, output);
-
-    for (const auto& expectation : expectations) {
-      expectation(output);
+  auto resetBuffer(std::vector<uint8_t>& buffer) -> void {
+    Position2D<uint32_t> position;
+    for (position.y = 0; position.y < canvasDescription.size.height; ++position.y) {
+      for (position.x = 0; position.x < canvasDescription.size.width; ++position.x) {
+        const auto idx = mapSimulationPositionToCanvasIndex(position, canvasDescription);
+        buffer[idx] = cell::PADDING;
+      }
     }
   }
 
@@ -136,510 +156,412 @@ protected:
     return idx;
   }
 
-private:
-  PaintingCanvasDescription canvasDescription;
+  auto runTest() -> vector<Error> {
+    vector<Error> errors;
 
-  vector<uint8_t> input;
-  vector<uint8_t> output;
-  vector<function<void(const vector<uint8_t>&)>> expectations;
+    resetBuffer(output);
+
+    simulator.run(input, output);
+
+    for (const auto& expectation : expectations) {
+      const uint32_t idx = positionToIndex(expectation.position);
+      if ((output[idx] & expectation.cellMask) == 0) {
+        errors.push_back({
+          .position = expectation.position,
+          .cell = output[idx],
+          .expectedMask = expectation.cellMask
+        });
+      }
+    }
+
+    return errors;
+  }
+
+  auto checkErrors(const vector<Error>& errors) -> void {
+    for (const auto& [position, cell, expectedMask] : errors) {
+      INFO("Position { x = " << position.x << ", y = " << position.y << " }");
+      INFO("Expected mask " << std::bitset<8>(expectedMask));
+      CHECK((cell & expectedMask) > 0);
+    }
+  }
 };
 
-TEST_CASE_METHOD(TestFixture, "Air should not fall down through sand") {
+TEST_CASE_METHOD(TestFixture, "AIR should not fall down through SAND") {
   set({ 0, 1 }, cell::AIR);
   set({ 0, 0 }, cell::SAND);
   expect({ 0, 1 }, cell::AIR);
   expect({ 0, 0 }, cell::SAND);
-  runTest();
+  runTestExpectAllSuccess();
 }
 
-TEST_CASE_METHOD(TestFixture, "Air should not fall down through water") {
-  SECTION("water L") {
-    set({ 0, 1 }, cell::AIR);
-    set({ 0, 0 }, cell::WATER_L);
-    expect({ 0, 1 }, cell::AIR);
-    expect({ 0, 0 }, cell::WATER_L);
-    runTest();
-  }
-
-  reset();
-
-  SECTION("water R") {
-    set({ 0, 1 }, cell::AIR);
-    set({ 0, 0 }, cell::WATER_R);
-    expect({ 0, 1 }, cell::AIR);
-    expect({ 0, 0 }, cell::WATER_R);
-    runTest();
-  }
+TEST_CASE_METHOD(TestFixture, "AIR should not fall down through WATER_L") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 0, 0 }, cell::WATER_L);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 0, 0 }, cell::WATER_L | cell::WATER_R);
+  runTestExpectAllSuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Sand should fall down through air") {
+TEST_CASE_METHOD(TestFixture, "AIR should not fall down through WATER_R") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 0, 0 }, cell::WATER_R);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 0, 0 }, cell::WATER_R | cell::WATER_L);
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should fall down through AIR") {
   set({ 0, 1 }, cell::SAND);
   set({ 0, 0 }, cell::AIR);
   expect({ 0, 1 }, cell::AIR);
   expect({ 0, 0 }, cell::SAND);
-  runTest();
+  runTestExpectAllSuccess();
 }
 
-TEST_CASE_METHOD(TestFixture, "Sand should fall down through water") {
-  SECTION("water L") {
-    set({ 0, 1 }, cell::SAND);
-    set({ 0, 0 }, cell::WATER_L);
-    expect({ 0, 1 }, cell::WATER_L);
-    expect({ 0, 0 }, cell::SAND);
-    runTest();
-  }
-
-  reset();
-
-  SECTION("water R") {
-    set({ 0, 1 }, cell::SAND);
-    set({ 0, 0 }, cell::WATER_R);
-    expect({ 0, 1 }, cell::WATER_R);
-    expect({ 0, 0 }, cell::SAND);
-    runTest();
-  }
+TEST_CASE_METHOD(TestFixture, "SAND should fall down through WATER_L") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 0, 0 }, cell::WATER_L);
+  expect({ 0, 1 }, cell::WATER_L);
+  expect({ 0, 0 }, cell::SAND);
+  runTestExpectAllSuccess();
 }
 
-TEST_CASE_METHOD(TestFixture, "Water should fall down through air") {
-  SECTION("water L") {
-    set({ 0, 1 }, cell::WATER_L);
-    set({ 0, 0 }, cell::AIR);
-    expect({ 0, 1 }, cell::AIR);
-    expect({ 0, 0 }, cell::WATER_L);
-    runTest();
-  }
-
-  reset();
-
-  SECTION("water R") {
-    set({ 0, 1 }, cell::WATER_R);
-    set({ 0, 0 }, cell::AIR);
-    expect({ 0, 1 }, cell::AIR);
-    expect({ 0, 0 }, cell::WATER_R);
-    runTest();
-  }
+TEST_CASE_METHOD(TestFixture, "SAND should fall down through WATER_R") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 0, 0 }, cell::WATER_R);
+  expect({ 0, 1 }, cell::WATER_R);
+  expect({ 0, 0 }, cell::SAND);
+  runTestExpectAllSuccess();
 }
 
-TEST_CASE_METHOD(TestFixture, "Water should not fall down through sand") {
-  SECTION("water L") {
-    set({ 0, 1 }, cell::WATER_L);
-    set({ 0, 0 }, cell::SAND);
-    expect({ 0, 1 }, cell::WATER_L);
-    expect({ 0, 0 }, cell::SAND);
-    runTest();
-  }
-
-  reset();
-
-  SECTION("water R") {
-    set({ 0, 1 }, cell::WATER_R);
-    set({ 0, 0 }, cell::SAND);
-    expect({ 0, 1 }, cell::WATER_R);
-    expect({ 0, 0 }, cell::SAND);
-    runTest();
-  }
+TEST_CASE_METHOD(TestFixture, "WATER_L should fall down through AIR") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ 0, 0 }, cell::AIR);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 0, 0 }, cell::WATER_L);
+  runTestExpectAllSuccess();
 }
 
-TEST_CASE_METHOD(TestFixture, "Air should not fall diagonally through sand") {
-  SECTION("left") {
-    set({ 0, 1 }, cell::AIR);
-    set({ -1, 0 }, cell::SAND);
-    expect({ 0, 1 }, cell::AIR);
-    expect({ -1, 0 }, cell::SAND);
-    runTest();
-  }
-
-  reset();
-
-  SECTION("right") {
-    set({ 0, 1 }, cell::AIR);
-    set({ 1, 0 }, cell::SAND);
-    expect({ 0, 1 }, cell::AIR);
-    expect({ 1, 0 }, cell::SAND);
-    runTest();
-  }
+TEST_CASE_METHOD(TestFixture, "WATER_R should fall down through AIR") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ 0, 0 }, cell::AIR);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 0, 0 }, cell::WATER_R);
+  runTestExpectAllSuccess();
 }
 
-TEST_CASE_METHOD(TestFixture, "Air should not fall diagonally through water") {
-  SECTION("left") {
-    SECTION("water L") {
-      set({ 0, 1 }, cell::AIR);
-      set({ -1, 0, }, cell::WATER_L);
-      expect({ 0, 1 }, cell::AIR);
-      expect({ -1, 0, }, cell::WATER_L);
-      runTest();
-    }
-
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 1 }, cell::AIR);
-      set({ -1, 0, }, cell::WATER_R);
-      expect({ 0, 1 }, cell::AIR);
-      expect({ -1, 0, }, cell::WATER_R);
-      runTest();
-    }
-  }
-
-  reset();
-
-  SECTION("right") {
-    SECTION("water L") {
-      set({ 0, 1 }, cell::AIR);
-      set({ 1, 0, }, cell::WATER_L);
-      expect({ 0, 1 }, cell::AIR);
-      expect({ 1, 0, }, cell::WATER_L);
-      runTest();
-    }
-
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 1 }, cell::AIR);
-      set({ 1, 0, }, cell::WATER_R);
-      expect({ 0, 1 }, cell::AIR);
-      expect({ 1, 0, }, cell::WATER_R);
-      runTest();
-    }
-  }
+TEST_CASE_METHOD(TestFixture, "WATER_L should not fall down through SAND") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ 0, 0 }, cell::SAND);
+  expect({ 0, 1 }, cell::WATER_L | cell::WATER_R);
+  expect({ 0, 0 }, cell::SAND);
+  runTestExpectAllSuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Sand should fall diagonally through air") {
-  SECTION("left") {
-    set({ 0, 1 }, cell::SAND);
-    set({ -1, 0 }, cell::AIR);
-    expect({ 0, 1 }, cell::AIR);
-    expect({ -1, 0 }, cell::SAND);
-    runTest();
-  }
-
-  reset();
-
-  SECTION("right") {
-    set({ 0, 1 }, cell::SAND);
-    set({ 1, 0 }, cell::AIR);
-    expect({ 0, 1 }, cell::AIR);
-    expect({ 1, 0 }, cell::SAND);
-    runTest();
-  }
+TEST_CASE_METHOD(TestFixture, "WATER_R should not fall down through SAND") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ 0, 0 }, cell::SAND);
+  expect({ 0, 1 }, cell::WATER_R | cell::WATER_L);
+  expect({ 0, 0 }, cell::SAND);
+  runTestExpectAllSuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Sand should not fall diagonally through water") {
-  SECTION("left") {
-    SECTION("water L") {
-      set({ 0, 1 }, cell::SAND);
-      set({ -1, 0 }, cell::WATER_L);
-      expect({ 0, 1 }, cell::SAND);
-      expect({ -1, 0 }, cell::WATER_L);
-      runTest();
-    }
+TEST_CASE_METHOD(TestFixture, "AIR should not fall diagonally left through SAND") {
+  set({ 0, 1 }, cell::AIR);
+  set({ -1, 0 }, cell::SAND);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ -1, 0 }, cell::SAND);
 
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 1 }, cell::SAND);
-      set({ -1, 0 }, cell::WATER_R);
-      expect({ 0, 1 }, cell::SAND);
-      expect({ -1, 0 }, cell::WATER_R);
-      runTest();
-    }
-  }
-
-  reset();
-
-  SECTION("right") {
-    SECTION("water L") {
-      set({ 0, 1 }, cell::SAND);
-      set({ 1, 0 }, cell::WATER_L);
-      expect({ 0, 1 }, cell::SAND);
-      expect({ 1, 0 }, cell::WATER_L);
-      runTest();
-    }
-
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 1 }, cell::SAND);
-      set({ 1, 0 }, cell::WATER_R);
-      expect({ 0, 1 }, cell::SAND);
-      expect({ 1, 0 }, cell::WATER_R);
-      runTest();
-    }
-  }
+  runTestExpectAllSuccess();
 }
 
-TEST_CASE_METHOD(TestFixture, "Water should not fall diagonally through air") {
-  SECTION("left") {
-    SECTION("water L") {
-      set({ 0, 1 }, cell::WATER_L);
-      set({ -1, 0 }, cell::AIR);
-      expect({ 0, 1 }, cell::WATER_L);
-      expect({ -1, 0 }, cell::AIR);
-      runTest();
-    }
+TEST_CASE_METHOD(TestFixture, "AIR should not fall diagonally right through SAND") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 1, 0 }, cell::SAND);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 1, 0 }, cell::SAND);
 
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 1 }, cell::WATER_R);
-      set({ -1, 0 }, cell::AIR);
-      expect({ 0, 1 }, cell::WATER_R);
-      expect({ -1, 0 }, cell::AIR);
-      runTest();
-    }
-  }
-
-  reset();
-
-  SECTION("right") {
-    SECTION("water L") {
-      set({ 0, 1 }, cell::WATER_L);
-      set({ 1, 0 }, cell::AIR);
-      expect({ 0, 1 }, cell::WATER_L);
-      expect({ 1, 0 }, cell::AIR);
-      runTest();
-    }
-
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 1 }, cell::WATER_R);
-      set({ 1, 0 }, cell::AIR);
-      expect({ 0, 1 }, cell::WATER_R);
-      expect({ 1, 0 }, cell::AIR);
-      runTest();
-    }
-  }
+  runTestExpectAllSuccess();
 }
 
-TEST_CASE_METHOD(TestFixture, "Water should not fall diagonally through sand") {
-  SECTION("left") {
-    SECTION("water L") {
-      set({ 0, 1 }, cell::WATER_L);
-      set({ -1, 0 }, cell::SAND);
-      expect({ 0, 1 }, cell::WATER_L);
-      expect({ -1, 0 }, cell::SAND);
-      runTest();
-    }
+TEST_CASE_METHOD(TestFixture, "AIR should not fall diagonally left through WATER_L") {
+  set({ 0, 1 }, cell::AIR);
+  set({ -1, 0, }, cell::WATER_L);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ -1, 0, }, cell::WATER_L | cell::WATER_R);
 
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 1 }, cell::WATER_R);
-      set({ -1, 0 }, cell::SAND);
-      expect({ 0, 1 }, cell::WATER_R);
-      expect({ -1, 0 }, cell::SAND);
-      runTest();
-    }
-  }
-
-  reset();
-
-  SECTION("right") {
-    SECTION("water L") {
-      set({ 0, 1 }, cell::WATER_L);
-      set({ 1, 0 }, cell::SAND);
-      expect({ 0, 1 }, cell::WATER_L);
-      expect({ 1, 0 }, cell::SAND);
-      runTest();
-    }
-
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 1 }, cell::WATER_R);
-      set({ 1, 0 }, cell::SAND);
-      expect({ 0, 1 }, cell::WATER_R);
-      expect({ 1, 0 }, cell::SAND);
-      runTest();
-    }
-  }
+  // run twice because moving diagonally happens in one direction at the time
+  runTestExpectAllSuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Sand should not move horizontaly through air") {
-  SECTION("left") {
-    set({ 0, 0 }, cell::SAND);
-    set({ -1, 0 }, cell::AIR);
-    expect({ 0, 0 }, cell::SAND);
-    expect({ -1, 0 }, cell::AIR);
-    runTest();
-  }
+TEST_CASE_METHOD(TestFixture, "AIR should not fall diagonally left through WATER_R") {
+  set({ 0, 1 }, cell::AIR);
+  set({ -1, 0, }, cell::WATER_R);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ -1, 0, }, cell::WATER_R | cell::WATER_L);
 
-  reset();
-
-  SECTION("right") {
-    set({ 0, 0 }, cell::SAND);
-    set({ 1, 0 }, cell::AIR);
-    expect({ 0, 0 }, cell::SAND);
-    expect({ 1, 0 }, cell::AIR);
-    runTest();
-  }
+  // run twice because moving diagonally happens in one direction at the time
+  runTestExpectAllSuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Water should move horizontaly through air") {
-  SECTION("left") {
-    SECTION("water L") {
-      set({ 0, 0 }, cell::WATER_L);
-      set({ -1, 0 }, cell::AIR);
-      expect({ 0, 0 }, cell::AIR);
-      expect({ -1, 0 }, cell::WATER_L);
-      runTest();
-    }
+TEST_CASE_METHOD(TestFixture, "AIR should not fall diagonally right through WATER_L") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 1, 0, }, cell::WATER_L);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 1, 0, }, cell::WATER_L | cell::WATER_R);
 
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 0 }, cell::WATER_R);
-      set({ -1, 0 }, cell::AIR);
-      expect({ 0, 0 }, cell::AIR);
-      expect({ -1, 0 }, cell::WATER_L); // After moving to left direction of water is changed
-      runTest();
-    }
-  }
-
-  reset();
-
-  SECTION("right") {
-    SECTION("water L") {
-      set({ 0, 0 }, cell::WATER_L);
-      set({ 1, 0 }, cell::AIR);
-      expect({ 0, 0 }, cell::AIR);
-      expect({ 1, 0 }, cell::WATER_R); // After moving to right direction of water is changed
-      runTest();
-    }
-
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 0 }, cell::WATER_R);
-      set({ 1, 0 }, cell::AIR);
-      expect({ 0, 0 }, cell::AIR);
-      expect({ 1, 0 }, cell::WATER_R);
-      runTest();
-    }
-  }
+  // run test twice because moving diagonally happens in one direction at the time
+  runTestExpectAllSuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Water should not move horizontaly through sand") {
-  SECTION("left") {
-    SECTION("water L") {
-      set({ 0, 0 }, cell::WATER_L);
-      set({ -1, 0 }, cell::SAND);
-      expect({ 0, 0 }, cell::WATER_L);
-      expect({ -1, 0 }, cell::SAND);
-      runTest();
-    }
+TEST_CASE_METHOD(TestFixture, "AIR should not fall diagonally right through WATER_R") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 1, 0, }, cell::WATER_R);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 1, 0, }, cell::WATER_R | cell::WATER_L);
 
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 0 }, cell::WATER_R);
-      set({ -1, 0 }, cell::SAND);
-      expect({ 0, 0 }, cell::WATER_R);
-      expect({ -1, 0 }, cell::SAND);
-      runTest();
-    }
-  }
-
-  reset();
-
-  SECTION("right") {
-    SECTION("water L") {
-      set({ 0, 0 }, cell::WATER_L);
-      set({ 1, 0 }, cell::SAND);
-      expect({ 0, 0 }, cell::WATER_L);
-      expect({ 1, 0 }, cell::SAND);
-      runTest();
-    }
-
-    reset();
-
-    SECTION("water R") {
-      set({ 0, 0 }, cell::WATER_R);
-      set({ 1, 0 }, cell::SAND);
-      expect({ 0, 0 }, cell::WATER_R);
-      expect({ 1, 0 }, cell::SAND);
-      runTest();
-    }
-  }
+  // run test twice because moving diagonally happens in one direction at the time
+  runTestExpectAllSuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Water L should flow left") {
+TEST_CASE_METHOD(TestFixture, "SAND should fall diagonally left through AIR") {
+  set({ 0, 1 }, cell::SAND);
   set({ -1, 0 }, cell::AIR);
-  set({  0, 0 }, cell::WATER_L);
-  set({  1, 0 }, cell::AIR);
-  expect({ -1, 0 }, cell::WATER_L);
-  expect({  0, 0 }, cell::AIR);
-  expect({  1, 0 }, cell::AIR);
-  runTest();
+  expect({ 0, 1 }, cell::AIR);
+  expect({ -1, 0 }, cell::SAND);
+
+  runTestExpectAnySuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Water L should flow right if left is impossible") {
+TEST_CASE_METHOD(TestFixture, "SAND should fall diagonally right through AIR") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 1, 0 }, cell::AIR);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 1, 0 }, cell::SAND);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should not fall diagonally left through WATER_L") {
+  set({  0, 1 }, cell::SAND);
   set({ -1, 0 }, cell::WATER_L);
-  set({  0, 0 }, cell::AIR);
-  set({  1, 0 }, cell::AIR);
-  expect({ -1, 0 }, cell::AIR);
-  expect({  0, 0 }, cell::WATER_R);
-  expect({  1, 0 }, cell::AIR);
-  runTest();
+  expect({  0, 1 }, cell::SAND);
+  expect({ -1, 0 }, cell::WATER_L | cell::WATER_R);
+
+  runTestExpectAllSuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Water R should flow right") {
+TEST_CASE_METHOD(TestFixture, "SAND should not fall diagonally left through WATER_R") {
+  set({  0, 1 }, cell::SAND);
+  set({ -1, 0 }, cell::WATER_R);
+  expect({  0, 1 }, cell::SAND);
+  expect({ -1, 0 }, cell::WATER_R | cell::WATER_L);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should not fall diagonally right through WATER_L") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 1, 0 }, cell::WATER_L);
+  expect({ 0, 1 }, cell::SAND);
+  expect({ 1, 0 }, cell::WATER_L | cell::WATER_R);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should not fall diagonally right through WATER_R") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 1, 0 }, cell::WATER_R);
+  expect({ 0, 1 }, cell::SAND);
+  expect({ 1, 0 }, cell::WATER_R | cell::WATER_L);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should fall diagonally left through AIR") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ -1, 0 }, cell::AIR);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ -1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should fall diagonally right through AIR") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ 1, 0 }, cell::AIR);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should fall diagonally left through AIR") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ -1, 0 }, cell::AIR);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ -1, 0 }, cell::WATER_R);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should fall diagonally right through AIR") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ 1, 0 }, cell::AIR);
+  expect({ 0, 1 }, cell::AIR);
+  expect({ 1, 0 }, cell::WATER_R);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should not fall diagonally left through SAND") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ -1, 0 }, cell::SAND);
+  expect({ 0, 1 }, cell::WATER_L | cell::WATER_R);
+  expect({ -1, 0 }, cell::SAND);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should not fall diagonally right through SAND") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ 1, 0 }, cell::SAND);
+  expect({ 0, 1 }, cell::WATER_L | cell::WATER_R);
+  expect({ 1, 0 }, cell::SAND);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should not fall diagonally left through SAND") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ -1, 0 }, cell::SAND);
+  expect({ 0, 1 }, cell::WATER_R | cell::WATER_L);
+  expect({ -1, 0 }, cell::SAND);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should not fall diagonally right through SAND") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ 1, 0 }, cell::SAND);
+  expect({ 0, 1 }, cell::WATER_R | cell::WATER_L);
+  expect({ 1, 0 }, cell::SAND);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should not move horizontally left through AIR") {
+  set({  0, 0 }, cell::SAND);
+  set({ -1, 0 }, cell::AIR);
+  expect({  0, 0 }, cell::SAND);
+  expect({ -1, 0 }, cell::AIR);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should not move horizontally right through AIR") {
+  set({ 0, 0 }, cell::SAND);
+  set({ 1, 0 }, cell::AIR);
+  expect({ 0, 0 }, cell::SAND);
+  expect({ 1, 0 }, cell::AIR);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should move horizontally left through AIR") {
+  set({  0, 0 }, cell::WATER_L);
+  set({ -1, 0 }, cell::AIR);
+  expect({  0, 0 }, cell::AIR);
+  expect({ -1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L when can't move horizontally left should change to WATER_R") {
+  set({ 0, 0 }, cell::WATER_L);
+  set({ 1, 0 }, cell::AIR);
+  expect({ 0, 0 }, cell::WATER_R);
+  expect({ 1, 0 }, cell::AIR);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R when can't move horizontally right should change to WATER_L") {
   set({ -1, 0 }, cell::AIR);
   set({  0, 0 }, cell::WATER_R);
-  set({  1, 0 }, cell::AIR);
-  expect({ -1, 0 }, cell::AIR);
-  expect({  0, 0 }, cell::AIR);
-  expect({  1, 0 }, cell::WATER_R);
-  runTest();
-}
-
-TEST_CASE_METHOD(TestFixture, "Water R should flow left if right is impossible") {
-  set({ -1, 0 }, cell::AIR);
-  set({  0, 0 }, cell::AIR);
-  set({  1, 0 }, cell::WATER_R);
   expect({ -1, 0 }, cell::AIR);
   expect({  0, 0 }, cell::WATER_L);
-  expect({  1, 0 }, cell::AIR);
-  runTest();
+
+  runTestExpectAnySuccess(2);
 }
 
-TEST_CASE_METHOD(TestFixture, "Water L and R race for center position") {
-  bool waterR = true;
-  bool waterL = true;
+TEST_CASE_METHOD(TestFixture, "WATER_R should move horizontally right through AIR") {
+  set({ 0, 0 }, cell::WATER_R);
+  set({ 1, 0 }, cell::AIR);
+  expect({ 0, 0 }, cell::AIR);
+  expect({ 1, 0 }, cell::WATER_R);
 
-  const uint32_t leftIdx = positionToIndex({ -1, 0 });
-  const uint32_t centerIdx = positionToIndex({ 0, 0 });
-  const uint32_t rightIdx = positionToIndex({ 1, 0 });
+  runTestExpectAnySuccess(2);
+}
 
-  SECTION("WATER_R moving from left to center") {
-    set({ -1, 0 }, cell::WATER_R);
-    set({  0, 0 }, cell::AIR);
-    set({  1, 0 }, cell::WATER_L);
-    expect([&waterR, leftIdx](const auto& output) {
-      waterR = waterR && (output[leftIdx] == cell::AIR);
-    });
-    expect([&waterR, centerIdx](const auto& output) {
-      waterR = waterR && (output[centerIdx] == cell::WATER_R);
-    });
-    runTest();
-  }
+TEST_CASE_METHOD(TestFixture, "WATER_L should not move horizontally left through SAND and should not move right through AIR but should change to WATER_R") {
+  set({ -1, 0 }, cell::SAND);
+  set({  0, 0 }, cell::WATER_L);
+  set({  1, 0 }, cell::AIR);
+  expect({ -1, 0 }, cell::SAND);
+  expect({  0, 0 }, cell::WATER_R);
+  expect({  1, 0 }, cell::AIR);
 
-  reset();
+  runTestExpectAnySuccess(2);
+}
 
-  SECTION("WATER_L moving from right to center") {
-    set({ -1, 0 }, cell::WATER_R);
-    set({  0, 0 }, cell::AIR);
-    set({  1, 0 }, cell::WATER_L);
-    expect([&waterL, centerIdx](const auto& output) {
-      waterL = waterL && (output[centerIdx] == cell::WATER_L);
-    });
-    expect([&waterL, rightIdx](const auto& output) {
-      waterL = waterL && (output[rightIdx] == cell::AIR);
-    });
-  }
+TEST_CASE_METHOD(TestFixture, "WATER_R should not move horizontally right through SAND and should not move left through AIR but should change to WATER_L") {
+  set({ -1, 0 }, cell::AIR);
+  set({  0, 0 }, cell::WATER_R);
+  set({  1, 0 }, cell::SAND);
+  expect({ -1, 0 }, cell::AIR);
+  expect({  0, 0 }, cell::WATER_L);
+  expect({  1, 0 }, cell::SAND);
 
-  bool testSuccessful = waterR || waterL;
+  runTestExpectAnySuccess(2);
+}
 
-  REQUIRE(testSuccessful);
+TEST_CASE_METHOD(TestFixture, "WATER_L and WATER_R race for center position") {
+  set({ -1, 0 }, cell::WATER_R);
+  set({  0, 0 }, cell::AIR);
+  set({  1, 0 }, cell::WATER_L);
+  expect({ -1, 0 }, cell::WATER_R);
+  expect({  0, 0 }, cell::WATER_L);
+  expect({  1, 0 }, cell::AIR);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R and WATER_L race for center position") {
+  set({ -1, 0 }, cell::WATER_R);
+  set({  0, 0 }, cell::AIR);
+  set({  1, 0 }, cell::WATER_L);
+  expect({ -1, 0 }, cell::AIR);
+  expect({  0, 0 }, cell::WATER_R);
+  expect({  1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should move horizontally through WATER_R") {
+  set({ -1, 0 }, cell::WATER_R);
+  set({  0, 0 }, cell::WATER_L);
+  expect({ -1, 0 }, cell::WATER_L);
+  expect({  0, 0 }, cell::WATER_R);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should move horizontally through WATER_L") {
+  set({ 0, 0 }, cell::WATER_R);
+  set({ 1, 0 }, cell::WATER_L);
+  set({ 0, 0 }, cell::WATER_L);
+  set({ 1, 0 }, cell::WATER_R);
+
+  runTestExpectAllSuccess(2);
 }
