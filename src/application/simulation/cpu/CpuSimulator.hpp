@@ -2,6 +2,7 @@
 #define APPLICATION_SIMULATION_CPU_CPU_SIMULATOR_HPP
 
 #include "engine/error/Error.hpp"
+#include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
 #include <cstdint>
 #include <expected>
@@ -33,7 +34,7 @@ public:
   auto run(
     const std::vector<uint8_t>& bufferIn,
     std::vector<uint8_t>& bufferOut
-  ) const -> void;
+  ) -> void;
 
 private:
   CpuSimulator(
@@ -43,6 +44,15 @@ private:
 
   engine::Size2D<uint32_t> m_size;
   engine::Size2D<uint32_t> m_sizeWithPadding;
+
+  int32_t m_priorityDirection;
+
+  auto canMoveCell(
+    const std::vector<uint8_t>& bufferIn,
+    uint32_t cellIdx,
+    engine::Position2D<int32_t> direction,
+    const std::array<uint8_t, 5>& rules
+  ) const -> bool;
 };
 
 #endif
