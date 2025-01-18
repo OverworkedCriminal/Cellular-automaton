@@ -30,7 +30,7 @@ static constexpr array<uint8_t, 5> MOVE_DOWN_DIAG_RULES = {
   0b00000010  // WATER_R
 };
 
-static constexpr array<uint8_t, 5> MOVE_HORIZONTALY_RULES = {
+static constexpr array<uint8_t, 5> MOVE_HORIZONTALLY_RULES = {
   0b00000000, // PADDING
   0b00000000, // AIR
   0b00000000, // SAND
@@ -38,7 +38,7 @@ static constexpr array<uint8_t, 5> MOVE_HORIZONTALY_RULES = {
   0b00001010  // WATER_R
 };
 
-static constexpr array<int32_t, 5> MOVE_HORIZONTALY_DIRECTIONS = {
+static constexpr array<int32_t, 5> MOVE_HORIZONTALLY_DIRECTIONS = {
    0, // PADDING
    0, // AIR
    0, // SAND
@@ -46,7 +46,7 @@ static constexpr array<int32_t, 5> MOVE_HORIZONTALY_DIRECTIONS = {
    1  // WATER_R
 };
 
-static constexpr array<int32_t, 5> MOVE_HORIZONTALY_OPPOSITE_CELL = {
+static constexpr array<int32_t, 5> MOVE_HORIZONTALLY_OPPOSITE_CELL = {
   cell::PADDING, // PADDING
   cell::AIR,     // AIR
   cell::SAND,    // SAND
@@ -138,15 +138,15 @@ auto CpuSimulator::run(
         }
       }
 
-      { // MOVE_HORIZONTALY
+      { // MOVE_HORIZONTALLY
         { // MOVE IN
           const uint32_t otherIdx = idx - m_priorityDirection;
           const uint32_t otherRuleIdx = log2(bufferIn[otherIdx]);
-          const int32_t otherDirection = MOVE_HORIZONTALY_DIRECTIONS[otherRuleIdx];
+          const int32_t otherDirection = MOVE_HORIZONTALLY_DIRECTIONS[otherRuleIdx];
 
           if (
             otherDirection == m_priorityDirection &&
-            canMoveCell(bufferIn, otherIdx, { m_priorityDirection, 0 }, MOVE_HORIZONTALY_RULES) &&
+            canMoveCell(bufferIn, otherIdx, { m_priorityDirection, 0 }, MOVE_HORIZONTALLY_RULES) &&
             !canMoveCell(bufferIn, otherIdx, { 0, -1 }, MOVE_DOWN_RULES) &&
             !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, MOVE_DOWN_RULES) &&
             !canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, MOVE_DOWN_DIAG_RULES) &&
@@ -157,11 +157,11 @@ auto CpuSimulator::run(
           }
         }
         { // MOVE OUT
-          const int32_t direction = MOVE_HORIZONTALY_DIRECTIONS[ruleIdx];
+          const int32_t direction = MOVE_HORIZONTALLY_DIRECTIONS[ruleIdx];
           const uint32_t otherIdx = idx + m_priorityDirection;
           if (direction == m_priorityDirection) {
             if (
-              canMoveCell(bufferIn, idx, { m_priorityDirection, 0 }, MOVE_HORIZONTALY_RULES) &&
+              canMoveCell(bufferIn, idx, { m_priorityDirection, 0 }, MOVE_HORIZONTALLY_RULES) &&
               !canMoveCell(bufferIn, otherIdx, { 0, -1 }, MOVE_DOWN_RULES) &&
               !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, MOVE_DOWN_RULES) &&
               !canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, MOVE_DOWN_DIAG_RULES) &&
@@ -169,7 +169,7 @@ auto CpuSimulator::run(
             ) {
               bufferOut[idx] = bufferIn[otherIdx];
             } else {
-              bufferOut[idx] = MOVE_HORIZONTALY_OPPOSITE_CELL[ruleIdx];
+              bufferOut[idx] = MOVE_HORIZONTALLY_OPPOSITE_CELL[ruleIdx];
             }
             continue;
           }
