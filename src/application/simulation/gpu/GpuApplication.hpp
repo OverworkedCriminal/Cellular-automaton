@@ -3,10 +3,10 @@
 
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/ApplicationPainting.hpp"
+#include "application/simulation/gpu/GpuSimulator.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/error/Error.hpp"
-#include "engine/graphics/shader/Program.hpp"
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/graphics/texture/Texture.hpp"
 #include <expected>
@@ -43,11 +43,10 @@ private:
   engine::Size2D<uint32_t> m_size;
   std::vector<uint8_t> m_buffer;
 
-  std::optional<engine::Program> m_simulationProgram;
+  std::optional<GpuSimulator> m_simulator;
+
   std::optional<engine::ShaderStorageBuffer> m_inputSSBO;
   std::optional<engine::ShaderStorageBuffer> m_outputSSBO;
-  int m_computeSpaceX;
-  int m_computeSpaceY;
 
   std::optional<engine::Texture> m_drawingTexture;
   std::optional<TextureDrawingProgram> m_drawingProgram;
