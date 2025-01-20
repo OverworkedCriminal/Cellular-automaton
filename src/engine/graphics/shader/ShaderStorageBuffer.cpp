@@ -12,7 +12,7 @@ auto ShaderStorageBuffer::create(
   }
 
   // makes sure size is multiple of 4
-  const GLsizeiptr effectiveSize = size + size % 4;
+  const GLsizeiptr effectiveSize = size + (4 * ((size % 4) > 0) - size % 4);
 
   GLuint ssbo;
   glCreateBuffers(1, &ssbo);
