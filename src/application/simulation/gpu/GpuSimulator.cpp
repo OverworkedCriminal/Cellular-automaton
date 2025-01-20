@@ -62,7 +62,7 @@ auto GpuSimulator::create(
     std::cerr << "failed to set uniform simulationTexture\n\t" << uniformResult.error() << '\n';
   }
 
-  return GpuSimulator(std::move(*program),size);
+  return GpuSimulator(std::move(*program), size);
 }
 
 GpuSimulator::GpuSimulator(Program&& program, Size2D<GLuint> computeSpace)

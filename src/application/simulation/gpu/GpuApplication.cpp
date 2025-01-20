@@ -4,11 +4,10 @@
 #include "application/painting/PaintingCanvasDescription.hpp"
 #include "application/simulation/cell.hpp"
 #include "application/simulation/gpu/GpuSimulator.hpp"
+#include "application/simulation/gpu/utils.hpp"
 #include "application/simulation/padding.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/error/Error.hpp"
-#include "engine/graphics/shader/Program.hpp"
-#include "engine/graphics/shader/Shader.hpp"
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/graphics/texture/Texture.hpp"
 #include "engine/input/binding/MouseButton.hpp"
@@ -18,57 +17,6 @@
 using engine::error;
 using engine::EngineContext;
 using engine::input::MouseButton;
-
-static auto isGpuBigEndian() -> std::expected<bool, engine::Error> {
-  auto shaderResult = engine::Shader::create_from_file(GL_COMPUTE_SHADER, "shaders/endianess.compute.glsl");
-  if (!shaderResult.has_value()) {
-    return std::unexpected(error("failed to create endianess shader", shaderResult.error()));
-  }
-  engine::Shader& shader = *shaderResult;
-
-  const std::vector<engine::Shader*> shaders = { &shader };
-  auto programResult = engine::Program::create(shaders);
-  if (!programResult.has_value()) {
-    return std::unexpected(error("failed to create endianess program", programResult.error()));
-  }
-  engine::Program& program = *programResult;
-
-  auto useProgramResult = program.useProgram();
-  if (!useProgramResult.has_value()) {
-    return std::unexpected(error("failed to use endianess program", useProgramResult.error()));
-  }
-
-  constexpr auto SHADER_BUFFER_SIZE = 4;
-  auto shaderBufferResult = engine::ShaderStorageBuffer::create(SHADER_BUFFER_SIZE);
-  if (!shaderBufferResult.has_value()) {
-    return std::unexpected(error("failed to create endianess shader buffer", shaderBufferResult.error()));
-  }
-  engine::ShaderStorageBuffer& shaderBuffer = *shaderBufferResult;
-  
-  auto bindBufferResult = shaderBuffer.bindBufferBase(0);
-  if (!bindBufferResult.has_value()) {
-    return std::unexpected(error("failed to bind endianess shader buffer", bindBufferResult.error()));
-  }
-
-  std::vector<uint8_t> shaderBufferBytes(SHADER_BUFFER_SIZE, 0);
-  shaderBuffer.store(shaderBufferBytes);
-
-  // start compute shader
-  glDispatchCompute(1, 1, 1);
-
-  // wait for compute shader to finish
-  glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-  shaderBuffer.load(shaderBufferBytes);
-
-  // Shader stores value 1 to shaderBuffer on 4 bytes.
-  // If GPU uses little endian value 1 should be at byteIdx 0
-  // If GPU uses big endian value 1 should be at byteIdx 3
-  uint8_t byte = shaderBufferBytes[3];
-  bool isBigEndian = byte == 1;
-
-  return isBigEndian;
-}
 
 auto GpuApplication::create(
   int width,

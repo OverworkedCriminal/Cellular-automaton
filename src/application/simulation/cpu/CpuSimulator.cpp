@@ -89,15 +89,13 @@ auto CpuSimulator::run(
 
   const int32_t UP = m_sizeWithPadding.width;
   const int32_t DOWN = -m_sizeWithPadding.width;
-  const int32_t LEFT = -1;
-  const int32_t RIGHT = 1;
-
+  
   for (uint32_t row = 0; row < m_size.height; ++row) {
     for (uint32_t col = 0; col < m_size.width; ++col) {
       const uint32_t idx = (row + PADDING_SIZE) * m_sizeWithPadding.width + col + PADDING_SIZE;
       const uint32_t ruleIdx = log2(bufferIn[idx]);
 
-      { // MOVE_VERTICALY
+      { // MOVE_VERTICALLY
         { // MOVE IN
           const uint32_t otherIdx = idx + UP;
           if (canMoveCell(bufferIn, otherIdx, { 0, -1 }, MOVE_DOWN_RULES)) {
