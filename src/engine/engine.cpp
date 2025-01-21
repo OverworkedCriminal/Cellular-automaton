@@ -112,39 +112,6 @@ static auto destroyGLFW() -> void {
   glfwTerminate();
 }
 
-auto runApplication(
-  GLFWwindow* window,
-  EngineContext& engineContext,
-  std::unique_ptr<IApplication> applicationPtr
-) -> std::expected<void, Error> {
-  std::expected<void, Error> result;
-
-  result = applicationPtr->onCreate(engineContext);
-  if (!result.has_value()) {
-    return std::unexpected(error("application on create failed", result.error()));
-  }
-
-  while(!glfwWindowShouldClose(window)) {
-    reinterpret_cast<TimeSystem&>(engineContext.timeSystem).onUpdate();
-    
-    result = applicationPtr->onUpdate(engineContext);
-    if (!result.has_value()) {
-      std::cerr << "application on update failed. closing main loop\n\t" << result.error() << '\n';
-      break;
-    }
-
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-  }
-
-  result = applicationPtr->onDestroy(engineContext);
-  if (!result.has_value()) {
-    return std::unexpected(error("application on destroy failed", result.error()));
-  }
-
-  return {};
-}
-
 auto run(
   const Config& config,
   std::unique_ptr<IApplication> applicationPtr
@@ -157,12 +124,12 @@ auto run(
   auto inputSystem = InputSystem::create(*window);
   auto windowSystem = WindowSystem::create(*window);
   auto timeSystem = TimeSystem::create();
+
   auto engineContext = EngineContext {
     .inputSystem = inputSystem,
     .windowSystem = windowSystem,
     .timeSystem = timeSystem
   };
-
   auto glfwWindowContext = GlfwWindowContext {
     .inputSystem = inputSystem,
     .windowSystem = windowSystem
@@ -172,15 +139,37 @@ auto run(
   glfwSetWindowUserPointer(*window, &glfwWindowContext);
 
   // Run application
-  auto runApplicationResult = runApplication(
-    *window,
-    engineContext,
-    std::move(applicationPtr)
-  );
+  std::expected<void, Error> result;
 
+  result = applicationPtr->onCreate(engineContext);
+  if (!result.has_value()) {
+    return std::unexpected(error("application on create failed", result.error()));
+  }
+
+  while(!glfwWindowShouldClose(*window)) {
+    timeSystem.onUpdate();
+    
+    result = applicationPtr->onUpdate(engineContext);
+    if (!result.has_value()) {
+      std::cerr << "application on update failed. closing main loop\n\t" << result.error() << '\n';
+      break;
+    }
+
+    glfwSwapBuffers(*window);
+    glfwPollEvents();
+  }
+
+  result = applicationPtr->onDestroy(engineContext);
+  if (!result.has_value()) {
+    applicationPtr = nullptr;
+    destroyGLFW();
+    return std::unexpected(error("application on destroy failed", result.error()));
+  }
+
+  applicationPtr = nullptr;
   destroyGLFW();
 
-  return runApplicationResult;
+  return {};
 }
 
 }
