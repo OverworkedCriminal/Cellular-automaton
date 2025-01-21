@@ -4,6 +4,7 @@
 #include "engine/application/IApplication.hpp"
 #include "engine/input/InputSystem.hpp"
 #include "engine/time/TimeSystem.hpp"
+#include "engine/utils/defer.hpp"
 #include "engine/utils/error.hpp"
 #include "engine/window/WindowSystem.hpp"
 #include "glad/glad.h"
@@ -120,6 +121,8 @@ auto run(
   if (!window.has_value()) {
     return std::unexpected(error("failed to init window", window.error()));
   }
+  defer(destroyGLFW());
+  defer(applicationPtr = nullptr);
 
   auto inputSystem = InputSystem::create(*window);
   auto windowSystem = WindowSystem::create(*window);
@@ -161,13 +164,8 @@ auto run(
 
   result = applicationPtr->onDestroy(engineContext);
   if (!result.has_value()) {
-    applicationPtr = nullptr;
-    destroyGLFW();
     return std::unexpected(error("application on destroy failed", result.error()));
   }
-
-  applicationPtr = nullptr;
-  destroyGLFW();
 
   return {};
 }
