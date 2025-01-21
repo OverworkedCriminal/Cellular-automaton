@@ -2,8 +2,8 @@
 #include "engine/Config.hpp"
 #include "engine/GlfwWindowContext.hpp"
 #include "engine/application/IApplication.hpp"
-#include "engine/input/IInputSystem.hpp"
 #include "engine/input/InputSystem.hpp"
+#include "engine/time/TimeSystem.hpp"
 #include "engine/utils/error.hpp"
 #include "engine/window/WindowSystem.hpp"
 #include "glad/glad.h"
@@ -14,6 +14,7 @@ namespace engine {
 
 using namespace engine::input;
 using namespace engine::window;
+using namespace engine::time;
 
 static auto keyboardCallback(
   GLFWwindow* window,
@@ -124,6 +125,8 @@ auto runApplication(
   }
 
   while(!glfwWindowShouldClose(window)) {
+    reinterpret_cast<TimeSystem&>(engineContext.timeSystem).onUpdate();
+    
     result = applicationPtr->onUpdate(engineContext);
     if (!result.has_value()) {
       std::cerr << "application on update failed. closing main loop\n\t" << result.error() << '\n';
@@ -153,9 +156,11 @@ auto run(
 
   auto inputSystem = InputSystem::create(*window);
   auto windowSystem = WindowSystem::create(*window);
+  auto timeSystem = TimeSystem::create();
   auto engineContext = EngineContext {
-    .inputSystem = dynamic_cast<IInputSystem&>(inputSystem),
-    .windowSystem = windowSystem
+    .inputSystem = inputSystem,
+    .windowSystem = windowSystem,
+    .timeSystem = timeSystem
   };
 
   auto glfwWindowContext = GlfwWindowContext {

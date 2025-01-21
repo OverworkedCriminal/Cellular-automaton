@@ -2,6 +2,7 @@
 #define ENGINE_ENGINE_CONTEXT_HPP
 
 #include "engine/input/IInputSystem.hpp"
+#include "engine/time/ITimeSystem.hpp"
 #include "engine/window/IWindowSystem.hpp"
 
 namespace engine {
@@ -9,6 +10,7 @@ namespace engine {
 struct EngineContext {
   input::IInputSystem& inputSystem;
   window::IWindowSystem& windowSystem;
+  time::ITimeSystem& timeSystem;
 };
 
 }
