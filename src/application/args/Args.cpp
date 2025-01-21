@@ -38,6 +38,7 @@ auto Args::parse(
   const char **argv
 ) -> expected<optional<Args>, Error> {
   Processor processor = Processor::CPU;
+  uint32_t processorCoreCount = 1;
   uint32_t widthWindow = 800;
   uint32_t heightWindow = 600;
   optional<uint32_t> widthSimulation;
@@ -49,7 +50,7 @@ auto Args::parse(
     if (std::strcmp(argv[i], "--help") == 0) {
       std::cout << "cellular-automaton -w <width> -h <height>\n"
                 << "\nARGS:\n"
-                << '\t' << std::left << std::setw(15) << "--cpu" << " run simulation on CPU (default)\n"
+                << '\t' << std::left << std::setw(15) << "--cpu [coreCount]" << " run simulation on CPU (default). Default coreCount is 1\n"
                 << '\t' << std::left << std::setw(15) << "--gpu" << " run simulation on GPU\n"
                 << '\t' << std::left << std::setw(15) << "-w, --width" << " simulation width\n"
                 << '\t' << std::left << std::setw(15) << "-h, --height" << " simulation height\n"
@@ -61,6 +62,14 @@ auto Args::parse(
 
     if (std::strcmp(argv[i], "--cpu") == 0) {
       processor = Processor::CPU;
+      auto coreCount = parseIntValue(argc, argv, i + 1);
+      if (coreCount.has_value()) {
+        if (*coreCount <= 0) {
+          return unexpected(error("invalid cpu's coreCount"));
+        }
+        processorCoreCount = *coreCount;
+        i += 1;
+      }
       continue;
     }
     if (std::strcmp(argv[i], "--gpu") == 0) {
