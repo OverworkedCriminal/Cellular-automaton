@@ -22,6 +22,7 @@ struct Args {
   ) -> std::expected<std::optional<Args>, engine::Error>;
 
   Processor processor;
+  uint32_t processorCoreCount;
   uint32_t widthSimulation;
   uint32_t heightSimulation;
   uint32_t widthWindow;

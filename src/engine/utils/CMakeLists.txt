@@ -6,3 +6,4 @@ target_sources(
 )
 
 add_subdirectory(dto)
+add_subdirectory(thread_pool)
