@@ -17,16 +17,20 @@ using engine::input::MouseButton;
 
 auto CpuApplication::create(
   int width,
-  int height
+  int height,
+  uint32_t processorsCount
 ) -> std::expected<CpuApplication, engine::Error> {
   if (width <= PADDING_SIZE * 2 || height <= PADDING_SIZE * 2) {
     return std::unexpected(error("too small simulation dimensions"));
   }
 
-  auto simulator = CpuSimulator::create({
-    .width = width - 2 * PADDING_SIZE,
-    .height = height - 2 * PADDING_SIZE
-  });
+  auto simulator = CpuSimulator::create(
+    {
+      .width = width - 2 * PADDING_SIZE,
+      .height = height - 2 * PADDING_SIZE
+    },
+    processorsCount
+  );
   if (!simulator.has_value()) {
     return std::unexpected(error("failed to create simulator", simulator.error()));
   }

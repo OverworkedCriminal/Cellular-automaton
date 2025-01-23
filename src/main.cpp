@@ -29,7 +29,11 @@ int main(int argc, const char** argv) {
   std::unique_ptr<engine::IApplication> applicationPtr;
   switch (args.processor) {
     case Processor::CPU: {
-      auto applicationResult = CpuApplication::create(args.widthSimulation, args.heightSimulation);
+      auto applicationResult = CpuApplication::create(
+        args.widthSimulation,
+        args.heightSimulation,
+        args.processorCoreCount
+      );
       if (!applicationResult.has_value()) {
         std::cerr << "CpuApplication creation failed:\n\t" << applicationResult.error() << '\n';
         return -1;
