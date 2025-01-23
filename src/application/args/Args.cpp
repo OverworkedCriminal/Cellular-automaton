@@ -127,6 +127,7 @@ auto Args::parse(
 
   return Args {
     .processor = processor,
+    .processorCoreCount = processorCoreCount,
     .widthSimulation = *widthSimulation,
     .heightSimulation = *heightSimulation,
     .widthWindow = widthWindow,
