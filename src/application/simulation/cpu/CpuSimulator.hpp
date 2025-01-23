@@ -4,6 +4,7 @@
 #include "engine/error/Error.hpp"
 #include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
+#include "engine/utils/thread_pool/ThreadPool.hpp"
 #include <cstdint>
 #include <expected>
 #include <vector>
@@ -18,12 +19,16 @@ public:
    * @brief Class constructor
    * 
    * @param size (does not include padding)
+   * @param processorsCount (enables parallelism)
    *
    * @return std::expected<CpuSimulator, engine::Error>
    *
-   * @throws engine::Error when width or height is less than 1
+   * @throws engine::Error when width or height is less than 1 or processorsCount is 0
    */
-  static auto create(engine::Size2D<uint32_t> size) -> std::expected<CpuSimulator, engine::Error>;
+  static auto create(
+    engine::Size2D<uint32_t> size,
+    uint32_t processorsCount = 1
+  ) -> std::expected<CpuSimulator, engine::Error>;
 
   CpuSimulator(const CpuSimulator&) = delete;
   CpuSimulator(CpuSimulator&&) = default;
@@ -38,9 +43,14 @@ public:
 
 private:
   CpuSimulator(
+    engine::ThreadPool&& threadPool,
+    engine::Size2D<float> subrangeSize,
     engine::Size2D<uint32_t> size,
     engine::Size2D<uint32_t> sizeWithPadding
   );
+
+  engine::ThreadPool m_threadPool;
+  engine::Size2D<float> m_subrangeSize;
 
   engine::Size2D<uint32_t> m_size;
   engine::Size2D<uint32_t> m_sizeWithPadding;

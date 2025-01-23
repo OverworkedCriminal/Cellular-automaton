@@ -14,7 +14,8 @@ class CpuApplication :public engine::IApplication {
 public:
   static auto create(
     int width,
-    int height
+    int height,
+    uint32_t processorsCount
   ) -> std::expected<CpuApplication, engine::Error>;
 
   CpuApplication(const CpuApplication&) = delete;
