@@ -4,6 +4,7 @@
 #include "engine/Config.hpp"
 #include "engine/application/IApplication.hpp"
 #include "engine/engine.hpp"
+#include "engine/utils/dto/Size2D.hpp"
 #include <iostream>
 #include <memory>
 
@@ -26,12 +27,16 @@ int main(int argc, const char** argv) {
     .windowHeight = static_cast<int>(args.heightWindow)
   };
 
+  const engine::Size2D<uint32_t> simulationSize = {
+    .width = args.widthSimulation,
+    .height = args.heightSimulation
+  };
+
   std::unique_ptr<engine::IApplication> applicationPtr;
   switch (args.processor) {
     case Processor::CPU: {
       auto applicationResult = CpuApplication::create(
-        args.widthSimulation,
-        args.heightSimulation,
+        simulationSize,
         args.processorCoreCount
       );
       if (!applicationResult.has_value()) {
@@ -42,7 +47,7 @@ int main(int argc, const char** argv) {
       break;
     }
     case Processor::GPU: {
-      auto applicationResult = GpuApplication::create(args.widthSimulation, args.heightSimulation);
+      auto applicationResult = GpuApplication::create(simulationSize);
       if (!applicationResult.has_value()) {
         std::cerr << "GpuApplication creation failed:\n\t" << applicationResult.error() << '\n';
         return -1;
