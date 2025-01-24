@@ -6,11 +6,11 @@ auto mapCellsToColors(
   const std::vector<uint8_t>& inCells,
   std::vector<float>& outColors
 ) -> void {
-  for (int idx = 0; idx < inCells.size(); ++idx) {
-    const int colorIdx = std::log2(inCells[idx]);
-    const auto& color = COLORS[colorIdx];
+  for (uint32_t idx = 0; idx < inCells.size(); ++idx) {
+    const uint32_t colorIdx = std::log2(inCells[idx]);
+    const Color& color = COLORS[colorIdx];
 
-    for (int colorComponentIdx = 0; colorComponentIdx < 4; ++colorComponentIdx) {
+    for (uint32_t colorComponentIdx = 0; colorComponentIdx < 4; ++colorComponentIdx) {
       outColors[idx * 4 + colorComponentIdx] = color.component[colorComponentIdx];
     }
   }

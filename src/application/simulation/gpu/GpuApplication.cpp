@@ -106,9 +106,9 @@ auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, Erro
 
   m_buffer = std::vector<uint8_t>(width * height * 4, 0);
 
-  for (int row = 0; row < height; ++row) {
-    for (int col = 0; col < width; ++col) {
-      int idx = (row * width + col) * stride + offset;
+  for (uint32_t row = 0; row < height; ++row) {
+    for (uint32_t col = 0; col < width; ++col) {
+      uint32_t idx = (row * width + col) * stride + offset;
       if (row < PADDING_SIZE || row >= width - PADDING_SIZE || col < PADDING_SIZE || col >= width - PADDING_SIZE) {
         m_buffer[idx] = cell::PADDING;
       } else {

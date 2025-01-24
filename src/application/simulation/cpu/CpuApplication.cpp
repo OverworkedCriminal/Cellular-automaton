@@ -109,9 +109,9 @@ auto CpuApplication::initSimulation() -> void {
 
   m_bufferIn = std::vector<uint8_t>(width * height, cell::PADDING);
   m_bufferOut = std::vector<uint8_t>(width * height, cell::PADDING);
-  for (int row = PADDING_SIZE; row < height - PADDING_SIZE; ++row) {
-    for (int col = PADDING_SIZE; col < width - PADDING_SIZE; ++col) {
-      const int idx = row * width + col;
+  for (uint32_t row = PADDING_SIZE; row < height - PADDING_SIZE; ++row) {
+    for (uint32_t col = PADDING_SIZE; col < width - PADDING_SIZE; ++col) {
+      const uint32_t idx = row * width + col;
       m_bufferIn[idx] = cell::AIR;
       m_bufferOut[idx] = cell::AIR;
     }

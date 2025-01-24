@@ -47,12 +47,12 @@ InputSystem::InputSystem(GLFWwindow *window)
 {}
 
 auto InputSystem::isKeyboardKeyPressed(KeyboardKey key) const -> bool {
-  int state = glfwGetKey(m_window, static_cast<int>(key));
+  const auto state = glfwGetKey(m_window, static_cast<int>(key));
   return state == GLFW_PRESS;
 }
 
 auto InputSystem::isMouseButtonPressed(MouseButton button) const -> bool {
-  int state = glfwGetMouseButton(m_window, static_cast<int>(button));
+  const auto state = glfwGetMouseButton(m_window, static_cast<int>(button));
   return state == GLFW_PRESS;
 }
 
