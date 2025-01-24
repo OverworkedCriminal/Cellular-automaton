@@ -12,9 +12,16 @@
 
 class CpuApplication :public engine::IApplication {
 public:
+
+  /**
+   * @brief Application constructor
+   * 
+   * @param size (does not include padding)
+   * @param processorsCount 
+   * @return std::expected<CpuApplication, engine::Error> 
+   */
   static auto create(
-    int width,
-    int height,
+    engine::Size2D<uint32_t> size,
     uint32_t processorsCount
   ) -> std::expected<CpuApplication, engine::Error>;
 
@@ -30,8 +37,7 @@ public:
 private:
   CpuApplication(
     CpuSimulator&& simulator,
-    uint32_t width,
-    uint32_t height
+    engine::Size2D<uint32_t> sizeWithPadding
   );
 
   auto initDrawing() -> std::expected<void, engine::Error>;
@@ -40,10 +46,7 @@ private:
 
   auto paint(const engine::EngineContext& context) -> void;
 
-  /**
-   * @brief includes padding
-   */
-  engine::Size2D<uint32_t> m_size;
+  engine::Size2D<uint32_t> m_sizeWithPadding;
   CpuSimulator m_simulator;
 
   std::vector<uint8_t> m_bufferIn;

@@ -19,21 +19,22 @@ using engine::EngineContext;
 using engine::input::MouseButton;
 
 auto GpuApplication::create(
-  int width,
-  int height
+  engine::Size2D<uint32_t> size
 ) -> std::expected<GpuApplication, engine::Error> {
-  if (width <= PADDING_SIZE * 2 || height <= PADDING_SIZE * 2) {
+  if (size.width < 1 || size.height < 1) {
     return std::unexpected(error("dimensions to small"));
   }
 
-  return GpuApplication(width, height);
+  const engine::Size2D<uint32_t> sizeWithPadding = {
+    .width = size.width + 2 * PADDING_SIZE,
+    .height = size.height + 2 * PADDING_SIZE
+  };
+
+  return GpuApplication(sizeWithPadding);
 }
 
-GpuApplication::GpuApplication(uint32_t width, uint32_t height)
-  :m_size({
-    .width = width,
-    .height = height
-  })
+GpuApplication::GpuApplication(engine::Size2D<uint32_t> sizeWithPadding)
+  :m_sizeWithPadding(sizeWithPadding)
 {}
 
 auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, engine::Error> {
@@ -95,7 +96,7 @@ auto GpuApplication::onUpdate(EngineContext& context) -> std::expected<void, eng
 }
 
 auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, engine::Error> {
-  const auto [width, height] = m_size;
+  const auto [width, height] = m_sizeWithPadding;
   const uint32_t offset = 3 * isGpuBigEndian;
   const uint32_t stride = 4;
 
@@ -117,15 +118,15 @@ auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, engi
 
 auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
   auto simulatorResult = GpuSimulator::create({
-    .width = m_size.width - 2 * PADDING_SIZE,
-    .height = m_size.height - 2 * PADDING_SIZE
+    .width = m_sizeWithPadding.width - 2 * PADDING_SIZE,
+    .height = m_sizeWithPadding.height - 2 * PADDING_SIZE
   });
   if (!simulatorResult.has_value()) {
     return std::unexpected(error("failed to create GpuSimulator", simulatorResult.error()));
   }
   m_simulator = std::move(*simulatorResult);
 
-  const auto [width, height] = m_size;
+  const auto [width, height] = m_sizeWithPadding;
 
   auto inputSSBO = engine::ShaderStorageBuffer::create(width * height * 4);
   if (!inputSSBO.has_value()) {
@@ -145,7 +146,7 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
 }
 
 auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
-  const auto [width, height] = m_size;
+  const auto [width, height] = m_sizeWithPadding;
 
   auto texture = engine::Texture::create(width, height);
   if (!texture.has_value()) {
@@ -167,7 +168,7 @@ auto GpuApplication::initPainting(
   bool isGpuBigEndian
 ) -> void {
   PaintingCanvasDescription canvasDescription = {
-    .size = m_size,
+    .size = m_sizeWithPadding,
     .paddingSize = PADDING_SIZE,
     .valueOffset = static_cast<uint8_t>(3 * isGpuBigEndian),
     .valueStride = 4

@@ -16,34 +16,31 @@ using engine::error;
 using engine::input::MouseButton;
 
 auto CpuApplication::create(
-  int width,
-  int height,
+  engine::Size2D<uint32_t> size,
   uint32_t processorsCount
 ) -> std::expected<CpuApplication, engine::Error> {
-  if (width <= PADDING_SIZE * 2 || height <= PADDING_SIZE * 2) {
+  if (size.width < 1 || size.height < 1) {
     return std::unexpected(error("too small simulation dimensions"));
   }
 
-  auto simulator = CpuSimulator::create(
-    {
-      .width = width - 2 * PADDING_SIZE,
-      .height = height - 2 * PADDING_SIZE
-    },
-    processorsCount
-  );
+  auto simulator = CpuSimulator::create(size, processorsCount);
   if (!simulator.has_value()) {
     return std::unexpected(error("failed to create simulator", simulator.error()));
   }
 
-  return CpuApplication(std::move(*simulator), width, height);
+  const engine::Size2D<uint32_t> sizeWithPadding = {
+    .width = size.width + 2 * PADDING_SIZE,
+    .height = size.height + 2 * PADDING_SIZE
+  };
+
+  return CpuApplication(std::move(*simulator), sizeWithPadding);
 }
 
 CpuApplication::CpuApplication(
   CpuSimulator&& simulator,
-  uint32_t width,
-  uint32_t height
+  engine::Size2D<uint32_t> sizeWithPadding
 )
-  :m_size({ .width = width, .height = height })
+  :m_sizeWithPadding(sizeWithPadding)
   ,m_simulator(std::move(simulator))
 {}
 
@@ -85,7 +82,7 @@ auto CpuApplication::onUpdate(engine::EngineContext& context) -> std::expected<v
 }
 
 auto CpuApplication::initDrawing() -> std::expected<void, engine::Error> {
-  const auto [width, height] = m_size;
+  const auto [width, height] = m_sizeWithPadding;
 
   auto texture = engine::Texture::create(width, height);
   if (!texture.has_value()) {
@@ -103,7 +100,7 @@ auto CpuApplication::initDrawing() -> std::expected<void, engine::Error> {
 }
 
 auto CpuApplication::initSimulation() -> void {
-  const auto [width, height] = m_size;
+  const auto [width, height] = m_sizeWithPadding;
 
   m_bufferIn = std::vector<uint8_t>(width * height, cell::PADDING);
   m_bufferOut = std::vector<uint8_t>(width * height, cell::PADDING);
@@ -122,7 +119,7 @@ auto CpuApplication::initPainting(engine::EngineContext& context) -> void {
   m_applicationPainting = ApplicationPainting::create(
     context,
     {
-      .size = m_size,
+      .size = m_sizeWithPadding,
       .paddingSize = PADDING_SIZE,
       .valueOffset = 0,
       .valueStride = 1

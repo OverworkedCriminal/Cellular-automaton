@@ -9,13 +9,20 @@
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/graphics/texture/Texture.hpp"
+#include "engine/utils/dto/Size2D.hpp"
 #include <expected>
 
 class GpuApplication :public engine::IApplication {
 public:
+
+  /**
+   * @brief Application constructor
+   * 
+   * @param size (does not include padding)
+   * @return std::expected<GpuApplication, engine::Error> 
+   */
   static auto create(
-    int width,
-    int height
+    engine::Size2D<uint32_t> size
   ) -> std::expected<GpuApplication, engine::Error>;
 
   GpuApplication(const GpuApplication&) = delete;
@@ -28,7 +35,7 @@ public:
   auto onUpdate(engine::EngineContext& context) -> std::expected<void, engine::Error> override;
 
 private:
-  GpuApplication(uint32_t width, uint32_t height);
+  GpuApplication(engine::Size2D<uint32_t> sizeWithPadding);
 
   auto initBuffer(bool isGpuBigEndian) -> std::expected<void, engine::Error>;
   auto initSimulation() -> std::expected<void, engine::Error>;
@@ -37,10 +44,7 @@ private:
 
   auto paint(const engine::EngineContext& context) -> void;
 
-  /**
-   * @brief includes padding
-   */
-  engine::Size2D<uint32_t> m_size;
+  engine::Size2D<uint32_t> m_sizeWithPadding;
   std::vector<uint8_t> m_buffer;
 
   std::optional<GpuSimulator> m_simulator;
