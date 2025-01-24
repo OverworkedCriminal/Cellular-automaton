@@ -5,6 +5,8 @@
 #include <cassert>
 #include <cstdint>
 
+using engine::Position2D;
+
 namespace engine::input {
 
 /**

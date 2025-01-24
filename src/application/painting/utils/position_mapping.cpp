@@ -1,10 +1,13 @@
 #include "application/painting/utils/position_mapping.hpp"
 
+using engine::Position2D;
+using engine::Size2D;
+
 auto mapWindowPositionToSimulationPosition(
-  engine::Position2D<uint32_t> windowPosition,
-  engine::Size2D<uint32_t> framebufferSize,
-  engine::Size2D<uint32_t> simulationSize
-) -> engine::Position2D<uint32_t> {
+  Position2D<uint32_t> windowPosition,
+  Size2D<uint32_t> framebufferSize,
+  Size2D<uint32_t> simulationSize
+) -> Position2D<uint32_t> {
   const auto [posX, posY] = windowPosition;
   const auto [framebufferWidth, framebufferHeight] = framebufferSize;
   const auto [simulationWidth, simulationHeight] = simulationSize;
@@ -22,7 +25,7 @@ auto mapWindowPositionToSimulationPosition(
 }
 
 auto mapSimulationPositionToCanvasIndex(
-  engine::Position2D<uint32_t> position,
+  Position2D<uint32_t> position,
   const PaintingCanvasDescription& canvasDescription
 ) -> uint32_t {
   const auto [size, paddingSize, valueOffset, valueStride] = canvasDescription;

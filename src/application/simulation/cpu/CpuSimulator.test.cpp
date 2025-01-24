@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <vector>
 
-using std::vector;
 using engine::Position2D;
 
 TEST_CASE("Invalid width", "[constructor]") {
@@ -90,10 +89,10 @@ protected:
   }
 
   auto runTestExpectAnySuccess(uint32_t tries = 1) -> void {
-    vector<vector<Error>> allErrors;
+    std::vector<std::vector<Error>> allErrors;
 
     for (uint32_t i = 0; i < tries; ++i) {
-      vector<Error> errors = runTest();
+      std::vector<Error> errors = runTest();
       if (errors.empty()) {
         SUCCEED("All expectations matched");
         return;
@@ -112,7 +111,7 @@ protected:
     for (uint32_t i = 0; i < tries; ++i) {
       INFO("Try " << i);
 
-      vector<Error> errors = runTest();
+      std::vector<Error> errors = runTest();
       CHECK(errors.empty());
 
       checkErrors(errors);
@@ -123,9 +122,9 @@ private:
   CpuSimulator simulator;
   PaintingCanvasDescription canvasDescription;
 
-  vector<uint8_t> input;
-  vector<uint8_t> output;
-  vector<Expectation> expectations;
+  std::vector<uint8_t> input;
+  std::vector<uint8_t> output;
+  std::vector<Expectation> expectations;
 
   /**
    * @brief Resets input and output to default state
@@ -156,8 +155,8 @@ private:
     return idx;
   }
 
-  auto runTest() -> vector<Error> {
-    vector<Error> errors;
+  auto runTest() -> std::vector<Error> {
+    std::vector<Error> errors;
 
     resetBuffer(output);
 
@@ -177,7 +176,7 @@ private:
     return errors;
   }
 
-  auto checkErrors(const vector<Error>& errors) -> void {
+  auto checkErrors(const std::vector<Error>& errors) -> void {
     for (const auto& [position, cell, expectedMask] : errors) {
       INFO("Position { x = " << position.x << ", y = " << position.y << " }");
       INFO("Expected mask " << std::bitset<8>(expectedMask));

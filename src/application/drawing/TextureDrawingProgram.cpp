@@ -7,13 +7,20 @@
 #include "engine/utils/error.hpp"
 #include <vector>
 
+using engine::Error;
 using engine::error;
 using engine::errorGL;
+using engine::VertexArray;
+using engine::VaoAttribute;
+using engine::VertexBuffer;
+using engine::Program;
+using engine::Texture;
+using engine::Shader;
 
 constexpr int DRAWING_PROGRAM_TEXTURE_UNIT = 0;
 
-auto createVao() -> std::expected<engine::VertexArray, engine::Error> {
-  const std::vector<engine::VaoAttribute> vaoAttributes = {
+auto createVao() -> std::expected<VertexArray, Error> {
+  const std::vector<VaoAttribute> vaoAttributes = {
     {
       .size = 2,
       .type = GL_FLOAT,
@@ -26,10 +33,10 @@ auto createVao() -> std::expected<engine::VertexArray, engine::Error> {
     }
   };
 
-  return engine::VertexArray::create(vaoAttributes);
+  return VertexArray::create(vaoAttributes);
 }
 
-auto createVbo() -> std::expected<engine::VertexBuffer, engine::Error> {
+auto createVbo() -> std::expected<VertexBuffer, Error> {
   const std::vector<GLfloat> vboData = {
     //   POS        TEX_POS
     -1.0f,  1.0f, 0.0f, 1.0f,
@@ -38,14 +45,14 @@ auto createVbo() -> std::expected<engine::VertexBuffer, engine::Error> {
      1.0f,  1.0f, 1.0f, 1.0f
   };
 
-  return engine::VertexBuffer::create(vboData);
+  return VertexBuffer::create(vboData);
 }
 
 auto bindVbo(
-  engine::VertexArray& vao,
-  engine::VertexBuffer& vbo
-) -> std::expected<void, engine::Error> {
-  std::expected<void, engine::Error> bindResult;
+  VertexArray& vao,
+  VertexBuffer& vbo
+) -> std::expected<void, Error> {
+  std::expected<void, Error> bindResult;
   bindResult = vao.bindBuffer(0, vbo, 0 * sizeof(GLfloat), 4 * sizeof(GLfloat));
   if (!bindResult.has_value()) {
     return std::unexpected(error("failed to bind position data", bindResult.error()));
@@ -58,19 +65,19 @@ auto bindVbo(
   return {};
 }
 
-auto createProgram() -> std::expected<engine::Program, engine::Error> {
-  auto vertexShader = engine::Shader::create_from_file(GL_VERTEX_SHADER, "shaders/texture.vertex.glsl");
+auto createProgram() -> std::expected<Program, Error> {
+  auto vertexShader = Shader::create_from_file(GL_VERTEX_SHADER, "shaders/texture.vertex.glsl");
   if (!vertexShader.has_value()) {
     return std::unexpected(error("failed to create vertex shader", vertexShader.error()));
   }
 
-  auto fragmentShader = engine::Shader::create_from_file(GL_FRAGMENT_SHADER, "shaders/texture.fragment.glsl");
+  auto fragmentShader = Shader::create_from_file(GL_FRAGMENT_SHADER, "shaders/texture.fragment.glsl");
   if (!fragmentShader.has_value()) {
     return std::unexpected(error("failed to create fragment shader", fragmentShader.error()));
   }
 
-  const std::vector<engine::Shader*> shaders = { &*vertexShader, &*fragmentShader };
-  auto program = engine::Program::create(shaders);
+  const std::vector<Shader*> shaders = { &*vertexShader, &*fragmentShader };
+  auto program = Program::create(shaders);
   if (!program.has_value()) {
     return std::unexpected(error("failed to create program", program.error()));
   }
@@ -88,7 +95,7 @@ auto createProgram() -> std::expected<engine::Program, engine::Error> {
   return std::move(*program);
 }
 
-auto TextureDrawingProgram::create() -> std::expected<TextureDrawingProgram, engine::Error> {
+auto TextureDrawingProgram::create() -> std::expected<TextureDrawingProgram, Error> {
   auto vbo = createVbo();
   if (!vbo.has_value()) {
     return std::unexpected(error("failed to create vbo", vbo.error()));
@@ -117,16 +124,16 @@ auto TextureDrawingProgram::create() -> std::expected<TextureDrawingProgram, eng
 }
 
 TextureDrawingProgram::TextureDrawingProgram(
-  engine::VertexArray vao,
-  engine::VertexBuffer vbo,
-  engine::Program program
+  VertexArray vao,
+  VertexBuffer vbo,
+  Program program
 )
   :m_vao(std::move(vao))
   ,m_vbo(std::move(vbo))
   ,m_program(std::move(program))
 {}
 
-auto TextureDrawingProgram::draw(engine::Texture& texture) -> std::expected<void, engine::Error> {
+auto TextureDrawingProgram::draw(Texture& texture) -> std::expected<void, Error> {
   auto useProgramResult = m_program.useProgram();
   if (!useProgramResult.has_value()) {
     return std::unexpected(error("failed to use program", useProgramResult.error()));

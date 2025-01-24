@@ -13,12 +13,17 @@
 #include <vector>
 
 using engine::error;
+using engine::Size2D;
 using engine::input::MouseButton;
+using engine::Texture;
+using engine::Error;
+using engine::EngineContext;
+using engine::error;
 
 auto CpuApplication::create(
-  engine::Size2D<uint32_t> size,
+  Size2D<uint32_t> size,
   uint32_t processorsCount
-) -> std::expected<CpuApplication, engine::Error> {
+) -> std::expected<CpuApplication, Error> {
   if (size.width < 1 || size.height < 1) {
     return std::unexpected(error("too small simulation dimensions"));
   }
@@ -28,7 +33,7 @@ auto CpuApplication::create(
     return std::unexpected(error("failed to create simulator", simulator.error()));
   }
 
-  const engine::Size2D<uint32_t> sizeWithPadding = {
+  const Size2D<uint32_t> sizeWithPadding = {
     .width = size.width + 2 * PADDING_SIZE,
     .height = size.height + 2 * PADDING_SIZE
   };
@@ -38,13 +43,13 @@ auto CpuApplication::create(
 
 CpuApplication::CpuApplication(
   CpuSimulator&& simulator,
-  engine::Size2D<uint32_t> sizeWithPadding
+  Size2D<uint32_t> sizeWithPadding
 )
   :m_sizeWithPadding(sizeWithPadding)
   ,m_simulator(std::move(simulator))
 {}
 
-auto CpuApplication::onCreate(engine::EngineContext& context) -> std::expected<void, engine::Error> {
+auto CpuApplication::onCreate(EngineContext& context) -> std::expected<void, Error> {
   auto initDrawingResult = initDrawing();
   if (!initDrawingResult.has_value()) {
     return std::unexpected(error("failed to init drawing", initDrawingResult.error()));
@@ -56,7 +61,7 @@ auto CpuApplication::onCreate(engine::EngineContext& context) -> std::expected<v
   return {};
 }
 
-auto CpuApplication::onUpdate(engine::EngineContext& context) -> std::expected<void, engine::Error> {
+auto CpuApplication::onUpdate(EngineContext& context) -> std::expected<void, Error> {
   const bool mouseLeftPressed = context.inputSystem.isMouseButtonPressed(MouseButton::LEFT);
   if (mouseLeftPressed) {
     paint(context);
@@ -81,10 +86,10 @@ auto CpuApplication::onUpdate(engine::EngineContext& context) -> std::expected<v
   return {};
 }
 
-auto CpuApplication::initDrawing() -> std::expected<void, engine::Error> {
+auto CpuApplication::initDrawing() -> std::expected<void, Error> {
   const auto [width, height] = m_sizeWithPadding;
 
-  auto texture = engine::Texture::create(width, height);
+  auto texture = Texture::create(width, height);
   if (!texture.has_value()) {
     return std::unexpected(error("failed to create texture", texture.error()));
   }
@@ -115,7 +120,7 @@ auto CpuApplication::initSimulation() -> void {
   m_textureBuffer = std::vector<GLfloat>(width * height * 4, 0.0f);
 }
 
-auto CpuApplication::initPainting(engine::EngineContext& context) -> void {
+auto CpuApplication::initPainting(EngineContext& context) -> void {
   m_applicationPainting = ApplicationPainting::create(
     context,
     {
@@ -127,6 +132,6 @@ auto CpuApplication::initPainting(engine::EngineContext& context) -> void {
   );
 }
 
-auto CpuApplication::paint(const engine::EngineContext& context) -> void {
+auto CpuApplication::paint(const EngineContext& context) -> void {
   m_applicationPainting->paint(context, m_bufferIn);
 }

@@ -15,17 +15,21 @@
 #include <ctime>
 
 using engine::error;
+using engine::Error;
 using engine::EngineContext;
 using engine::input::MouseButton;
+using engine::Size2D;
+using engine::ShaderStorageBuffer;
+using engine::Texture;
 
 auto GpuApplication::create(
-  engine::Size2D<uint32_t> size
-) -> std::expected<GpuApplication, engine::Error> {
+  Size2D<uint32_t> size
+) -> std::expected<GpuApplication, Error> {
   if (size.width < 1 || size.height < 1) {
     return std::unexpected(error("dimensions to small"));
   }
 
-  const engine::Size2D<uint32_t> sizeWithPadding = {
+  const Size2D<uint32_t> sizeWithPadding = {
     .width = size.width + 2 * PADDING_SIZE,
     .height = size.height + 2 * PADDING_SIZE
   };
@@ -33,11 +37,11 @@ auto GpuApplication::create(
   return GpuApplication(sizeWithPadding);
 }
 
-GpuApplication::GpuApplication(engine::Size2D<uint32_t> sizeWithPadding)
+GpuApplication::GpuApplication(Size2D<uint32_t> sizeWithPadding)
   :m_sizeWithPadding(sizeWithPadding)
 {}
 
-auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, engine::Error> {
+auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, Error> {
   auto& input = context.inputSystem;
   
   srand(time(NULL));
@@ -67,7 +71,7 @@ auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, eng
   return {};
 }
 
-auto GpuApplication::onUpdate(EngineContext& context) -> std::expected<void, engine::Error> {
+auto GpuApplication::onUpdate(EngineContext& context) -> std::expected<void, Error> {
   const auto& input = context.inputSystem;
 
   const bool mouseLeftPressed = input.isMouseButtonPressed(MouseButton::LEFT);
@@ -95,7 +99,7 @@ auto GpuApplication::onUpdate(EngineContext& context) -> std::expected<void, eng
   return {};
 }
 
-auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, engine::Error> {
+auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, Error> {
   const auto [width, height] = m_sizeWithPadding;
   const uint32_t offset = 3 * isGpuBigEndian;
   const uint32_t stride = 4;
@@ -116,7 +120,7 @@ auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, engi
   return {};
 }
 
-auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
+auto GpuApplication::initSimulation() -> std::expected<void, Error> {
   auto simulatorResult = GpuSimulator::create({
     .width = m_sizeWithPadding.width - 2 * PADDING_SIZE,
     .height = m_sizeWithPadding.height - 2 * PADDING_SIZE
@@ -128,14 +132,14 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
 
   const auto [width, height] = m_sizeWithPadding;
 
-  auto inputSSBO = engine::ShaderStorageBuffer::create(width * height * 4);
+  auto inputSSBO = ShaderStorageBuffer::create(width * height * 4);
   if (!inputSSBO.has_value()) {
     return std::unexpected(error("failed to create input SSBO", inputSSBO.error()));
   }
   m_inputSSBO = std::move(*inputSSBO);
   m_inputSSBO->store(m_buffer);
 
-  auto outputSSBO = engine::ShaderStorageBuffer::create(width * height * 4);
+  auto outputSSBO = ShaderStorageBuffer::create(width * height * 4);
   if (!outputSSBO.has_value()) {
     return std::unexpected(error("failed to create output SSBO", outputSSBO.error()));
   }
@@ -145,10 +149,10 @@ auto GpuApplication::initSimulation() -> std::expected<void, engine::Error> {
   return {};
 }
 
-auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
+auto GpuApplication::initDrawing() -> std::expected<void, Error> {
   const auto [width, height] = m_sizeWithPadding;
 
-  auto texture = engine::Texture::create(width, height);
+  auto texture = Texture::create(width, height);
   if (!texture.has_value()) {
     return std::unexpected(error("failed to create texture", texture.error()));
   }
@@ -164,7 +168,7 @@ auto GpuApplication::initDrawing() -> std::expected<void, engine::Error> {
 }
 
 auto GpuApplication::initPainting(
-  engine::EngineContext& context,
+  EngineContext& context,
   bool isGpuBigEndian
 ) -> void {
   PaintingCanvasDescription canvasDescription = {

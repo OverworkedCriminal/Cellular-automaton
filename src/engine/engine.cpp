@@ -13,9 +13,9 @@
 
 namespace engine {
 
-using namespace engine::input;
-using namespace engine::window;
-using namespace engine::time;
+using namespace input;
+using namespace window;
+using namespace time;
 
 static auto keyboardCallback(
   GLFWwindow* window,

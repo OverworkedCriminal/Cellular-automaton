@@ -15,7 +15,7 @@ SquarePaintingBrush::SquarePaintingBrush() {}
 
 auto SquarePaintingBrush::paint(
   const PaintingBrushDescription brushDescription,
-  const engine::Position2D<uint32_t> position,
+  const Position2D<uint32_t> position,
   const PaintingCanvasDescription& canvasDescription,
   std::vector<uint8_t>& canvas
 ) const -> void {
