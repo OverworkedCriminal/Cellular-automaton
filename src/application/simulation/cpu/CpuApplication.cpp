@@ -13,12 +13,11 @@
 #include <vector>
 
 using engine::error;
+using engine::Error;
 using engine::Size2D;
 using engine::input::MouseButton;
 using engine::Texture;
-using engine::Error;
 using engine::EngineContext;
-using engine::error;
 
 auto CpuApplication::create(
   Size2D<uint32_t> size,
