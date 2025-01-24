@@ -29,14 +29,14 @@ struct Context {
   State state;
 
   /**
-   * Arguments parsed by the parser
-   */
-  Args* args;
-
-  /**
    * Pointer to value for parsing value
    */
   uint32_t* valuePtr;
+
+  /**
+   * Arguments parsed by the parser
+   */
+  Args args;
 };
 
 static auto parseUint32(const char* str) -> expected<uint32_t, Error> {
@@ -69,35 +69,35 @@ static auto printHelp() -> void {
 
 static auto parseOption(Context& context, const char* option) -> expected<void, Error> {
   if (std::strcmp(option, "--cpu") == 0) {
-    context.args->processor = Processor::CPU;
+    context.args.processor = Processor::CPU;
     context.state = State::PARSING_OPTIONAL_VALUE;
-    context.valuePtr = &context.args->processorCoreCount;
+    context.valuePtr = &context.args.processorCoreCount;
     return {};
   }
   if (std::strcmp(option, "--gpu") == 0) {
-    context.args->processor = Processor::GPU;
+    context.args.processor = Processor::GPU;
     return {};
   }
 
   if (std::strcmp(option, "-w") == 0 || std::strcmp(option, "--width") == 0) {
     context.state = State::PARSING_VALUE;
-    context.valuePtr = &context.args->widthSimulation;
+    context.valuePtr = &context.args.widthSimulation;
     return {};
   }
   if (std::strcmp(option, "-h") == 0 || std::strcmp(option, "--height") == 0) {
     context.state = State::PARSING_VALUE;
-    context.valuePtr = &context.args->heightSimulation;
+    context.valuePtr = &context.args.heightSimulation;
     return {};
   }
 
   if (std::strcmp(option, "--window-width") == 0) {
     context.state = State::PARSING_VALUE;
-    context.valuePtr = &context.args->widthWindow;
+    context.valuePtr = &context.args.widthWindow;
     return {};
   }
   if (std::strcmp(option, "--window-height") == 0) {
     context.state = State::PARSING_VALUE;
-    context.valuePtr = &context.args->heightWindow;
+    context.valuePtr = &context.args.heightWindow;
     return {};
   }
 
@@ -121,19 +121,17 @@ auto Args::parse(
   int argc,
   const char **argv
 ) -> expected<optional<Args>, Error> {
-  Args args = {
-    .processor = Processor::CPU,
-    .processorCoreCount = 1,
-    .widthSimulation = 0,
-    .heightSimulation = 0,
-    .widthWindow = 800,
-    .heightWindow = 600
-  };
-
   Context context = {
     .state = State::PARSING_OPTION,
-    .args = &args,
-    .valuePtr = nullptr
+    .valuePtr = nullptr,
+    .args = {
+      .processor = Processor::CPU,
+      .processorCoreCount = 1,
+      .widthSimulation = 0,
+      .heightSimulation = 0,
+      .widthWindow = 800,
+      .heightWindow = 600
+    }
   };
 
   for (uint32_t i = 1; i < argc; ++i) {
@@ -168,12 +166,12 @@ auto Args::parse(
     }
   }
 
-  if (args.widthSimulation == 0) {
+  if (context.args.widthSimulation == 0) {
     return unexpected(error("width is required and must be positive"));
   }
-  if (args.heightSimulation == 0) {
+  if (context.args.heightSimulation == 0) {
     return unexpected(error("height is required and must be positive"));
   }
 
-  return args;
+  return context.args;
 }
