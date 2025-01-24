@@ -79,10 +79,10 @@ auto VertexArray::unbind() -> void {
 
 auto VertexArray::bindBuffer(
   GLuint idx,
-  engine::VertexBuffer& buffer,
+  VertexBuffer& buffer,
   GLintptr offset,
   GLsizei stride
-) -> std::expected<void, engine::Error> {
+) -> std::expected<void, Error> {
   glVertexArrayVertexBuffer(m_vao, idx, *buffer, offset, stride);
   const GLenum error = glGetError();
   if (error != GL_NO_ERROR) {

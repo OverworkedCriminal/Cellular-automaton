@@ -9,14 +9,13 @@
 #include <cstdint>
 #include <latch>
 
-using std::array;
-using std::vector;
-using std::log2;
 using engine::error;
 using engine::Size2D;
 using engine::Position2D;
+using engine::Error;
+using engine::ThreadPool;
 
-static constexpr array<uint8_t, 5> MOVE_DOWN_RULES = {
+static constexpr std::array<uint8_t, 5> MOVE_DOWN_RULES = {
   0b00000000, // PADDING
   0b00000000, // AIR
   0b00011010, // SAND
@@ -24,7 +23,7 @@ static constexpr array<uint8_t, 5> MOVE_DOWN_RULES = {
   0b00000010  // WATER_R
 };
 
-static constexpr array<uint8_t, 5> MOVE_DOWN_DIAG_RULES = {
+static constexpr std::array<uint8_t, 5> MOVE_DOWN_DIAG_RULES = {
   0b00000000, // PADDING
   0b00000000, // AIR
   0b00000010, // SAND
@@ -32,7 +31,7 @@ static constexpr array<uint8_t, 5> MOVE_DOWN_DIAG_RULES = {
   0b00000010  // WATER_R
 };
 
-static constexpr array<uint8_t, 5> MOVE_HORIZONTALLY_RULES = {
+static constexpr std::array<uint8_t, 5> MOVE_HORIZONTALLY_RULES = {
   0b00000000, // PADDING
   0b00000000, // AIR
   0b00000000, // SAND
@@ -40,7 +39,7 @@ static constexpr array<uint8_t, 5> MOVE_HORIZONTALLY_RULES = {
   0b00001010  // WATER_R
 };
 
-static constexpr array<int32_t, 5> MOVE_HORIZONTALLY_DIRECTIONS = {
+static constexpr std::array<int32_t, 5> MOVE_HORIZONTALLY_DIRECTIONS = {
    0, // PADDING
    0, // AIR
    0, // SAND
@@ -48,7 +47,7 @@ static constexpr array<int32_t, 5> MOVE_HORIZONTALLY_DIRECTIONS = {
    1  // WATER_R
 };
 
-static constexpr array<int32_t, 5> MOVE_HORIZONTALLY_OPPOSITE_CELL = {
+static constexpr std::array<int32_t, 5> MOVE_HORIZONTALLY_OPPOSITE_CELL = {
   cell::PADDING, // PADDING
   cell::AIR,     // AIR
   cell::SAND,    // SAND
@@ -59,7 +58,7 @@ static constexpr array<int32_t, 5> MOVE_HORIZONTALLY_OPPOSITE_CELL = {
 auto CpuSimulator::create(
   Size2D<uint32_t> size,
   uint32_t processorsCount
-) -> std::expected<CpuSimulator, engine::Error> {
+) -> std::expected<CpuSimulator, Error> {
   if (size.width < 1 || size.height < 1) {
     return std::unexpected(error("invalid simulation dimensions"));
   }
@@ -72,7 +71,7 @@ auto CpuSimulator::create(
     .height = static_cast<float>(size.height) / processorsCount
   };
 
-  auto threadPool = engine::ThreadPool::create(processorsCount);
+  auto threadPool = ThreadPool::create(processorsCount);
   if (!threadPool.has_value()) {
     return std::unexpected(error("failed to create thread pool", threadPool.error()));
   }
@@ -91,7 +90,7 @@ auto CpuSimulator::create(
 }
 
 CpuSimulator::CpuSimulator(
-  engine::ThreadPool&& threadPool,
+  ThreadPool&& threadPool,
   Size2D<float> subrangeSize,
   Size2D<uint32_t> size,
   Size2D<uint32_t> sizeWithPadding
@@ -104,8 +103,8 @@ CpuSimulator::CpuSimulator(
 {}
 
 auto CpuSimulator::run(
-  const vector<uint8_t>& bufferIn,
-  vector<uint8_t>& bufferOut
+  const std::vector<uint8_t>& bufferIn,
+  std::vector<uint8_t>& bufferOut
 ) -> void {
   assert(bufferIn.size() == m_sizeWithPadding.width * m_sizeWithPadding.height);
   assert(bufferIn.size() == bufferOut.size());
@@ -225,10 +224,10 @@ auto CpuSimulator::run(
 }
 
 auto CpuSimulator::canMoveCell(
-  const vector<uint8_t>& bufferIn,
+  const std::vector<uint8_t>& bufferIn,
   uint32_t cellIdx,
   Position2D<int32_t> direction,
-  const array<uint8_t, 5>& rules
+  const std::array<uint8_t, 5>& rules
 ) const -> bool {
   const uint8_t cell = bufferIn[cellIdx];
   const uint8_t cellRuleIdx = log2(cell);

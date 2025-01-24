@@ -15,9 +15,6 @@
 #include <stdexcept>
 #include <vector>
 
-using std::vector;
-using std::optional;
-using std::runtime_error;
 using engine::Position2D;
 using engine::ShaderStorageBuffer;
 using engine::Texture;
@@ -50,12 +47,12 @@ public:
 
     auto isGpuBigEndianResult = isGpuBigEndian();
     if (!isGpuBigEndianResult.has_value()) {
-      throw runtime_error(isGpuBigEndianResult.error().message());
+      throw std::runtime_error(isGpuBigEndianResult.error().message());
     }
 
     auto simulatorResult = GpuSimulator::create({ .width = 5, .height = 5 });
     if (!simulatorResult.has_value()) {
-      throw runtime_error(simulatorResult.error().message());
+      throw std::runtime_error(simulatorResult.error().message());
     }
     simulator = std::move(*simulatorResult);
 
@@ -74,19 +71,19 @@ public:
 
     auto inputSSBOResult = ShaderStorageBuffer::create(inputBuffer.size());
     if (!inputSSBOResult.has_value()) {
-      throw runtime_error(inputSSBOResult.error().message());
+      throw std::runtime_error(inputSSBOResult.error().message());
     }
     inputSSBO = std::move(*inputSSBOResult);
 
     auto outputSSBOResult = ShaderStorageBuffer::create(outputBuffer.size());
     if (!outputSSBOResult.has_value()) {
-      throw runtime_error(outputSSBOResult.error().message());
+      throw std::runtime_error(outputSSBOResult.error().message());
     }
     outputSSBO = std::move(*outputSSBOResult);
 
     auto textureResult = Texture::create(canvasDescription.size.width, canvasDescription.size.height);
     if (!textureResult.has_value()) {
-      throw runtime_error(textureResult.error().message());
+      throw std::runtime_error(textureResult.error().message());
     }
     texture = std::move(*textureResult);
 
@@ -137,10 +134,10 @@ protected:
   }
 
   auto runTestExpectAnySuccess(uint32_t tries = 1) -> void {
-    vector<vector<Error>> allErrors;
+    std::vector<std::vector<Error>> allErrors;
 
     for (uint32_t i = 0; i < tries; ++i) {
-      vector<Error> errors = runTest();
+      std::vector<Error> errors = runTest();
       if (errors.empty()) {
         SUCCEED("All expectations matched");
         return;
@@ -159,7 +156,7 @@ protected:
     for (uint32_t i = 0; i < tries; ++i) {
       INFO("Try " << i);
 
-      vector<Error> errors = runTest();
+      std::vector<Error> errors = runTest();
       CHECK(errors.empty());
 
       checkErrors(errors);
@@ -167,16 +164,16 @@ protected:
   }
 
 private:
-  optional<GpuSimulator> simulator;
-  optional<ShaderStorageBuffer> inputSSBO;
-  optional<ShaderStorageBuffer> outputSSBO;
-  optional<Texture> texture;
+  std::optional<GpuSimulator> simulator;
+  std::optional<ShaderStorageBuffer> inputSSBO;
+  std::optional<ShaderStorageBuffer> outputSSBO;
+  std::optional<Texture> texture;
 
   PaintingCanvasDescription canvasDescription;
 
-  vector<uint8_t> inputBuffer;
-  vector<uint8_t> outputBuffer;
-  vector<Expectation> expectations;
+  std::vector<uint8_t> inputBuffer;
+  std::vector<uint8_t> outputBuffer;
+  std::vector<Expectation> expectations;
 
   /**
    * @brief Resets input and output to default state
@@ -207,8 +204,8 @@ private:
     return idx;
   }
 
-  auto runTest() -> vector<Error> {
-    vector<Error> errors;
+  auto runTest() -> std::vector<Error> {
+    std::vector<Error> errors;
 
     resetBuffer(outputBuffer);
     inputSSBO->store(inputBuffer);
@@ -220,7 +217,7 @@ private:
       *texture
     );
     if (!runResult.has_value()) {
-      throw runtime_error(runResult.error().message());
+      throw std::runtime_error(runResult.error().message());
     }
 
     outputSSBO->load(outputBuffer);
@@ -239,7 +236,7 @@ private:
     return errors;
   }
 
-  auto checkErrors(const vector<Error>& errors) -> void {
+  auto checkErrors(const std::vector<Error>& errors) -> void {
     for (const auto& [position, cell, expectedMask] : errors) {
       INFO("Position { x = " << position.x << ", y = " << position.y << " }");
       INFO("Expected mask " << std::bitset<8>(expectedMask));
@@ -249,7 +246,7 @@ private:
 
   auto initOpenGL() -> void {
     if (!glfwInit()) {
-      throw runtime_error("failed to init GLFW");
+      throw std::runtime_error("failed to init GLFW");
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -265,14 +262,14 @@ private:
     );
     if (!window) {
       glfwTerminate();
-      throw runtime_error("failed to create window");
+      throw std::runtime_error("failed to create window");
     }
 
     glfwMakeContextCurrent(window);
 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
       glfwTerminate();
-      throw runtime_error("failed to init GLAD");
+      throw std::runtime_error("failed to init GLAD");
     }
   }
 

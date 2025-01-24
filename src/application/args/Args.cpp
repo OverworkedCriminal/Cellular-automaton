@@ -11,10 +11,6 @@
 
 using engine::Error;
 using engine::error;
-using std::optional;
-using std::string;
-using std::expected;
-using std::unexpected;
 
 enum class State : uint8_t {
   PARSING_OPTION,
@@ -39,13 +35,13 @@ struct Context {
   Args args;
 };
 
-static auto parseUint32(const char* str) -> expected<uint32_t, Error> {
+static auto parseUint32(const char* str) -> std::expected<uint32_t, Error> {
   uint32_t value = 0;
   uint32_t i = 0;
 
   while (str[i] != '\0') {
     if (str[i] < '0' || str[i] > '9') {
-      return unexpected(error("invalid uint32_t character"));
+      return std::unexpected(error("invalid uint32_t character"));
     }
 
     value = value * 10 + (str[i] - '0');
@@ -67,7 +63,7 @@ static auto printHelp() -> void {
             << '\t' << std::left << std::setw(17) << "--help" << " display this message\n";
 }
 
-static auto parseOption(Context& context, const char* option) -> expected<void, Error> {
+static auto parseOption(Context& context, const char* option) -> std::expected<void, Error> {
   if (std::strcmp(option, "--cpu") == 0) {
     context.args.processor = Processor::CPU;
     context.state = State::PARSING_OPTIONAL_VALUE;
@@ -101,13 +97,13 @@ static auto parseOption(Context& context, const char* option) -> expected<void, 
     return {};
   }
 
-  return unexpected(error("unexpected option"));
+  return std::unexpected(error("unexpected option"));
 }
 
-static auto parseValue(Context& context, const char* value) -> expected<void, Error> {
+static auto parseValue(Context& context, const char* value) -> std::expected<void, Error> {
   auto result = parseUint32(value);
   if (!result.has_value()) {
-    return unexpected(error("failed to parse value", result.error()));
+    return std::unexpected(error("failed to parse value", result.error()));
   }
 
   context.state = State::PARSING_OPTION;
@@ -120,7 +116,7 @@ static auto parseValue(Context& context, const char* value) -> expected<void, Er
 auto Args::parse(
   int argc,
   const char **argv
-) -> expected<optional<Args>, Error> {
+) -> std::expected<std::optional<Args>, Error> {
   Context context = {
     .state = State::PARSING_OPTION,
     .valuePtr = nullptr,
@@ -135,7 +131,7 @@ auto Args::parse(
   };
 
   for (uint32_t i = 1; i < argc; ++i) {
-    expected<void, Error> result;
+    std::expected<void, Error> result;
 
     switch (context.state) {
       case State::PARSING_OPTION: {
@@ -162,15 +158,15 @@ auto Args::parse(
     }
 
     if (!result.has_value()) {
-      return unexpected(error("parsing input argument failed", result.error()));
+      return std::unexpected(error("parsing input argument failed", result.error()));
     }
   }
 
   if (context.args.widthSimulation == 0) {
-    return unexpected(error("width is required and must be positive"));
+    return std::unexpected(error("width is required and must be positive"));
   }
   if (context.args.heightSimulation == 0) {
-    return unexpected(error("height is required and must be positive"));
+    return std::unexpected(error("height is required and must be positive"));
   }
 
   return context.args;

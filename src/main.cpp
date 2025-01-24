@@ -8,6 +8,10 @@
 #include <iostream>
 #include <memory>
 
+using engine::Config;
+using engine::Size2D;
+using engine::IApplication;
+
 int main(int argc, const char** argv) {
   const auto argsResult = Args::parse(argc, argv);
   if (!argsResult.has_value()) {
@@ -21,18 +25,18 @@ int main(int argc, const char** argv) {
   }
   const auto& args = *argsOpt;
 
-  const engine::Config config = {
+  const Config config = {
     .windowTitle = "Cellular automaton",
     .windowWidth = static_cast<int>(args.widthWindow),
     .windowHeight = static_cast<int>(args.heightWindow)
   };
 
-  const engine::Size2D<uint32_t> simulationSize = {
+  const Size2D<uint32_t> simulationSize = {
     .width = args.widthSimulation,
     .height = args.heightSimulation
   };
 
-  std::unique_ptr<engine::IApplication> applicationPtr;
+  std::unique_ptr<IApplication> applicationPtr;
   switch (args.processor) {
     case Processor::CPU: {
       auto applicationResult = CpuApplication::create(
@@ -57,7 +61,7 @@ int main(int argc, const char** argv) {
     }
   }
 
-  auto result = engine::run(config, std::move(applicationPtr));
+  auto result = run(config, std::move(applicationPtr));
   if (!result.has_value()) {
     std::cerr << "Engine failed:\n\t" << result.error() << '\n';
     return -1;

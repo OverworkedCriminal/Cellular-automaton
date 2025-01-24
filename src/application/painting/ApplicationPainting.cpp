@@ -11,26 +11,21 @@
 #include <memory>
 #include <utility>
 
-using std::vector;
-using std::make_unique;
-using std::make_shared;
-using std::shared_ptr;
-using std::unique_ptr;
 using engine::EngineContext;
 using engine::IKeyboardKeyCallback;
 
 auto ApplicationPainting::create(
-  engine::EngineContext& context,
+  EngineContext& context,
   PaintingCanvasDescription canvasDescription
 ) -> ApplicationPainting {
-  auto brushDescriptionPtr = make_shared<PaintingBrushDescription>(
+  auto brushDescriptionPtr = std::make_shared<PaintingBrushDescription>(
     PaintingBrushDescription {
       .size = 1,
       .cell = cell::SAND
     }
   );
-  auto paintingBrushPtr = make_unique<SquarePaintingBrush>(SquarePaintingBrush::create());
-  auto keyboardCallback = make_shared<ApplicationPaintingCallback>(
+  auto paintingBrushPtr = std::make_unique<SquarePaintingBrush>(SquarePaintingBrush::create());
+  auto keyboardCallback = std::make_shared<ApplicationPaintingCallback>(
     ApplicationPaintingCallback::create(brushDescriptionPtr)
   );
 
@@ -48,9 +43,9 @@ auto ApplicationPainting::create(
 
 ApplicationPainting::ApplicationPainting(
   PaintingCanvasDescription canvasDescription,
-  shared_ptr<PaintingBrushDescription>&& brushDescriptionPtr,
-  unique_ptr<IPaintingBrush>&& paintingBrushPtr,
-  shared_ptr<IKeyboardKeyCallback>&& keyboardCallback
+  std::shared_ptr<PaintingBrushDescription>&& brushDescriptionPtr,
+  std::unique_ptr<IPaintingBrush>&& paintingBrushPtr,
+  std::shared_ptr<IKeyboardKeyCallback>&& keyboardCallback
 )
   :m_canvasDescription(canvasDescription)
   ,m_brushDescriptionPtr(std::move(brushDescriptionPtr))
@@ -60,7 +55,7 @@ ApplicationPainting::ApplicationPainting(
 
 auto ApplicationPainting::paint(
   const EngineContext& context,
-  vector<uint8_t>& canvas
+  std::vector<uint8_t>& canvas
 ) const -> void {
   const auto position = mapWindowPositionToSimulationPosition(
     context.inputSystem.getMousePosition(),
