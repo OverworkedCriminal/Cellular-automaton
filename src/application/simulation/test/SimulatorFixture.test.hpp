@@ -138,6 +138,7 @@ protected:
     for (const auto& [position, cell, expectedMask] : errors) {
       INFO("Position { x = " << position.x << ", y = " << position.y << " }");
       INFO("Expected mask " << std::bitset<8>(expectedMask));
+      INFO("Output cell " << std::bitset<8>(cell));
       CHECK((cell & expectedMask) > 0);
     }
   }
