@@ -63,8 +63,8 @@ CpuSimulator::CpuSimulator(
 {}
 
 auto CpuSimulator::run(
-  const std::vector<uint8_t>& bufferIn,
-  std::vector<uint8_t>& bufferOut
+  const std::vector<cell_t>& bufferIn,
+  std::vector<cell_t>& bufferOut
 ) -> void {
   assert(bufferIn.size() == m_sizeWithPadding.width * m_sizeWithPadding.height);
   assert(bufferIn.size() == bufferOut.size());
@@ -184,17 +184,17 @@ auto CpuSimulator::run(
 }
 
 auto CpuSimulator::canMoveCell(
-  const std::vector<uint8_t>& bufferIn,
+  const std::vector<cell_t>& bufferIn,
   uint32_t cellIdx,
   Position2D<int32_t> direction,
-  const std::array<uint8_t, 5>& rules
+  const std::array<cell_t, 5>& rules
 ) const -> bool {
-  const uint8_t cell = bufferIn[cellIdx];
+  const cell_t cell = bufferIn[cellIdx];
   const uint8_t cellRuleIdx = log2(cell);
-  const uint8_t cellRule = rules[cellRuleIdx];
+  const cell_t cellRule = rules[cellRuleIdx];
 
   const uint32_t otherIdx = cellIdx + direction.y * m_sizeWithPadding.width + direction.x;
-  const uint8_t other = bufferIn[otherIdx];
+  const cell_t other = bufferIn[otherIdx];
 
   return (other & cellRule) > 0;
 }

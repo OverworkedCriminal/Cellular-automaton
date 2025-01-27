@@ -9,7 +9,7 @@ union Color {
     float a;
   };
 
-  float component[4];
+  float rgba[4];
 };
 
 

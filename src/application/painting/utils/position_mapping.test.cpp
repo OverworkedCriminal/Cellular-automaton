@@ -112,15 +112,13 @@ TEST_CASE("mapWindowPositionToSimulationPosition 5x5 -> 2x2", "[position-mapping
 
 }
 
-TEST_CASE("mapSimulationPositionToCanvasIndex 10x10 0-offset 1-stride") {
+TEST_CASE("mapSimulationPositionToCanvasIndex 10x10") {
   const PaintingCanvasDescription canvasDescription = {
     .size = {
       .width = 10,
       .height = 10
     },
-    .paddingSize = 0,
-    .valueOffset = 0,
-    .valueStride = 1
+    .paddingSize = 0
   };
 
   SECTION("x=0, y=0 should return 0") {
@@ -136,59 +134,5 @@ TEST_CASE("mapSimulationPositionToCanvasIndex 10x10 0-offset 1-stride") {
   SECTION("x=2, y=3 should return 32") {
     const uint32_t idx = mapSimulationPositionToCanvasIndex({ .x = 2, .y = 3 }, canvasDescription);
     CHECK(idx == 32);
-  }
-}
-
-TEST_CASE("mapSimulationPositionToCanvasIndex 5x5 0-offset 4-stride") {
-  const PaintingCanvasDescription canvasDescription = {
-    .size = {
-      .width = 5,
-      .height = 5
-    },
-    .paddingSize = 0,
-    .valueOffset = 0,
-    .valueStride = 4
-  };
-
-  SECTION("x=0, y=0 should return 0") {
-    const uint32_t idx = mapSimulationPositionToCanvasIndex({ .x = 0, .y = 0 }, canvasDescription);
-    CHECK(idx == 0);
-  }
-
-  SECTION("x=2, y=0 should return 2") {
-    const uint32_t idx = mapSimulationPositionToCanvasIndex({ .x = 2, .y = 0 }, canvasDescription);
-    CHECK(idx == 8);
-  }
-
-  SECTION("x=1, y=2 should return 44") {
-    const uint32_t idx = mapSimulationPositionToCanvasIndex({ .x = 1, .y = 2 }, canvasDescription);
-    CHECK(idx == 44);
-  }
-}
-
-TEST_CASE("mapSimulationPositionToCanvasIndex 4x4 3-offset 4-stride") {
-  const PaintingCanvasDescription canvasDescription = {
-    .size = {
-      .width = 4,
-      .height = 4
-    },
-    .paddingSize = 0,
-    .valueOffset = 3,
-    .valueStride = 4
-  };
-
-  SECTION("x=0, y=0 should return 3") {
-    const uint32_t idx = mapSimulationPositionToCanvasIndex({ .x = 0, .y = 0 }, canvasDescription);
-    CHECK(idx == 3);
-  }
-
-  SECTION("x=3, y=0 should return 15") {
-    const uint32_t idx = mapSimulationPositionToCanvasIndex({ .x = 3, .y = 0 }, canvasDescription);
-    CHECK(idx == 15);
-  }
-
-  SECTION("x=2, y=3 should return 59") {
-    const uint32_t idx = mapSimulationPositionToCanvasIndex({ .x = 2, .y = 3 }, canvasDescription);
-    CHECK(idx == 59);
   }
 }

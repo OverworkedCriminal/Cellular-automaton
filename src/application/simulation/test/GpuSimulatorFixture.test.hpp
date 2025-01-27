@@ -31,13 +31,11 @@ protected:
         .width = 5 + 2 * PADDING_SIZE,
         .height = 5 + 2 * PADDING_SIZE
       },
-      .paddingSize = PADDING_SIZE,
-      .valueOffset = static_cast<uint32_t>(3) * *isGpuBigEndianResult,
-      .valueStride = 4
+      .paddingSize = PADDING_SIZE
     };
 
-    input = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0);
-    output = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0);
+    input = std::vector<cell_t>(canvasDescription.size.width * canvasDescription.size.height, 0);
+    output = std::vector<cell_t>(canvasDescription.size.width * canvasDescription.size.height, 0);
 
     resetBuffer(input);
     resetBuffer(output);

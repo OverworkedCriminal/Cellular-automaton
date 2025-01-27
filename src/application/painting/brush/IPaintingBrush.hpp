@@ -3,6 +3,7 @@
 
 #include "application/painting/PaintingCanvasDescription.hpp"
 #include "application/painting/brush/PaintingBrushDescription.hpp"
+#include "application/simulation/cell.hpp"
 #include "engine/utils/dto/Position2D.hpp"
 #include <cstdint>
 #include <vector>
@@ -15,7 +16,7 @@ public:
     const PaintingBrushDescription brushDescription,
     const engine::Position2D<uint32_t> position,
     const PaintingCanvasDescription& canvasDescription,
-    std::vector<uint8_t>& canvas
+    std::vector<cell_t>& canvas
   ) const -> void = 0;
 };
 

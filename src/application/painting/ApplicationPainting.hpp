@@ -4,6 +4,7 @@
 #include "application/painting/PaintingCanvasDescription.hpp"
 #include "application/painting/brush/IPaintingBrush.hpp"
 #include "application/painting/brush/PaintingBrushDescription.hpp"
+#include "application/simulation/cell.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/callback/IKeyboardKeyCallback.hpp"
 #include <vector>
@@ -21,7 +22,7 @@ public:
   auto operator=(const ApplicationPainting&) -> ApplicationPainting& = delete;
   auto operator=(ApplicationPainting&&) -> ApplicationPainting& = default;
 
-  auto paint(const engine::EngineContext& context, std::vector<uint8_t>& canvas) const -> void;
+  auto paint(const engine::EngineContext& context, std::vector<cell_t>& canvas) const -> void;
 
 private:
   ApplicationPainting(
