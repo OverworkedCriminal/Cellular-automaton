@@ -13,21 +13,21 @@
 
 struct Expectation {
   engine::Position2D<int32_t> position;
-  uint8_t cellMask;
+  cell_t cellMask;
 };
 
 struct Error {
   engine::Position2D<int32_t> position;
-  uint8_t cell;
-  uint8_t expectedMask;
+  cell_t cell;
+  cell_t expectedMask;
 };
 
 class SimulatorFixture {
 protected:
   PaintingCanvasDescription canvasDescription;
 
-  std::vector<uint8_t> input;
-  std::vector<uint8_t> output;
+  std::vector<cell_t> input;
+  std::vector<cell_t> output;
   std::vector<Expectation> expectations;
 
   SimulatorFixture() {}
@@ -44,7 +44,7 @@ protected:
    * @param position { .x = 0, .y = 0 } means centre of 5x5 grid
    * @param cell 
    */
-  auto set(engine::Position2D<int32_t> position, uint8_t cell) -> void {
+  auto set(engine::Position2D<int32_t> position, cell_t cell) -> void {
     const uint32_t idx = mapSimulationPositionToCanvasIndex(
       {
         .x = PADDING_SIZE + 2 + position.x,
@@ -62,7 +62,7 @@ protected:
    * @param position { .x = 0, .y = 0 } means centre of 5x5 grid
    * @param cell 
    */
-  auto expect(engine::Position2D<int32_t> position, uint8_t cellMask) -> void {
+  auto expect(engine::Position2D<int32_t> position, cell_t cellMask) -> void {
     expectations.push_back({
       .position = position,
       .cellMask = cellMask
@@ -124,7 +124,7 @@ protected:
     return errors;
   }
 
-  auto resetBuffer(std::vector<uint8_t>& buffer) -> void {
+  auto resetBuffer(std::vector<cell_t>& buffer) -> void {
     engine::Position2D<uint32_t> position;
     for (position.y = 0; position.y < canvasDescription.size.height; ++position.y) {
       for (position.x = 0; position.x < canvasDescription.size.width; ++position.x) {

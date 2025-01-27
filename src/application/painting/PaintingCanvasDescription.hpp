@@ -14,16 +14,6 @@ struct PaintingCanvasDescription {
    * @brief Padding size. Padding is added to each side of the canvas
    */
   uint32_t paddingSize;
-
-  /**
-   * @brief Offset of the value within the element
-   */
-  uint32_t valueOffset;
-
-  /**
-   * @brief Distance to next element (in bytes)
-   */
-  uint32_t valueStride;
 };
 
 #endif

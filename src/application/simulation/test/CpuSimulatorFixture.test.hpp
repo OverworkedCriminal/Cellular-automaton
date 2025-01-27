@@ -17,13 +17,11 @@ protected:
         .width = 5 + 2 * PADDING_SIZE,
         .height = 5 + 2 * PADDING_SIZE
       },
-      .paddingSize = PADDING_SIZE,
-      .valueOffset = 0,
-      .valueStride = 1
+      .paddingSize = PADDING_SIZE
     };
 
-    input = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0);
-    output = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0);
+    input = std::vector<cell_t>(canvasDescription.size.width * canvasDescription.size.height, 0);
+    output = std::vector<cell_t>(canvasDescription.size.width * canvasDescription.size.height, 0);
 
     resetBuffer(input);
     resetBuffer(output);

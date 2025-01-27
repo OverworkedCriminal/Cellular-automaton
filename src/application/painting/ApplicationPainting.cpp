@@ -55,7 +55,7 @@ ApplicationPainting::ApplicationPainting(
 
 auto ApplicationPainting::paint(
   const EngineContext& context,
-  std::vector<uint8_t>& canvas
+  std::vector<cell_t>& canvas
 ) const -> void {
   const auto position = mapWindowPositionToSimulationPosition(
     context.inputSystem.getMousePosition(),

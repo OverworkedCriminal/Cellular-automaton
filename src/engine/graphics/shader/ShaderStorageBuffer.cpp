@@ -1,6 +1,5 @@
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/utils/error.hpp"
-#include <algorithm>
 
 namespace engine {
 
@@ -62,24 +61,6 @@ auto ShaderStorageBuffer::bindBufferBase(GLuint index) -> std::expected<void, Er
   }
 
   return {};
-}
-
-auto ShaderStorageBuffer::store(const std::vector<uint8_t>& buffer) -> void {
-  const GLsizeiptr size = std::min(
-    m_size,
-    static_cast<GLsizeiptr>(buffer.size())
-  );
-
-  glNamedBufferSubData(m_ssbo, 0, size, buffer.data());
-}
-
-auto ShaderStorageBuffer::load(std::vector<uint8_t>& buffer) -> void {
-  const GLsizeiptr size = std::min(
-    m_size,
-    static_cast<GLsizeiptr>(buffer.size())
-  );
-
-  glGetNamedBufferSubData(m_ssbo, 0, size, buffer.data());
 }
 
 }

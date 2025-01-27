@@ -21,8 +21,19 @@ public:
 
   auto bindBufferBase(GLuint index) -> std::expected<void, Error>;
 
-  auto store(const std::vector<uint8_t>& buffer) -> void;
-  auto load(std::vector<uint8_t>& buffer) -> void;
+  template<typename T>
+  auto store(const std::vector<T>& buffer) -> void {
+    const GLsizeiptr bufferByteSize = buffer.size() * sizeof(T);
+    const GLsizeiptr size = std::min(m_size, bufferByteSize);
+    glNamedBufferSubData(m_ssbo, 0, size, buffer.data());
+  }
+
+  template<typename T>
+  auto load(std::vector<T>& buffer) -> void {
+    const GLsizeiptr bufferByteSize = buffer.size() * sizeof(T);
+    const GLsizeiptr size = std::min(m_size, bufferByteSize);
+    glGetNamedBufferSubData(m_ssbo, 0, size, buffer.data());
+  }
 
 private:
   ShaderStorageBuffer(GLuint ssbo, GLsizeiptr size);

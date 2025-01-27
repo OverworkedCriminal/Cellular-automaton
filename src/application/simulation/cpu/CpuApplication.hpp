@@ -3,6 +3,7 @@
 
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/ApplicationPainting.hpp"
+#include "application/simulation/cell.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
@@ -49,8 +50,8 @@ private:
   engine::Size2D<uint32_t> m_sizeWithPadding;
   CpuSimulator m_simulator;
 
-  std::vector<uint8_t> m_bufferIn;
-  std::vector<uint8_t> m_bufferOut;
+  std::vector<cell_t> m_bufferIn;
+  std::vector<cell_t> m_bufferOut;
   std::vector<GLfloat> m_textureBuffer;
 
   std::optional<engine::Texture> m_drawingTexture;

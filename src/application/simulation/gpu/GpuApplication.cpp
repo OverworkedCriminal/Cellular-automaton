@@ -104,7 +104,7 @@ auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, Erro
   const uint32_t offset = 3 * isGpuBigEndian;
   const uint32_t stride = 4;
 
-  m_buffer = std::vector<uint8_t>(width * height * 4, 0);
+  m_buffer = std::vector<cell_t>(width * height, 0);
 
   for (uint32_t row = 0; row < height; ++row) {
     for (uint32_t col = 0; col < width; ++col) {
@@ -173,9 +173,7 @@ auto GpuApplication::initPainting(
 ) -> void {
   PaintingCanvasDescription canvasDescription = {
     .size = m_sizeWithPadding,
-    .paddingSize = PADDING_SIZE,
-    .valueOffset = static_cast<uint8_t>(3 * isGpuBigEndian),
-    .valueStride = 4
+    .paddingSize = PADDING_SIZE
   };
 
   m_applicationPainting = ApplicationPainting::create(context, canvasDescription);
