@@ -7,7 +7,7 @@
 
 namespace rule {
 
-constexpr std::array<uint8_t, 5> VERTICAL = {
+constexpr std::array<cell_t, 5> VERTICAL = {
   0b00000000, // PADDING
   0b00000000, // AIR
   0b00011010, // SAND
@@ -15,7 +15,7 @@ constexpr std::array<uint8_t, 5> VERTICAL = {
   0b00000010  // WATER_R
 };
 
-constexpr std::array<uint8_t, 5> DIAGONAL = {
+constexpr std::array<cell_t, 5> DIAGONAL = {
   0b00000000, // PADDING
   0b00000000, // AIR
   0b00000010, // SAND
@@ -23,7 +23,7 @@ constexpr std::array<uint8_t, 5> DIAGONAL = {
   0b00000010  // WATER_R
 };
 
-constexpr std::array<uint8_t, 5> HORIZONTAL = {
+constexpr std::array<cell_t, 5> HORIZONTAL = {
   0b00000000, // PADDING
   0b00000000, // AIR
   0b00000000, // SAND
@@ -39,7 +39,7 @@ constexpr std::array<int32_t, 5> HORIZONTAL_DIRECTIONS = {
    1  // WATER_R
 };
 
-constexpr std::array<uint8_t, 5> HORIZONTAL_OPPOSITE_DIRECTION_CELL = {
+constexpr std::array<cell_t, 5> HORIZONTAL_OPPOSITE_DIRECTION_CELL = {
   cell::PADDING, // PADDING
   cell::AIR,     // AIR
   cell::SAND,    // SAND
