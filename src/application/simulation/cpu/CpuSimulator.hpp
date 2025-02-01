@@ -1,6 +1,7 @@
 #ifndef APPLICATION_SIMULATION_CPU_CPU_SIMULATOR_HPP
 #define APPLICATION_SIMULATION_CPU_CPU_SIMULATOR_HPP
 
+#include "application/simulation/cell.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/dto/Size2D.hpp"
@@ -37,8 +38,8 @@ public:
   auto operator=(CpuSimulator&&) -> CpuSimulator& = default;
 
   auto run(
-    const std::vector<uint8_t>& bufferIn,
-    std::vector<uint8_t>& bufferOut
+    const std::vector<cell_t>& bufferIn,
+    std::vector<cell_t>& bufferOut
   ) -> void;
 
 private:
@@ -58,10 +59,10 @@ private:
   int32_t m_priorityDirection;
 
   auto canMoveCell(
-    const std::vector<uint8_t>& bufferIn,
+    const std::vector<cell_t>& bufferIn,
     uint32_t cellIdx,
     engine::Position2D<int32_t> direction,
-    const std::array<uint8_t, 5>& rules
+    const std::array<cell_t, 5>& rules
   ) const -> bool;
 };
 

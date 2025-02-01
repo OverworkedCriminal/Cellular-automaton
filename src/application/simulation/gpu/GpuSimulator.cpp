@@ -1,5 +1,7 @@
 #include "application/simulation/gpu/GpuSimulator.hpp"
+#include "application/simulation/cpu/colors.hpp"
 #include "application/simulation/padding.hpp"
+#include "application/simulation/rule.hpp"
 #include "engine/error/Error.hpp"
 #include "engine/graphics/shader/Program.hpp"
 #include "engine/graphics/shader/Shader.hpp"
@@ -42,6 +44,30 @@ auto GpuSimulator::create(
   }
 
   std::expected<void, Error> uniformResult;
+  uniformResult = program->setUniformVec4("COLORS", reinterpret_cast<const float*>(COLORS.data()), COLORS.size());
+  if (!uniformResult.has_value()) {
+    std::cerr << "failed to set uniform COLORS\n\t" << uniformResult.error() << '\n';
+  }
+  uniformResult = program->setUniform("RULE_VERTICAL", rule::VERTICAL.data(), rule::VERTICAL.size());
+  if (!uniformResult.has_value()) {
+    std::cerr << "failed to set uniform RULE_VERTICAL\n\t" << uniformResult.error() << '\n';
+  }
+  uniformResult = program->setUniform("RULE_DIAGONAL", rule::DIAGONAL.data(), rule::DIAGONAL.size());
+  if (!uniformResult.has_value()) {
+    std::cerr << "failed to set uniform RULE_DIAGONAL\n\t" << uniformResult.error() << '\n';
+  }
+  uniformResult = program->setUniform("RULE_HORIZONTAL", rule::HORIZONTAL.data(), rule::HORIZONTAL.size());
+  if (!uniformResult.has_value()) {
+    std::cerr << "failed to set uniform RULE_HORIZONTAL\n\t" << uniformResult.error() << '\n';
+  }
+  uniformResult = program->setUniform("RULE_HORIZONTAL_DIRECTIONS", rule::HORIZONTAL_DIRECTIONS.data(), rule::HORIZONTAL_DIRECTIONS.size());
+  if (!uniformResult.has_value()) {
+    std::cerr << "failed to set uniform RULE_HORIZONTAL_DIRECTIONS\n\t" << uniformResult.error() << '\n';
+  }
+  uniformResult = program->setUniform("RULE_HORIZONTAL_OPPOSITE_DIRECTION_CELL", rule::HORIZONTAL_OPPOSITE_DIRECTION_CELL.data(), rule::HORIZONTAL_OPPOSITE_DIRECTION_CELL.size());
+  if (!uniformResult.has_value()) {
+    std::cerr << "failed to set uniform HORIZONTAL_OPPOSITE_DIRECTION_CELL\n\t" << uniformResult.error() << '\n';
+  }
   uniformResult = program->setUniform("gridWidth", size.width + 2 * PADDING_SIZE);
   if (!uniformResult.has_value()) {
     std::cerr << "failed to set uniform gridWidth\n\t" << uniformResult.error() << '\n';

@@ -3,7 +3,7 @@
 #include <cmath>
 
 auto mapCellsToColors(
-  const std::vector<uint8_t>& inCells,
+  const std::vector<cell_t>& inCells,
   std::vector<float>& outColors
 ) -> void {
   for (uint32_t idx = 0; idx < inCells.size(); ++idx) {
@@ -11,7 +11,7 @@ auto mapCellsToColors(
     const Color& color = COLORS[colorIdx];
 
     for (uint32_t colorComponentIdx = 0; colorComponentIdx < 4; ++colorComponentIdx) {
-      outColors[idx * 4 + colorComponentIdx] = color.component[colorComponentIdx];
+      outColors[idx * 4 + colorComponentIdx] = color.rgba[colorComponentIdx];
     }
   }
 }

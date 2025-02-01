@@ -106,8 +106,8 @@ auto CpuApplication::initDrawing() -> std::expected<void, Error> {
 auto CpuApplication::initSimulation() -> void {
   const auto [width, height] = m_sizeWithPadding;
 
-  m_bufferIn = std::vector<uint8_t>(width * height, cell::PADDING);
-  m_bufferOut = std::vector<uint8_t>(width * height, cell::PADDING);
+  m_bufferIn = std::vector<cell_t>(width * height, cell::PADDING);
+  m_bufferOut = std::vector<cell_t>(width * height, cell::PADDING);
   for (uint32_t row = PADDING_SIZE; row < height - PADDING_SIZE; ++row) {
     for (uint32_t col = PADDING_SIZE; col < width - PADDING_SIZE; ++col) {
       const uint32_t idx = row * width + col;
@@ -124,9 +124,7 @@ auto CpuApplication::initPainting(EngineContext& context) -> void {
     context,
     {
       .size = m_sizeWithPadding,
-      .paddingSize = PADDING_SIZE,
-      .valueOffset = 0,
-      .valueStride = 1
+      .paddingSize = PADDING_SIZE
     }
   );
 }

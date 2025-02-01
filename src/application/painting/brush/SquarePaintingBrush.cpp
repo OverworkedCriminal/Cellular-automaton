@@ -17,12 +17,12 @@ auto SquarePaintingBrush::paint(
   const PaintingBrushDescription brushDescription,
   const Position2D<uint32_t> position,
   const PaintingCanvasDescription& canvasDescription,
-  std::vector<uint8_t>& canvas
+  std::vector<cell_t>& canvas
 ) const -> void {
-  const auto [size, padding, valueOffset, valueStride] = canvasDescription;
+  const auto [size, padding] = canvasDescription;
   const auto [posX, posY] = position;
 
-  assert(canvas.size() == (size.width * size.height * valueStride));
+  assert(canvas.size() == size.width * size.height);
 
   const int32_t lowerBoundX = padding;
   const int32_t upperBoundX = size.width - padding;

@@ -31,13 +31,11 @@ protected:
         .width = 5 + 2 * PADDING_SIZE,
         .height = 5 + 2 * PADDING_SIZE
       },
-      .paddingSize = PADDING_SIZE,
-      .valueOffset = static_cast<uint32_t>(3) * *isGpuBigEndianResult,
-      .valueStride = 4
+      .paddingSize = PADDING_SIZE
     };
 
-    input = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0);
-    output = std::vector<uint8_t>(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride, 0);
+    input = std::vector<cell_t>(canvasDescription.size.width * canvasDescription.size.height, 0);
+    output = std::vector<cell_t>(canvasDescription.size.width * canvasDescription.size.height, 0);
 
     resetBuffer(input);
     resetBuffer(output);
@@ -48,13 +46,13 @@ protected:
     }
     gpuSimulator = std::move(*simulatorResult);
 
-    auto inputSSBOResult = engine::ShaderStorageBuffer::create(input.size());
+    auto inputSSBOResult = engine::ShaderStorageBuffer::create(input.size() * sizeof(cell_t));
     if (!inputSSBOResult.has_value()) {
       throw std::runtime_error(inputSSBOResult.error().message());
     }
     inputSSBO = std::move(*inputSSBOResult);
 
-    auto outputSSBOResult = engine::ShaderStorageBuffer::create(output.size());
+    auto outputSSBOResult = engine::ShaderStorageBuffer::create(output.size() * sizeof(cell_t));
     if (!outputSSBOResult.has_value()) {
       throw std::runtime_error(outputSSBOResult.error().message());
     }

@@ -383,3 +383,26 @@ TEST_CASE_METHOD(TestFixture, "WATER_R should move horizontally through WATER_L"
 
   runTestExpectAllSuccess(2);
 }
+
+TEST_CASE_METHOD(TestFixture, "Move down, bottom should have priority") {
+  set({ 0,  1 }, cell::SAND);
+  set({ 0,  0 }, cell::WATER_L);
+  set({ 0, -1 }, cell::AIR);
+  expect({ 0,  1 }, cell::SAND);
+  expect({ 0,  0 }, cell::AIR);
+  expect({ 0, -1 }, cell::WATER_L | cell::WATER_R);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "Move down diagonally, bottom should have priority") {
+  SKIP("SAND can't move through water diagonally so this test is pointless");
+  set({  1,  1 }, cell::SAND);
+  set({  0,  0 }, cell::WATER_L);
+  set({ -1, -1 }, cell::AIR);
+  expect({  1,  1 }, cell::SAND);
+  expect({  0,  0 }, cell::AIR);
+  expect({ -1, -1 }, cell::WATER_L | cell::WATER_R);
+
+  runTestExpectAnySuccess(2);
+}

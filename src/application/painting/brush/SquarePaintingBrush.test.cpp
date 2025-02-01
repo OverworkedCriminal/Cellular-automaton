@@ -1,12 +1,13 @@
 #include "application/painting/brush/PaintingBrushDescription.hpp"
 #include "application/painting/brush/SquarePaintingBrush.hpp"
 #include "application/painting/PaintingCanvasDescription.hpp"
+#include "application/simulation/cell.hpp"
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 
-constexpr uint8_t EMPTY_VALUE = 0;
-constexpr uint8_t BRUSH_VALUE = 1;
+constexpr cell_t EMPTY_VALUE = 0;
+constexpr cell_t BRUSH_VALUE = 1;
 
 const SquarePaintingBrush paintingBrush = SquarePaintingBrush::create();
 const PaintingBrushDescription brushDescription = {
@@ -14,17 +15,15 @@ const PaintingBrushDescription brushDescription = {
   .cell = BRUSH_VALUE
 };
 
-TEST_CASE("painting 0-padding 0-offset 1-stride", "[painting]") {
+TEST_CASE("painting 0-padding", "[painting]") {
   const PaintingCanvasDescription canvasDescription = {
     .size = {
       .width = 2,
       .height = 2
     },
-    .paddingSize = 0,
-    .valueOffset = 0,
-    .valueStride = 1
+    .paddingSize = 0
   };
-  std::vector<uint8_t> canvas(canvasDescription.size.width * canvasDescription.size.height);
+  std::vector<cell_t> canvas(canvasDescription.size.width * canvasDescription.size.height);
   
   SECTION("position (0, 0)") {
     std::ranges::fill(canvas, EMPTY_VALUE);
@@ -63,18 +62,16 @@ TEST_CASE("painting 0-padding 0-offset 1-stride", "[painting]") {
   }
 }
 
-TEST_CASE("painting 2-padding 0-offset 1-stride", "[painting]") {
+TEST_CASE("painting 2-padding", "[painting]") {
   constexpr uint32_t PADDING_SIZE = 2;
   const PaintingCanvasDescription canvasDescription = {
     .size = {
       .width = 1 + 2 * PADDING_SIZE,
       .height = 1 + 2 * PADDING_SIZE
     },
-    .paddingSize = PADDING_SIZE,
-    .valueOffset = 0,
-    .valueStride = 1
+    .paddingSize = PADDING_SIZE
   };
-  std::vector<uint8_t> canvas(canvasDescription.size.width * canvasDescription.size.height);
+  std::vector<cell_t> canvas(canvasDescription.size.width * canvasDescription.size.height);
 
   const auto [width, height] = canvasDescription.size;
 
@@ -107,51 +104,5 @@ TEST_CASE("painting 2-padding 0-offset 1-stride", "[painting]") {
 
     uint32_t idx = row * width + col;
     CHECK(canvas[idx] == BRUSH_VALUE);
-  }
-}
-
-TEST_CASE("painting 0-padding 0-offset 4-stride", "[painting]") {
-  const PaintingCanvasDescription canvasDescription = {
-    .size = {
-      .width = 1,
-      .height = 1
-    },
-    .paddingSize = 0,
-    .valueOffset = 0,
-    .valueStride = 4
-  };
-  std::vector<uint8_t> canvas(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride);
-
-  SECTION("position (0, 0)") {
-    std::ranges::fill(canvas, EMPTY_VALUE);
-    paintingBrush.paint(brushDescription, { .x = 0, .y = 0 }, canvasDescription, canvas);
-
-    CHECK(canvas[0] == BRUSH_VALUE);
-    for (uint32_t i = 1; i < canvas.size(); ++i) {
-      CHECK(canvas[i] == EMPTY_VALUE);
-    }
-  }
-}
-
-TEST_CASE("painting 0-padding 3-offset 4-stride", "[painting]") {
-  const PaintingCanvasDescription canvasDescription = {
-    .size = {
-      .width = 1,
-      .height = 1
-    },
-    .paddingSize = 0,
-    .valueOffset = 3,
-    .valueStride = 4
-  };
-  std::vector<uint8_t> canvas(canvasDescription.size.width * canvasDescription.size.height * canvasDescription.valueStride);
-
-  SECTION("position (0, 0)") {
-    std::ranges::fill(canvas, EMPTY_VALUE);
-    paintingBrush.paint(brushDescription, { .x = 0, .y = 0 }, canvasDescription, canvas);
-
-    CHECK(canvas[3] == BRUSH_VALUE);
-    for (uint32_t i = 0; i < canvas.size() - 1; ++i) {
-      CHECK(canvas[i] == EMPTY_VALUE);
-    }
   }
 }

@@ -3,6 +3,7 @@
 
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/ApplicationPainting.hpp"
+#include "application/simulation/cell.hpp"
 #include "application/simulation/gpu/GpuSimulator.hpp"
 #include "engine/EngineContext.hpp"
 #include "engine/application/IApplication.hpp"
@@ -45,7 +46,7 @@ private:
   auto paint(const engine::EngineContext& context) -> void;
 
   engine::Size2D<uint32_t> m_sizeWithPadding;
-  std::vector<uint8_t> m_buffer;
+  std::vector<cell_t> m_buffer;
 
   std::optional<GpuSimulator> m_simulator;
 
