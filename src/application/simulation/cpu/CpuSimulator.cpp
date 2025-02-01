@@ -92,16 +92,20 @@ auto CpuSimulator::run(
           const uint32_t ruleIdx = log2(bufferIn[idx]);
 
           { // MOVE_VERTICALLY
-            { // MOVE IN
-              const uint32_t otherIdx = idx + UP;
-              if (canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL)) {
+            { // MOVE OUT
+              const uint32_t otherIdx = idx + DOWN;
+              if (
+                canMoveCell(bufferIn, idx, { 0, -1 }, rule::VERTICAL) &&
+                !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL)
+              ) {
                 bufferOut[idx] = bufferIn[otherIdx];
                 continue;
               }
             }
-            { // MOVE OUT
-              if (canMoveCell(bufferIn, idx, { 0, -1 }, rule::VERTICAL)) {
-                bufferOut[idx] = bufferIn[idx + DOWN];
+            { // MOVE IN
+              const uint32_t otherIdx = idx + UP;
+              if (canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL)) {
+                bufferOut[idx] = bufferIn[otherIdx];
                 continue;
               }
             }
