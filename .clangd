@@ -1,4 +1,9 @@
 CompileFlags:
   # hack that silences missing std::exception support
   # caused by missing implementation on clang side
-  Add: [-D__cpp_concepts=202002L]
+  Add: [
+    -D__cpp_concepts=202002L
+    -Wall
+    -Wextra
+    -Wpedantic
+  ]
