@@ -2,8 +2,9 @@
 #include "application/drawing/TextureDrawingProgram.hpp"
 #include "application/painting/ApplicationPainting.hpp"
 #include "application/simulation/cell.hpp"
+#include "application/simulation/cpu/Color.hpp"
 #include "application/simulation/cpu/CpuSimulator.hpp"
-#include "application/simulation/cpu/utils.hpp"
+#include "application/simulation/cpu/colors.hpp"
 #include "application/simulation/padding.hpp"
 #include "engine/graphics/texture/Texture.hpp"
 #include "engine/input/binding/MouseButton.hpp"
@@ -18,6 +19,20 @@ using engine::Size2D;
 using engine::input::MouseButton;
 using engine::Texture;
 using engine::EngineContext;
+
+static auto mapCellsToColors(
+  const std::vector<cell_t>& inCells,
+  std::vector<float>& outColors
+) -> void {
+  for (uint32_t idx = 0; idx < inCells.size(); ++idx) {
+    const uint32_t colorIdx = std::log2(inCells[idx]);
+    const Color& color = COLORS[colorIdx];
+
+    for (uint32_t colorComponentIdx = 0; colorComponentIdx < 4; ++colorComponentIdx) {
+      outColors[idx * 4 + colorComponentIdx] = color.rgba[colorComponentIdx];
+    }
+  }
+}
 
 auto CpuApplication::create(
   Size2D<uint32_t> size,

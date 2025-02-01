@@ -3,5 +3,4 @@ target_sources(
   PUBLIC
   CpuApplication.cpp
   CpuSimulator.cpp
-  utils.cpp
 )
