@@ -101,14 +101,12 @@ auto GpuApplication::onUpdate(EngineContext& context) -> std::expected<void, Err
 
 auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, Error> {
   const auto [width, height] = m_sizeWithPadding;
-  const uint32_t offset = 3 * isGpuBigEndian;
-  const uint32_t stride = 4;
 
   m_buffer = std::vector<cell_t>(width * height, 0);
 
   for (uint32_t row = 0; row < height; ++row) {
     for (uint32_t col = 0; col < width; ++col) {
-      uint32_t idx = (row * width + col) * stride + offset;
+      const uint32_t idx = row * width + col;
       if (row < PADDING_SIZE || row >= width - PADDING_SIZE || col < PADDING_SIZE || col >= width - PADDING_SIZE) {
         m_buffer[idx] = cell::PADDING;
       } else {
