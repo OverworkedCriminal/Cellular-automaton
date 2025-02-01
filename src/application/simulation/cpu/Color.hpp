@@ -1,14 +1,7 @@
 #ifndef APPLICATION_SIMULATION_CPU_COLOR_HPP
 #define APPLICATION_SIMULATION_CPU_COLOR_HPP
 
-union Color {
-  struct {
-    float r;
-    float g;
-    float b;
-    float a;
-  };
-
+struct Color {
   float rgba[4];
 };
 

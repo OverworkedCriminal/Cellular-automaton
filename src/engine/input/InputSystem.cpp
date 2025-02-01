@@ -80,9 +80,9 @@ auto InputSystem::addMouseButtonCallback(std::weak_ptr<IMouseButtonCallback> cal
 auto InputSystem::keyboardCallback(
   GLFWwindow* window,
   int key,
-  int scancode,
+  int scancode [[maybe_unused]],
   int action,
-  int mods
+  int mods [[maybe_unused]]
 ) -> void {
   static_assert(GLFW_PRESS == 1);
   static_assert(GLFW_RELEASE == 0);
@@ -123,7 +123,7 @@ auto InputSystem::mouseButtonCallback(
   GLFWwindow* window,
   int button,
   int action,
-  int mods
+  int mods [[maybe_unused]]
 ) -> void {
   static_assert(GLFW_PRESS == 1);
   static_assert(GLFW_RELEASE == 0);

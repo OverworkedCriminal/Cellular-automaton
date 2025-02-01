@@ -42,16 +42,12 @@ GpuApplication::GpuApplication(Size2D<uint32_t> sizeWithPadding)
 {}
 
 auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, Error> {
-  auto& input = context.inputSystem;
-  
-  srand(time(NULL));
-
   auto isGpuBigEndianResult = isGpuBigEndian();
   if (!isGpuBigEndianResult.has_value()) {
     return std::unexpected(error("failed to check GPU endianess", isGpuBigEndianResult.error()));
   }
 
-  auto initBufferResult = initBuffer(*isGpuBigEndianResult);
+  auto initBufferResult = initBuffer();
   if (!initBufferResult.has_value()) {
     return std::unexpected(error("failed to init buffer", initBufferResult.error()));
   }
@@ -66,7 +62,7 @@ auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, Err
     return std::unexpected(error("failed to init drawing", initDrawingResult.error()));
   }
 
-  initPainting(context, *isGpuBigEndianResult);
+  initPainting(context);
 
   return {};
 }
@@ -99,7 +95,7 @@ auto GpuApplication::onUpdate(EngineContext& context) -> std::expected<void, Err
   return {};
 }
 
-auto GpuApplication::initBuffer(bool isGpuBigEndian) -> std::expected<void, Error> {
+auto GpuApplication::initBuffer() -> std::expected<void, Error> {
   const auto [width, height] = m_sizeWithPadding;
 
   m_buffer = std::vector<cell_t>(width * height, 0);
@@ -165,10 +161,7 @@ auto GpuApplication::initDrawing() -> std::expected<void, Error> {
   return {};
 }
 
-auto GpuApplication::initPainting(
-  EngineContext& context,
-  bool isGpuBigEndian
-) -> void {
+auto GpuApplication::initPainting(EngineContext& context) -> void {
   PaintingCanvasDescription canvasDescription = {
     .size = m_sizeWithPadding,
     .paddingSize = PADDING_SIZE

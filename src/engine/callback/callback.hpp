@@ -8,10 +8,10 @@ namespace engine {
 
 template<typename T>
 auto removeDeadCallbacks(std::vector<std::weak_ptr<T>>& callbacks) -> void {
-  const auto callbackCount = callbacks.size();
+  const uint32_t callbackCount = callbacks.size();
   unsigned deadCallbackCount = 0;
 
-  for (int i = 0; i < callbackCount - deadCallbackCount; ++i) {
+  for (uint32_t i = 0; i < callbackCount - deadCallbackCount; ++i) {
     const auto& callbackWeakPtr = callbacks[i];
     if (callbackWeakPtr.expired()) {
       std::swap(

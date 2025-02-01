@@ -1,4 +1,9 @@
 add_library(cellular-automaton-application STATIC)
+if(MSVC)
+  target_compile_options(cellular-automaton-application PRIVATE /W4 /WX)
+else()
+  target_compile_options(cellular-automaton-application PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 target_include_directories(
   cellular-automaton-application
