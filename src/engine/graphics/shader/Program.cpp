@@ -126,4 +126,62 @@ auto Program::getUniformLocation(const std::string& name) -> std::expected<GLint
   return location;
 }
 
+auto Program::setUniform(
+  const std::string& name,
+  const GLint* data,
+  uint32_t count
+) -> std::expected<void, Error>{
+  auto locationResult = getUniformLocation(name);
+  if (!locationResult.has_value()) {
+    return std::unexpected(std::move(locationResult.error()));
+  }
+
+  glUniform1iv(*locationResult, count, data);
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glUniform1iv", glError));
+  }
+  
+  return {};
+}
+
+auto Program::setUniform(
+  const std::string& name,
+  const GLuint* data,
+  uint32_t count
+) -> std::expected<void, Error>{
+  auto locationResult = getUniformLocation(name);
+  if (!locationResult.has_value()) {
+    return std::unexpected(std::move(locationResult.error()));
+  }
+
+  glUniform1uiv(*locationResult, count, data);
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glUniform1uiv", glError));
+  }
+  
+  return {};
+}
+
+auto Program::setUniformVec4(
+  const std::string& name,
+  const GLfloat* data,
+  uint32_t count
+) -> std::expected<void, Error>{
+  auto locationResult = getUniformLocation(name);
+  if (!locationResult.has_value()) {
+    return std::unexpected(std::move(locationResult.error()));
+  }
+
+  glUniform4fv(*locationResult, count, data);
+  const GLenum glError = glGetError();
+  if (glError != GL_NO_ERROR) {
+    return std::unexpected(errorGL("glUniform4fv", glError));
+  }
+  
+  return {};
+}
+
+
 }
