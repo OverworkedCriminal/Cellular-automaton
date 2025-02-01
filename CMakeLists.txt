@@ -18,6 +18,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Output file
 #
 add_executable(cellular-automaton)
+if(MSVC)
+  target_compile_options(cellular-automaton PRIVATE /W4 /WX)
+else()
+  target_compile_options(cellular-automaton PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 #
 # Header files
