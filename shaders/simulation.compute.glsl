@@ -31,19 +31,23 @@ void main() {
   const uint ruleIdx = uint(log2(inputBuffer[idx]));
 
   { // MOVE_VERTICALLY
-    { // MOVE IN
-      const uint otherIdx = idx + gridWidth;
+    { // MOVE OUT
+      const uint otherIdx = idx - gridWidth;
       const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
-      if ((inputBuffer[idx] & RULE_VERTICAL[otherRuleIdx]) > 0) {
+      const uint otherDownIdx = otherIdx - gridWidth;
+      if (
+        (inputBuffer[otherIdx] & RULE_VERTICAL[ruleIdx]) > 0 &&         // can move down
+        (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0 // other can't move down
+      ) {
         outputBuffer[idx] = inputBuffer[otherIdx];
         imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);
         return;
       }
     }
-    { // MOVE OUT
-      const uint otherIdx = idx - gridWidth;
+    { // MOVE IN
+      const uint otherIdx = idx + gridWidth;
       const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
-      if ((inputBuffer[otherIdx] & RULE_VERTICAL[ruleIdx]) > 0) {
+      if ((inputBuffer[idx] & RULE_VERTICAL[otherRuleIdx]) > 0) { // other can move down
         outputBuffer[idx] = inputBuffer[otherIdx];
         imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);
         return;
