@@ -11,9 +11,9 @@ class IApplication {
 public:
   virtual ~IApplication() {}
 
-  virtual auto onCreate(EngineContext& context) -> std::expected<void, Error> { return {}; }
-  virtual auto onDestroy(EngineContext& context) -> std::expected<void, Error> { return {}; }
-  virtual auto onUpdate(EngineContext& context) -> std::expected<void, Error> { return {}; }
+  virtual auto onCreate(EngineContext& context [[maybe_unused]]) -> std::expected<void, Error> { return {}; }
+  virtual auto onDestroy(EngineContext& context [[maybe_unused]]) -> std::expected<void, Error> { return {}; }
+  virtual auto onUpdate(EngineContext& context [[maybe_unused]]) -> std::expected<void, Error> { return {}; }
 };
 
 } // namespace engine

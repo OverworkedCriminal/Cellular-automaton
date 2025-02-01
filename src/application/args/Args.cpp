@@ -130,7 +130,7 @@ auto Args::parse(
     }
   };
 
-  for (uint32_t i = 1; i < argc; ++i) {
+  for (int i = 1; i < argc; ++i) {
     std::expected<void, Error> result;
 
     switch (context.state) {

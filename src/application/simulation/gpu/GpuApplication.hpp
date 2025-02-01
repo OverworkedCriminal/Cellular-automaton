@@ -38,10 +38,10 @@ public:
 private:
   GpuApplication(engine::Size2D<uint32_t> sizeWithPadding);
 
-  auto initBuffer(bool isGpuBigEndian) -> std::expected<void, engine::Error>;
+  auto initBuffer() -> std::expected<void, engine::Error>;
   auto initSimulation() -> std::expected<void, engine::Error>;
   auto initDrawing() -> std::expected<void, engine::Error>;
-  auto initPainting(engine::EngineContext& context, bool isGpuBigEndian) -> void;
+  auto initPainting(engine::EngineContext& context) -> void;
 
   auto paint(const engine::EngineContext& context) -> void;
 
