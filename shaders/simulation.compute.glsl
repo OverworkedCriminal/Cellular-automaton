@@ -135,8 +135,12 @@ void main() {
           (inputBuffer[otherIdx] & RULE_DIAGONAL[otherUpDiagRuleIdx]) == 0
         ) {
           outputBuffer[idx] = inputBuffer[otherIdx];
+          imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);
         } else {
-          outputBuffer[idx] = RULE_HORIZONTAL_OPPOSITE_DIRECTION_CELL[ruleIdx];
+          const uint oppositeDirectionCell = RULE_HORIZONTAL_OPPOSITE_DIRECTION_CELL[ruleIdx];
+          const uint oppositeDirectionCellRuleIdx = uint(log2(oppositeDirectionCell));
+          outputBuffer[idx] = oppositeDirectionCell;
+          imageStore(simulationTexture, coords, COLORS[oppositeDirectionCellRuleIdx]);
         }
         return;
       }
