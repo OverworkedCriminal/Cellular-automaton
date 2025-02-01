@@ -36,7 +36,7 @@ void main() {
       const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
       const uint otherDownIdx = otherIdx - gridWidth;
       if (
-        (inputBuffer[otherIdx] & RULE_VERTICAL[ruleIdx]) > 0 &&         // can move down
+        (inputBuffer[otherIdx] & RULE_VERTICAL[ruleIdx]) > 0 &&        // can move down
         (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0 // other can't move down
       ) {
         outputBuffer[idx] = inputBuffer[otherIdx];

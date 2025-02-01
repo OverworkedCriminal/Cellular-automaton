@@ -31,8 +31,8 @@ constexpr std::array<cell_t, 7> HORIZONTAL = {
   0b00000000, // PADDING
   0b00000000, // AIR
   0b00000000, // SAND
-  0b00010010, // WATER_L
-  0b00001010, // WATER_R
+  0b01110010, // WATER_L
+  0b01101010, // WATER_R
   0b01000010, // SMOKE_L
   0b00100010  // SMOKE_R
 };
