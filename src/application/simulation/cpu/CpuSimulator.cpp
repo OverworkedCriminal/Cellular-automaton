@@ -191,7 +191,7 @@ auto CpuSimulator::canMoveCell(
   const std::vector<cell_t>& bufferIn,
   uint32_t cellIdx,
   Position2D<int32_t> direction,
-  const std::array<cell_t, 5>& rules
+  const std::array<cell_t, 7>& rules
 ) const -> bool {
   const cell_t cell = bufferIn[cellIdx];
   const uint8_t cellRuleIdx = log2(cell);

@@ -11,6 +11,8 @@ namespace cell {
   constexpr cell_t SAND = 4;
   constexpr cell_t WATER_L = 8;
   constexpr cell_t WATER_R = 16;
+  constexpr cell_t SMOKE_L = 32;
+  constexpr cell_t SMOKE_R = 64;
 }
 
 #endif
