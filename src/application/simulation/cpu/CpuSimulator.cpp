@@ -111,30 +111,60 @@ auto CpuSimulator::run(
             }
           }
 
-          { // MOVE DIAGONALY
-            { // MOVE IN
-              const uint32_t otherIdx = idx + UP - m_priorityDirection;
-              if (
-                canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, rule::DIAGONAL) &&
-                !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
-                !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, rule::VERTICAL)
-              ) {
-                bufferOut[idx] = bufferIn[otherIdx];
-                continue;
+          { // MOVE DIAGONALLY
+            { // MOVE OUT
+              if (canMoveCell(bufferIn, idx, { m_priorityDirection, -1 }, rule::DIAGONAL)) {
+                const uint32_t otherIdx = idx + DOWN + m_priorityDirection;
+                const uint32_t otherTopIdx = otherIdx + UP;
+                if (
+                  !canMoveCell(bufferIn, otherTopIdx, { 0, -1 }, rule::VERTICAL) &&
+                  !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
+                  !canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, rule::DIAGONAL)
+                ) {
+                  bufferOut[idx] = bufferIn[otherIdx];
+                  continue;
+                }
               }
             }
-            { // MOVE OUT
-              const uint32_t otherIdx = idx + DOWN + m_priorityDirection;
-              if (
-                canMoveCell(bufferIn, idx, { m_priorityDirection, -1 }, rule::DIAGONAL) &&
-                !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
-                !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, rule::VERTICAL)
-              ) {
-                bufferOut[idx] = bufferIn[otherIdx];
-                continue;
+            { // MOVE IN
+              const uint32_t otherIdx = idx + UP - m_priorityDirection;
+              if (canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, rule::DIAGONAL)) {
+                const uint32_t otherTopIdx = otherIdx + UP;
+                if (
+                  !canMoveCell(bufferIn, otherTopIdx, { 0, -1 }, rule::VERTICAL) &&
+                  !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL)
+                ) {
+                  bufferOut[idx] = bufferIn[otherIdx];
+                  continue;
+                }
               }
             }
           }
+
+          // { // MOVE DIAGONALY
+          //   { // MOVE IN
+          //     const uint32_t otherIdx = idx + UP - m_priorityDirection;
+          //     if (
+          //       canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, rule::DIAGONAL) &&
+          //       !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
+          //       !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, rule::VERTICAL)
+          //     ) {
+          //       bufferOut[idx] = bufferIn[otherIdx];
+          //       continue;
+          //     }
+          //   }
+          //   { // MOVE OUT
+          //     const uint32_t otherIdx = idx + DOWN + m_priorityDirection;
+          //     if (
+          //       canMoveCell(bufferIn, idx, { m_priorityDirection, -1 }, rule::DIAGONAL) &&
+          //       !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
+          //       !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, rule::VERTICAL)
+          //     ) {
+          //       bufferOut[idx] = bufferIn[otherIdx];
+          //       continue;
+          //     }
+          //   }
+          // }
 
           { // MOVE_HORIZONTALLY
             { // MOVE IN
