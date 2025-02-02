@@ -1,3 +1,4 @@
+#include "application/simulation/cell.hpp"
 #ifdef CPU_SIMULATOR
 #include "application/simulation/test/CpuSimulatorFixture.test.hpp"
 #elifdef GPU_SIMULATOR
@@ -28,6 +29,22 @@ TEST_CASE_METHOD(TestFixture, "AIR should not fall down through WATER_R") {
   runTestExpectAllSuccess(2);
 }
 
+TEST_CASE_METHOD(TestFixture, "AIR should fall down through SMOKE_L") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 0, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L | cell::SMOKE_R);
+  expect({ 0, 0 }, cell::AIR);
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "AIR should fall down through SMOKE_R") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 0, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R | cell::SMOKE_L);
+  expect({ 0, 0 }, cell::AIR);
+  runTestExpectAllSuccess(2);
+}
+
 TEST_CASE_METHOD(TestFixture, "SAND should fall down through AIR") {
   set({ 0, 1 }, cell::SAND);
   set({ 0, 0 }, cell::AIR);
@@ -48,6 +65,22 @@ TEST_CASE_METHOD(TestFixture, "SAND should fall down through WATER_R") {
   set({ 0, 1 }, cell::SAND);
   set({ 0, 0 }, cell::WATER_R);
   expect({ 0, 1 }, cell::WATER_R);
+  expect({ 0, 0 }, cell::SAND);
+  runTestExpectAllSuccess();
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should fall down through SMOKE_L") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 0, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L | cell::SMOKE_R);
+  expect({ 0, 0 }, cell::SAND);
+  runTestExpectAllSuccess();
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should fall down through SMOKE_R") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 0, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R | cell::SMOKE_L);
   expect({ 0, 0 }, cell::SAND);
   runTestExpectAllSuccess();
 }
@@ -81,6 +114,38 @@ TEST_CASE_METHOD(TestFixture, "WATER_R should not fall down through SAND") {
   set({ 0, 0 }, cell::SAND);
   expect({ 0, 1 }, cell::WATER_R | cell::WATER_L);
   expect({ 0, 0 }, cell::SAND);
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should fall down through SMOKE_L") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ 0, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L);
+  expect({ 0, 0 }, cell::WATER_L | cell::WATER_R);
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should fall down through SMOKE_L") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ 0, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L);
+  expect({ 0, 0 }, cell::WATER_R | cell::WATER_L);
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should fall down through SMOKE_R") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ 0, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R);
+  expect({ 0, 0 }, cell::WATER_L | cell::WATER_R);
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should fall down through SMOKE_R") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ 0, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R);
+  expect({ 0, 0 }, cell::WATER_R | cell::WATER_L);
   runTestExpectAllSuccess(2);
 }
 
@@ -142,6 +207,46 @@ TEST_CASE_METHOD(TestFixture, "AIR should not fall diagonally right through WATE
   runTestExpectAllSuccess(2);
 }
 
+TEST_CASE_METHOD(TestFixture, "AIR should fall diagonally right through SMOKE_L") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 1, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L | cell::SMOKE_R);
+  expect({ 1, 0 }, cell::AIR);
+
+  // run test twice because moving diagonally happens in one direction at the time
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "AIR should fall diagonally right through SMOKE_R") {
+  set({ 0, 1 }, cell::AIR);
+  set({ 1, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R | cell::SMOKE_L);
+  expect({ 1, 0 }, cell::AIR);
+
+  // run test twice because moving diagonally happens in one direction at the time
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "AIR should fall diagonally left through SMOKE_L") {
+  set({  0, 1 }, cell::AIR);
+  set({ -1, 0 }, cell::SMOKE_L);
+  expect({  0, 1 }, cell::SMOKE_L | cell::SMOKE_R);
+  expect({ -1, 0 }, cell::AIR);
+
+  // run test twice because moving diagonally happens in one direction at the time
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "AIR should fall diagonally left through SMOKE_R") {
+  set({  0, 1 }, cell::AIR);
+  set({ -1, 0 }, cell::SMOKE_R);
+  expect({  0, 1 }, cell::SMOKE_R | cell::SMOKE_L);
+  expect({ -1, 0 }, cell::AIR);
+
+  // run test twice because moving diagonally happens in one direction at the time
+  runTestExpectAnySuccess(2);
+}
+
 TEST_CASE_METHOD(TestFixture, "SAND should fall diagonally left through AIR") {
   set({ 0, 1 }, cell::SAND);
   set({ -1, 0 }, cell::AIR);
@@ -194,6 +299,42 @@ TEST_CASE_METHOD(TestFixture, "SAND should not fall diagonally right through WAT
   expect({ 1, 0 }, cell::WATER_R | cell::WATER_L);
 
   runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should fall diagonally left through SMOKE_L") {
+  set({  0, 1 }, cell::SAND);
+  set({ -1, 0 }, cell::SMOKE_L);
+  expect({  0, 1 }, cell::SMOKE_L | cell::SMOKE_R);
+  expect({ -1, 0 }, cell::SAND);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should fall diagonally left through SMOKE_R") {
+  set({  0, 1 }, cell::SAND);
+  set({ -1, 0 }, cell::SMOKE_R);
+  expect({  0, 1 }, cell::SMOKE_R | cell::SMOKE_L);
+  expect({ -1, 0 }, cell::SAND);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should fall diagonally right through SMOKE_L") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 1, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L | cell::SMOKE_R);
+  expect({ 1, 0 }, cell::SAND);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should fall diagonally right through SMOKE_R") {
+  set({ 0, 1 }, cell::SAND);
+  set({ 1, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R | cell::SMOKE_L);
+  expect({ 1, 0 }, cell::SAND);
+
+  runTestExpectAnySuccess(2);
 }
 
 TEST_CASE_METHOD(TestFixture, "WATER_L should fall diagonally left through AIR") {
@@ -268,6 +409,78 @@ TEST_CASE_METHOD(TestFixture, "WATER_R should not fall diagonally right through 
   runTestExpectAllSuccess(2);
 }
 
+TEST_CASE_METHOD(TestFixture, "WATER_L should fall diagonally left through SMOKE_L") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ -1, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L);
+  expect({ -1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should fall diagonally right through SMOKE_L") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ 1, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L);
+  expect({ 1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should fall diagonally left through SMOKE_L") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ -1, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L);
+  expect({ -1, 0 }, cell::WATER_R);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should fall diagonally right through SMOKE_L") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ 1, 0 }, cell::SMOKE_L);
+  expect({ 0, 1 }, cell::SMOKE_L);
+  expect({ 1, 0 }, cell::WATER_R);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should fall diagonally left through SMOKE_R") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ -1, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R);
+  expect({ -1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should fall diagonally right through SMOKE_R") {
+  set({ 0, 1 }, cell::WATER_L);
+  set({ 1, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R);
+  expect({ 1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should fall diagonally left through SMOKE_R") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ -1, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R);
+  expect({ -1, 0 }, cell::WATER_R);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should fall diagonally right through SMOKE_R") {
+  set({ 0, 1 }, cell::WATER_R);
+  set({ 1, 0 }, cell::SMOKE_R);
+  expect({ 0, 1 }, cell::SMOKE_R);
+  expect({ 1, 0 }, cell::WATER_R);
+
+  runTestExpectAnySuccess(2);
+}
+
 TEST_CASE_METHOD(TestFixture, "SAND should not move horizontally left through AIR") {
   set({  0, 0 }, cell::SAND);
   set({ -1, 0 }, cell::AIR);
@@ -286,10 +499,64 @@ TEST_CASE_METHOD(TestFixture, "SAND should not move horizontally right through A
   runTestExpectAllSuccess(2);
 }
 
+TEST_CASE_METHOD(TestFixture, "SAND should not move horizontally left through SMOKE_L") {
+  set({  0, 0 }, cell::SAND);
+  set({ -1, 0 }, cell::SMOKE_L);
+  expect({  0, 0 }, cell::SAND);
+  expect({ -1, 0 }, cell::SMOKE_L | cell::SMOKE_R);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should not move horizontally right through SMOKE_L") {
+  set({ 0, 0 }, cell::SAND);
+  set({ 1, 0 }, cell::SMOKE_L);
+  expect({ 0, 0 }, cell::SAND);
+  expect({ 1, 0 }, cell::SMOKE_L | cell::SMOKE_R);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should not move horizontally left through SMOKE_R") {
+  set({  0, 0 }, cell::SAND);
+  set({ -1, 0 }, cell::SMOKE_R);
+  expect({  0, 0 }, cell::SAND);
+  expect({ -1, 0 }, cell::SMOKE_L | cell::SMOKE_R);
+
+  runTestExpectAllSuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "SAND should not move horizontally right through SMOKE_R") {
+  set({ 0, 0 }, cell::SAND);
+  set({ 1, 0 }, cell::SMOKE_R);
+  expect({ 0, 0 }, cell::SAND);
+  expect({ 1, 0 }, cell::SMOKE_L | cell::SMOKE_R);
+
+  runTestExpectAllSuccess(2);
+}
+
 TEST_CASE_METHOD(TestFixture, "WATER_L should move horizontally left through AIR") {
   set({  0, 0 }, cell::WATER_L);
   set({ -1, 0 }, cell::AIR);
   expect({  0, 0 }, cell::AIR);
+  expect({ -1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should move horizontally left through SMOKE_L") {
+  set({  0, 0 }, cell::WATER_L);
+  set({ -1, 0 }, cell::SMOKE_L);
+  expect({  0, 0 }, cell::SMOKE_L | cell::SMOKE_R);
+  expect({ -1, 0 }, cell::WATER_L);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_L should move horizontally left through SMOKE_R") {
+  set({  0, 0 }, cell::WATER_L);
+  set({ -1, 0 }, cell::SMOKE_R);
+  expect({  0, 0 }, cell::SMOKE_R);
   expect({ -1, 0 }, cell::WATER_L);
 
   runTestExpectAnySuccess(2);
@@ -317,6 +584,24 @@ TEST_CASE_METHOD(TestFixture, "WATER_R should move horizontally right through AI
   set({ 0, 0 }, cell::WATER_R);
   set({ 1, 0 }, cell::AIR);
   expect({ 0, 0 }, cell::AIR);
+  expect({ 1, 0 }, cell::WATER_R);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should move horizontally right through SMOKE_L") {
+  set({ 0, 0 }, cell::WATER_R);
+  set({ 1, 0 }, cell::SMOKE_L);
+  expect({ 0, 0 }, cell::SMOKE_L);
+  expect({ 1, 0 }, cell::WATER_R);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "WATER_R should move horizontally right through SMOKE_R") {
+  set({ 0, 0 }, cell::WATER_R);
+  set({ 1, 0 }, cell::SMOKE_R);
+  expect({ 0, 0 }, cell::SMOKE_R);
   expect({ 1, 0 }, cell::WATER_R);
 
   runTestExpectAnySuccess(2);
@@ -396,13 +681,23 @@ TEST_CASE_METHOD(TestFixture, "Move down, bottom should have priority") {
 }
 
 TEST_CASE_METHOD(TestFixture, "Move down diagonally, bottom should have priority") {
-  SKIP("SAND can't move through water diagonally so this test is pointless");
-  set({  1,  1 }, cell::SAND);
-  set({  0,  0 }, cell::WATER_L);
-  set({ -1, -1 }, cell::AIR);
-  expect({  1,  1 }, cell::SAND);
-  expect({  0,  0 }, cell::AIR);
-  expect({ -1, -1 }, cell::WATER_L | cell::WATER_R);
+  set({  1,  1 }, cell::WATER_L);
+  set({  0,  0 }, cell::AIR);
+  set({ -1, -1 }, cell::SMOKE_L);
+  expect({  1,  1 }, cell::WATER_L | cell::WATER_R);
+  expect({  0,  0 }, cell::SMOKE_L | cell::SMOKE_R);
+  expect({ -1, -1 }, cell::AIR);
+
+  runTestExpectAnySuccess(2);
+}
+
+TEST_CASE_METHOD(TestFixture, "Move horizontally, further should have priority") {
+  set({ -1, 0 }, cell::WATER_R);
+  set({  0, 0 }, cell::SMOKE_R);
+  set({  1, 0 }, cell::AIR);
+  expect({ -1, 0 }, cell::WATER_R | cell::WATER_L);
+  expect({  0, 0 }, cell::AIR);
+  expect({  1, 0 }, cell::SMOKE_R);
 
   runTestExpectAnySuccess(2);
 }

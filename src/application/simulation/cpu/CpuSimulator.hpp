@@ -62,7 +62,7 @@ private:
     const std::vector<cell_t>& bufferIn,
     uint32_t cellIdx,
     engine::Position2D<int32_t> direction,
-    const std::array<cell_t, 5>& rules
+    const std::array<cell_t, 7>& rules
   ) const -> bool;
 };
 
