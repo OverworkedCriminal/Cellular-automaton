@@ -57,6 +57,8 @@ private:
   std::optional<TextureDrawingProgram> m_drawingProgram;
 
   std::optional<ApplicationPainting> m_applicationPainting;
+
+  bool m_isCpuAndGpuEndianessMatching;
 };
 
 #endif
