@@ -21,10 +21,11 @@ protected:
   TestFixture() {
     initOpenGL();
 
-    auto isGpuBigEndianResult = isGpuBigEndian();
-    if (!isGpuBigEndianResult.has_value()) {
-      throw std::runtime_error(isGpuBigEndianResult.error().message());
+    auto isCpuGpuEndianessMatchingResult = isCpuAndGpuEndianessMatching();
+    if (!isCpuGpuEndianessMatchingResult.has_value()) {
+      throw std::runtime_error(isCpuGpuEndianessMatchingResult.error().message());
     }
+    isEndianessMatching = *isCpuGpuEndianessMatchingResult;
 
     canvasDescription = {
       .size = {
@@ -76,6 +77,10 @@ protected:
   }
 
   auto runSimulator() -> void override {
+    if (!isEndianessMatching) {
+      switchEndianess(input);
+      switchEndianess(output);
+    }
     inputSSBO->store(input);
     outputSSBO->store(output);
 
@@ -89,9 +94,15 @@ protected:
     }
 
     outputSSBO->load(output);
+    if (!isEndianessMatching) {
+      switchEndianess(input);
+      switchEndianess(output);
+    }
   }
 
 private:
+  bool isEndianessMatching;
+
   auto initOpenGL() -> void {
     if (!glfwInit()) {
       throw std::runtime_error("failed to init GLFW");

@@ -19,7 +19,6 @@ uniform int RULE_HORIZONTAL_DIRECTIONS[32];
 uniform uint RULE_HORIZONTAL_OPPOSITE_DIRECTION_CELL[32];
 
 uniform uint gridWidth;
-uniform uint gridHeight;
 uniform uint gridPadding;
 uniform int priorityDirection;
 
@@ -34,14 +33,13 @@ void main() {
     { // MOVE OUT
       const uint otherIdx = idx - gridWidth;
       const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
-      const uint otherDownIdx = otherIdx - gridWidth;
-      if (
-        (inputBuffer[otherIdx] & RULE_VERTICAL[ruleIdx]) > 0 &&        // can move down
-        (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0 // other can't move down
-      ) {
-        outputBuffer[idx] = inputBuffer[otherIdx];
-        imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);
-        return;
+      if ((inputBuffer[otherIdx] & RULE_VERTICAL[ruleIdx]) > 0) {             // can move down
+        const uint otherDownIdx = otherIdx - gridWidth;
+        if ((inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0) { // other can't move down
+          outputBuffer[idx] = inputBuffer[otherIdx];
+          imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);
+          return;
+        }
       }
     }
     { // MOVE IN
@@ -56,16 +54,18 @@ void main() {
   }
 
   { // MOVE_DIAGONALLY
-    { // MOVE IN
-      const uint otherIdx = idx + gridWidth - priorityDirection;
-      const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
-      if ((inputBuffer[idx] & RULE_DIAGONAL[otherRuleIdx]) > 0) {
-        const uint otherUpIdx = otherIdx + gridWidth;
-        const uint otherUpRuleIdx = uint(log2(inputBuffer[otherUpIdx]));
+    { // MOVE OUT
+      const uint otherIdx = idx - gridWidth + priorityDirection;
+      if ((inputBuffer[otherIdx] & RULE_DIAGONAL[ruleIdx]) > 0) { // can move diagonally
+        const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
+        const uint otherTopIdx = otherIdx + gridWidth;
+        const uint otherTopRuleIdx = uint(log2(inputBuffer[otherTopIdx]));
         const uint otherDownIdx = otherIdx - gridWidth;
+        const uint otherDiagonalIdx = otherIdx - gridWidth + priorityDirection;
         if (
-          (inputBuffer[otherIdx] & RULE_VERTICAL[otherUpRuleIdx]) == 0 &&
-          (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0
+          (inputBuffer[otherIdx] & RULE_VERTICAL[otherTopRuleIdx]) == 0 &&   // other top can't move vertically
+          (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0 &&  // other can't move vertically
+          (inputBuffer[otherDiagonalIdx] & RULE_DIAGONAL[otherRuleIdx]) == 0 // other can't move diagonally
         ) {
           outputBuffer[idx] = inputBuffer[otherIdx];
           imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);
@@ -73,16 +73,16 @@ void main() {
         }
       }
     }
-    { // MOVE OUT
-      const uint otherIdx = idx - gridWidth + priorityDirection;
+    { // MOVE IN
+      const uint otherIdx = idx + gridWidth - priorityDirection;
       const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
-      if ((inputBuffer[otherIdx] & RULE_DIAGONAL[ruleIdx]) > 0) {
-        const uint otherUpIdx = otherIdx + gridWidth;
-        const uint otherUpRuleIdx = uint(log2(inputBuffer[otherUpIdx]));
+      if ((inputBuffer[idx] & RULE_DIAGONAL[otherRuleIdx]) > 0) { // other can move diagonally
+        const uint otherTopIdx = otherIdx + gridWidth;
+        const uint otherTopRuleIdx = uint(log2(inputBuffer[otherTopIdx]));
         const uint otherDownIdx = otherIdx - gridWidth;
         if (
-          (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0 &&
-          (inputBuffer[otherIdx] & RULE_VERTICAL[otherUpRuleIdx]) == 0
+          (inputBuffer[otherIdx] & RULE_VERTICAL[otherTopRuleIdx]) == 0 && // other top can't move vertically
+          (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0   // other can't move vertically
         ) {
           outputBuffer[idx] = inputBuffer[otherIdx];
           imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);

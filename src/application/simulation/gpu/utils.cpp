@@ -3,6 +3,7 @@
 #include "engine/graphics/shader/Shader.hpp"
 #include "engine/graphics/shader/ShaderStorageBuffer.hpp"
 #include "engine/utils/error.hpp"
+#include <bit>
 
 using engine::Error;
 using engine::error;
@@ -10,7 +11,7 @@ using engine::Shader;
 using engine::Program;
 using engine::ShaderStorageBuffer;
 
-auto isGpuBigEndian() -> std::expected<bool, Error> {
+auto isCpuAndGpuEndianessMatching() -> std::expected<bool, Error> {
   auto shaderResult = Shader::create_from_file(GL_COMPUTE_SHADER, "shaders/endianess.compute.glsl");
   if (!shaderResult.has_value()) {
     return std::unexpected(error("failed to create endianess shader", shaderResult.error()));
@@ -52,11 +53,18 @@ auto isGpuBigEndian() -> std::expected<bool, Error> {
 
   shaderBuffer.load(shaderBufferBytes);
 
-  // Shader stores value 1 to shaderBuffer on 4 bytes.
-  // If GPU uses little endian value 1 should be at byteIdx 0
-  // If GPU uses big endian value 1 should be at byteIdx 3
-  uint8_t byte = shaderBufferBytes[3];
-  bool isBigEndian = byte == 1;
+  // Map array of bytes to single uint32_t
+  const uint8_t* shaderBufferBytesData = shaderBufferBytes.data();
+  const uint32_t* storedNumberPtr = reinterpret_cast<const uint32_t*>(shaderBufferBytesData);
 
-  return isBigEndian;
+  // If one stored on GPU matches 1 on CPU endianess match
+  const bool isEndianessMatching = (*storedNumberPtr) == 1;
+
+  return isEndianessMatching;
+}
+
+auto switchEndianess(std::vector<uint32_t>& buffer) -> void {
+  for (uint32_t i = 0; i < buffer.size(); ++i) {
+    buffer[i] = std::byteswap(buffer[i]);
+  }
 }

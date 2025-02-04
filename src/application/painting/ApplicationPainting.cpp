@@ -25,19 +25,22 @@ auto ApplicationPainting::create(
     }
   );
   auto paintingBrushPtr = std::make_unique<SquarePaintingBrush>(SquarePaintingBrush::create());
-  auto keyboardCallback = std::make_shared<ApplicationPaintingCallback>(
+  auto callbacks = std::make_shared<ApplicationPaintingCallback>(
     ApplicationPaintingCallback::create(brushDescriptionPtr)
   );
 
   context
     .inputSystem
-    .addKeyboardKeyCallback(keyboardCallback);
+    .addKeyboardKeyCallback(callbacks);
+  context
+    .inputSystem
+    .addMouseScrollCallback(callbacks);
 
   return ApplicationPainting(
     canvasDescription,
     std::move(brushDescriptionPtr),
     std::move(paintingBrushPtr),
-    std::move(keyboardCallback)
+    std::move(callbacks)
   );
 }
 

@@ -42,10 +42,11 @@ GpuApplication::GpuApplication(Size2D<uint32_t> sizeWithPadding)
 {}
 
 auto GpuApplication::onCreate(EngineContext& context) -> std::expected<void, Error> {
-  auto isGpuBigEndianResult = isGpuBigEndian();
-  if (!isGpuBigEndianResult.has_value()) {
-    return std::unexpected(error("failed to check GPU endianess", isGpuBigEndianResult.error()));
+  auto isEndianessMatching = isCpuAndGpuEndianessMatching();
+  if (!isEndianessMatching.has_value()) {
+    return std::unexpected(error("failed to check GPU endianess", isEndianessMatching.error()));
   }
+  m_isCpuAndGpuEndianessMatching = *isEndianessMatching;
 
   auto initBufferResult = initBuffer();
   if (!initBufferResult.has_value()) {
@@ -131,13 +132,17 @@ auto GpuApplication::initSimulation() -> std::expected<void, Error> {
     return std::unexpected(error("failed to create input SSBO", inputSSBO.error()));
   }
   m_inputSSBO = std::move(*inputSSBO);
-  m_inputSSBO->store(m_buffer);
 
   auto outputSSBO = ShaderStorageBuffer::create(width * height * 4);
   if (!outputSSBO.has_value()) {
     return std::unexpected(error("failed to create output SSBO", outputSSBO.error()));
   }
   m_outputSSBO = std::move(*outputSSBO);
+
+  if (!m_isCpuAndGpuEndianessMatching) {
+    switchEndianess(m_buffer);
+  }
+  m_inputSSBO->store(m_buffer);
   m_outputSSBO->store(m_buffer);
 
   return {};
@@ -172,6 +177,14 @@ auto GpuApplication::initPainting(EngineContext& context) -> void {
 
 auto GpuApplication::paint(const EngineContext& context) -> void {
   m_inputSSBO->load(m_buffer);
+  if (!m_isCpuAndGpuEndianessMatching) {
+    switchEndianess(m_buffer);
+  }
+
   m_applicationPainting->paint(context, m_buffer);
+
+  if (!m_isCpuAndGpuEndianessMatching) {
+    switchEndianess(m_buffer);
+  }
   m_inputSSBO->store(m_buffer);
 }

@@ -1,6 +1,7 @@
 #ifndef ENGINE_INPUT_IINPUT_SYSTEM_HPP
 #define ENGINE_INPUT_IINPUT_SYSTEM_HPP
 
+#include "engine/callback/IMouseScrollCallback.hpp"
 #include "engine/input/binding/KeyboardKey.hpp"
 #include "engine/input/binding/MouseButton.hpp"
 #include "engine/callback/IKeyboardKeyCallback.hpp"
@@ -22,6 +23,7 @@ public:
   virtual auto addKeyboardKeyCallback(std::weak_ptr<IKeyboardKeyCallback>) -> void = 0;
   virtual auto addMousePositionCallback(std::weak_ptr<IMousePositionCallback>) -> void = 0;
   virtual auto addMouseButtonCallback(std::weak_ptr<IMouseButtonCallback>) -> void = 0;
+  virtual auto addMouseScrollCallback(std::weak_ptr<IMouseScrollCallback>) -> void = 0;
 };
 
 }

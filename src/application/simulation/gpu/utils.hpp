@@ -3,7 +3,10 @@
 
 #include "engine/error/Error.hpp"
 #include <expected>
+#include <vector>
 
-auto isGpuBigEndian() -> std::expected<bool, engine::Error>;
+auto isCpuAndGpuEndianessMatching() -> std::expected<bool, engine::Error>;
+
+auto switchEndianess(std::vector<uint32_t>& buffer) -> void;
 
 #endif
