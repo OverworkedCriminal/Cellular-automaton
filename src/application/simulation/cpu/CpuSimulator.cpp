@@ -1,7 +1,6 @@
 #include "application/simulation/cpu/CpuSimulator.hpp"
 #include "application/simulation/padding.hpp"
 #include "application/simulation/rule.hpp"
-#include "engine/utils/dto/Position2D.hpp"
 #include "engine/utils/error.hpp"
 #include "engine/utils/thread_pool/ThreadPool.hpp"
 #include <cassert>
@@ -11,7 +10,6 @@
 
 using engine::error;
 using engine::Size2D;
-using engine::Position2D;
 using engine::Error;
 using engine::ThreadPool;
 
@@ -63,11 +61,11 @@ CpuSimulator::CpuSimulator(
 {}
 
 auto CpuSimulator::run(
-  const std::vector<cell_t>& bufferIn,
-  std::vector<cell_t>& bufferOut
+  const std::vector<cell_t>& inputBuffer,
+  std::vector<cell_t>& outputBuffer
 ) -> void {
-  assert(bufferIn.size() == m_sizeWithPadding.width * m_sizeWithPadding.height);
-  assert(bufferIn.size() == bufferOut.size());
+  assert(inputBuffer.size() == m_sizeWithPadding.width * m_sizeWithPadding.height);
+  assert(inputBuffer.size() == outputBuffer.size());
 
   // Any movement in this direction should take priority
   // over movement in opposite direction
@@ -76,10 +74,7 @@ auto CpuSimulator::run(
   std::latch latch(m_threadPool.getSize());
 
   for (uint32_t i = 0; i < m_threadPool.getSize(); ++i) {
-    m_threadPool.run([this, &bufferIn, &bufferOut, &latch, i] {
-      const int32_t UP = m_sizeWithPadding.width;
-      const int32_t DOWN = -m_sizeWithPadding.width;
-
+    m_threadPool.run([this, &inputBuffer, &outputBuffer, &latch, i] {
       const uint32_t rowBeg = m_subrangeSize.height * i;
       const uint32_t rowEnd = m_subrangeSize.height * (i + 1);
 
@@ -89,115 +84,116 @@ auto CpuSimulator::run(
       for (uint32_t row = rowBeg; row < rowEnd; ++row) {
         for (uint32_t col = colBeg; col < colEnd; ++col) {
           const uint32_t idx = (row + PADDING_SIZE) * m_sizeWithPadding.width + col + PADDING_SIZE;
-          const uint32_t ruleIdx = log2(bufferIn[idx]);
+          const uint32_t ruleIdx = log2(inputBuffer[idx]);
 
           { // MOVE_VERTICALLY
             { // MOVE OUT
-              const uint32_t otherIdx = idx + DOWN;
-              if (
-                canMoveCell(bufferIn, idx, { 0, -1 }, rule::VERTICAL) &&
-                !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL)
-              ) {
-                bufferOut[idx] = bufferIn[otherIdx];
-                continue;
+              const uint32_t otherIdx = idx - m_sizeWithPadding.width;
+              const uint32_t otherRuleIdx = std::log2(inputBuffer[otherIdx]);
+              if ((inputBuffer[otherIdx] & rule::VERTICAL[ruleIdx]) > 0) {
+                const uint32_t otherDownIdx = otherIdx - m_sizeWithPadding.width;
+                if ((inputBuffer[otherDownIdx] & rule::VERTICAL[otherRuleIdx]) == 0) { // other can't move down
+                  outputBuffer[idx] = inputBuffer[otherIdx];
+                  continue;
+                }
               }
             }
             { // MOVE IN
-              const uint32_t otherIdx = idx + UP;
-              if (canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL)) {
-                bufferOut[idx] = bufferIn[otherIdx];
+              const uint32_t otherIdx = idx + m_sizeWithPadding.width;
+              const uint32_t otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
+              if ((inputBuffer[idx] & rule::VERTICAL[otherRuleIdx]) > 0) { // other can move down
+                outputBuffer[idx] = inputBuffer[otherIdx];
                 continue;
               }
             }
           }
 
-          { // MOVE DIAGONALLY
+          { // MOVE_DIAGONALLY
             { // MOVE OUT
-              if (canMoveCell(bufferIn, idx, { m_priorityDirection, -1 }, rule::DIAGONAL)) {
-                const uint32_t otherIdx = idx + DOWN + m_priorityDirection;
-                const uint32_t otherTopIdx = otherIdx + UP;
+              const uint32_t otherIdx = idx - m_sizeWithPadding.width + m_priorityDirection;
+              if ((inputBuffer[otherIdx] & rule::DIAGONAL[ruleIdx]) > 0) { // can move diagonally
+                const uint32_t otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
+                const uint32_t otherTopIdx = otherIdx + m_sizeWithPadding.width;
+                const uint32_t otherTopRuleIdx = uint(log2(inputBuffer[otherTopIdx]));
+                const uint32_t otherDownIdx = otherIdx - m_sizeWithPadding.width;
+                const uint32_t otherDiagonalIdx = otherIdx - m_sizeWithPadding.width + m_priorityDirection;
                 if (
-                  !canMoveCell(bufferIn, otherTopIdx, { 0, -1 }, rule::VERTICAL) &&
-                  !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
-                  !canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, rule::DIAGONAL)
+                  (inputBuffer[otherIdx] & rule::VERTICAL[otherTopRuleIdx]) == 0 &&   // other top can't move vertically
+                  (inputBuffer[otherDownIdx] & rule::VERTICAL[otherRuleIdx]) == 0 &&  // other can't move vertically
+                  (inputBuffer[otherDiagonalIdx] & rule::DIAGONAL[otherRuleIdx]) == 0 // other can't move diagonally
                 ) {
-                  bufferOut[idx] = bufferIn[otherIdx];
+                  outputBuffer[idx] = inputBuffer[otherIdx];
                   continue;
                 }
               }
             }
             { // MOVE IN
-              const uint32_t otherIdx = idx + UP - m_priorityDirection;
-              if (canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, rule::DIAGONAL)) {
-                const uint32_t otherTopIdx = otherIdx + UP;
+              const uint32_t otherIdx = idx + m_sizeWithPadding.width - m_priorityDirection;
+              const uint32_t otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
+              if ((inputBuffer[idx] & rule::DIAGONAL[otherRuleIdx]) > 0) { // other can move diagonally
+                const uint32_t otherTopIdx = otherIdx + m_sizeWithPadding.width;
+                const uint32_t otherTopRuleIdx = uint(log2(inputBuffer[otherTopIdx]));
+                const uint32_t otherDownIdx = otherIdx - m_sizeWithPadding.width;
                 if (
-                  !canMoveCell(bufferIn, otherTopIdx, { 0, -1 }, rule::VERTICAL) &&
-                  !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL)
+                  (inputBuffer[otherIdx] & rule::VERTICAL[otherTopRuleIdx]) == 0 && // other top can't move vertically
+                  (inputBuffer[otherDownIdx] & rule::VERTICAL[otherRuleIdx]) == 0   // other can't move vertically
                 ) {
-                  bufferOut[idx] = bufferIn[otherIdx];
+                  outputBuffer[idx] = inputBuffer[otherIdx];
                   continue;
                 }
               }
             }
           }
-
-          // { // MOVE DIAGONALY
-          //   { // MOVE IN
-          //     const uint32_t otherIdx = idx + UP - m_priorityDirection;
-          //     if (
-          //       canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, rule::DIAGONAL) &&
-          //       !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
-          //       !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, rule::VERTICAL)
-          //     ) {
-          //       bufferOut[idx] = bufferIn[otherIdx];
-          //       continue;
-          //     }
-          //   }
-          //   { // MOVE OUT
-          //     const uint32_t otherIdx = idx + DOWN + m_priorityDirection;
-          //     if (
-          //       canMoveCell(bufferIn, idx, { m_priorityDirection, -1 }, rule::DIAGONAL) &&
-          //       !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
-          //       !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, rule::VERTICAL)
-          //     ) {
-          //       bufferOut[idx] = bufferIn[otherIdx];
-          //       continue;
-          //     }
-          //   }
-          // }
 
           { // MOVE_HORIZONTALLY
             { // MOVE IN
               const uint32_t otherIdx = idx - m_priorityDirection;
-              const uint32_t otherRuleIdx = log2(bufferIn[otherIdx]);
-              const int32_t otherDirection = rule::HORIZONTAL_DIRECTIONS[otherRuleIdx];
-
+              const uint32_t otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
               if (
-                otherDirection == m_priorityDirection &&
-                canMoveCell(bufferIn, otherIdx, { m_priorityDirection, 0 }, rule::HORIZONTAL) &&
-                !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
-                !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, rule::VERTICAL) &&
-                !canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, rule::DIAGONAL) &&
-                !canMoveCell(bufferIn, otherIdx + UP - m_priorityDirection, { m_priorityDirection, -1 }, rule::DIAGONAL)
+                rule::HORIZONTAL_DIRECTIONS[otherRuleIdx] == m_priorityDirection &&
+                (inputBuffer[idx] & rule::HORIZONTAL[otherRuleIdx]) > 0
               ) {
-                bufferOut[idx] = bufferIn[otherIdx];
-                continue;
+                const uint32_t otherDownIdx = otherIdx - m_sizeWithPadding.width;
+                const uint32_t otherDownDiagIdx = otherDownIdx + m_priorityDirection;
+                const uint32_t otherTopIdx = otherIdx + m_sizeWithPadding.width;
+                const uint32_t otherTopRuleIdx = uint(log2(inputBuffer[otherTopIdx]));
+                const uint32_t otherTopDiagIdx = otherTopIdx - m_priorityDirection;
+                const uint32_t otherTopDiagRuleIdx = uint(log2(inputBuffer[otherTopDiagIdx]));
+
+                if(
+                  (inputBuffer[otherDownIdx] & rule::VERTICAL[otherRuleIdx]) == 0 &&
+                  (inputBuffer[otherIdx] & rule::VERTICAL[otherTopRuleIdx]) == 0 &&
+                  (inputBuffer[otherDownDiagIdx] & rule::DIAGONAL[otherRuleIdx]) == 0 &&
+                  (inputBuffer[otherIdx] & rule::DIAGONAL[otherTopDiagRuleIdx]) == 0
+                ) {
+                  outputBuffer[idx] = inputBuffer[otherIdx];
+                  continue;
+                }
               }
             }
             { // MOVE OUT
               const int32_t direction = rule::HORIZONTAL_DIRECTIONS[ruleIdx];
               const uint32_t otherIdx = idx + m_priorityDirection;
               if (direction == m_priorityDirection) {
+                const uint32_t otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
+                const uint32_t otherDownIdx = otherIdx - m_sizeWithPadding.width;
+                const uint32_t otherDownDiagIdx = otherIdx - m_sizeWithPadding.width + m_priorityDirection;
+                const uint32_t otherUpIdx = otherIdx + m_sizeWithPadding.width;
+                const uint32_t otherUpRuleIdx = uint(log2(inputBuffer[otherUpIdx]));
+                const uint32_t otherUpDiagIdx = otherIdx + m_sizeWithPadding.width - m_priorityDirection;
+                const uint32_t otherUpDiagRuleIdx = uint(log2(inputBuffer[otherUpDiagIdx]));
+
                 if (
-                  canMoveCell(bufferIn, idx, { m_priorityDirection, 0 }, rule::HORIZONTAL) &&
-                  !canMoveCell(bufferIn, otherIdx, { 0, -1 }, rule::VERTICAL) &&
-                  !canMoveCell(bufferIn, otherIdx + UP, { 0, -1 }, rule::VERTICAL) &&
-                  !canMoveCell(bufferIn, otherIdx, { m_priorityDirection, -1 }, rule::DIAGONAL) &&
-                  !canMoveCell(bufferIn, otherIdx + UP - m_priorityDirection, { m_priorityDirection, -1 }, rule::DIAGONAL)
+                  (inputBuffer[otherIdx] & rule::HORIZONTAL[ruleIdx]) > 0 &&
+                  (inputBuffer[otherDownIdx] & rule::VERTICAL[otherRuleIdx]) == 0 &&
+                  (inputBuffer[otherIdx] & rule::VERTICAL[otherUpRuleIdx]) == 0 &&
+                  (inputBuffer[otherDownDiagIdx] & rule::DIAGONAL[otherRuleIdx]) == 0 &&
+                  (inputBuffer[otherIdx] & rule::DIAGONAL[otherUpDiagRuleIdx]) == 0
                 ) {
-                  bufferOut[idx] = bufferIn[otherIdx];
+                  outputBuffer[idx] = inputBuffer[otherIdx];
                 } else {
-                  bufferOut[idx] = rule::HORIZONTAL_OPPOSITE_DIRECTION_CELL[ruleIdx];
+                  const uint32_t oppositeDirectionCell = rule::HORIZONTAL_OPPOSITE_DIRECTION_CELL[ruleIdx];
+                  outputBuffer[idx] = oppositeDirectionCell;
                 }
                 continue;
               }
@@ -206,7 +202,7 @@ auto CpuSimulator::run(
 
           // If no rule applies to cell at cellIdx
           // just copy it to the bufferOut
-          bufferOut[idx] = bufferIn[idx];
+          outputBuffer[idx] = inputBuffer[idx];
         }
       }
 
@@ -215,20 +211,4 @@ auto CpuSimulator::run(
   }
 
   latch.wait();  
-}
-
-auto CpuSimulator::canMoveCell(
-  const std::vector<cell_t>& bufferIn,
-  uint32_t cellIdx,
-  Position2D<int32_t> direction,
-  const std::array<cell_t, 7>& rules
-) const -> bool {
-  const cell_t cell = bufferIn[cellIdx];
-  const uint8_t cellRuleIdx = log2(cell);
-  const cell_t cellRule = rules[cellRuleIdx];
-
-  const uint32_t otherIdx = cellIdx + direction.y * m_sizeWithPadding.width + direction.x;
-  const cell_t other = bufferIn[otherIdx];
-
-  return (other & cellRule) > 0;
 }
