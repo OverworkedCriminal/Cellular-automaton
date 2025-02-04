@@ -24,7 +24,6 @@ add_subdirectory(window)
 
 # dependencies
 # --- GLFW --- # window manager
-add_subdirectory("${PROJECT_SOURCE_DIR}/lib/glfw-3.4" lib/glfw-3.4)
 target_link_libraries(cellular-automaton-engine glfw)
 # --- GLAD --- # openGL loader
 # GLFW's OpenGL loader does not provide access to glBindImageTexture
