@@ -19,7 +19,6 @@ uniform int RULE_HORIZONTAL_DIRECTIONS[32];
 uniform uint RULE_HORIZONTAL_OPPOSITE_DIRECTION_CELL[32];
 
 uniform uint gridWidth;
-uniform uint gridHeight;
 uniform uint gridPadding;
 uniform int priorityDirection;
 

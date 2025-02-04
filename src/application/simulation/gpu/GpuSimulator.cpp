@@ -72,10 +72,6 @@ auto GpuSimulator::create(
   if (!uniformResult.has_value()) {
     std::cerr << "failed to set uniform gridWidth\n\t" << uniformResult.error() << '\n';
   }
-  uniformResult = program->setUniform("gridHeight", size.height + 2 * PADDING_SIZE);
-  if (!uniformResult.has_value()) {
-    std::cerr << "failed to set uniform gridHeight\n\t" << uniformResult.error() << '\n';
-  }
   uniformResult = program->setUniform("gridPadding", PADDING_SIZE);
   if (!uniformResult.has_value()) {
     std::cerr << "failed to set uniform gridPadding\n\t" << uniformResult.error() << '\n';
