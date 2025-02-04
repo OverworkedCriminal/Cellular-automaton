@@ -3,9 +3,13 @@
 
 #include "application/painting/brush/PaintingBrushDescription.hpp"
 #include "engine/callback/IKeyboardKeyCallback.hpp"
+#include "engine/callback/IMouseScrollCallback.hpp"
 #include <memory>
 
-class ApplicationPaintingCallback :public engine::IKeyboardKeyCallback {
+class ApplicationPaintingCallback
+  :public engine::IKeyboardKeyCallback 
+  ,public engine::IMouseScrollCallback
+{
 public:
   static auto create(
     std::shared_ptr<PaintingBrushDescription>
@@ -18,6 +22,7 @@ public:
   auto operator=(ApplicationPaintingCallback&&) -> ApplicationPaintingCallback& = default;
 
   auto onKeyEvent(engine::input::KeyboardKey key, bool pressed) -> void override;
+  auto onScrollEvent(double offsetX, double offsetY) -> void override;
 
 private:
   ApplicationPaintingCallback(

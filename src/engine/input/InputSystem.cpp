@@ -77,6 +77,10 @@ auto InputSystem::addMouseButtonCallback(std::weak_ptr<IMouseButtonCallback> cal
   m_mouseButtonCallbacks.emplace_back(callback);
 }
 
+auto InputSystem::addMouseScrollCallback(std::weak_ptr<IMouseScrollCallback> callback) -> void {
+  m_mouseScrollCallbacks.emplace_back(callback);
+}
+
 auto InputSystem::keyboardCallback(
   GLFWwindow* window,
   int key,
@@ -138,6 +142,16 @@ auto InputSystem::mouseButtonCallback(
         ptr->onButtonEvent(static_cast<MouseButton>(button), action);
       }
       break;
+  }
+}
+
+auto InputSystem::mouseScrollCallback(GLFWwindow* window, double xOffset, double yOffset) -> void {
+  assert(window == m_window);
+
+  removeDeadCallbacks(m_mouseScrollCallbacks);
+  for (const auto& callbackWeakPtr : m_mouseScrollCallbacks) {
+    const auto ptr = callbackWeakPtr.lock();
+    ptr->onScrollEvent(xOffset, yOffset);
   }
 }
 

@@ -25,13 +25,18 @@ auto ApplicationPaintingCallback::onKeyEvent(KeyboardKey key, bool pressed) -> v
     case KeyboardKey::_2: m_brushDescriptionPtr->cell = 4;  break; // SAND
     case KeyboardKey::_3: m_brushDescriptionPtr->cell = 8;  break; // WATER
     case KeyboardKey::_4: m_brushDescriptionPtr->cell = 32; break; // SMOKE
-    case KeyboardKey::PLUS:
-      m_brushDescriptionPtr->size = std::min(m_brushDescriptionPtr->size + 1, 50);
-      break;
-    case KeyboardKey::MINUS:
-      m_brushDescriptionPtr->size = std::max(m_brushDescriptionPtr->size - 1, 1);
-      break;
     default:
       break;
+  }
+}
+
+auto ApplicationPaintingCallback::onScrollEvent(
+  double offsetX [[maybe_unused]],
+  double offsetY
+) -> void {
+  if (offsetY > 0) {
+    m_brushDescriptionPtr->size = std::min(m_brushDescriptionPtr->size + 1, 50);
+  } else if (offsetY < 0 ) {
+    m_brushDescriptionPtr->size = std::max(m_brushDescriptionPtr->size - 1, 1);
   }
 }

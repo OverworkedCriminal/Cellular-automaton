@@ -50,6 +50,16 @@ static auto mouseButtonCallback(
   context->inputSystem.mouseButtonCallback(window, button, action, mods);
 }
 
+static auto mouseScrollCallback(
+  GLFWwindow* window,
+  double xOffset,
+  double yOffset
+) -> void {
+  void* userPointer = glfwGetWindowUserPointer(window);
+  auto* context = reinterpret_cast<GlfwWindowContext*>(userPointer);
+  context->inputSystem.mouseScrollCallback(window, xOffset, yOffset);
+}
+
 static auto framebufferSizeCallback(
   GLFWwindow* window,
   int width,
@@ -99,6 +109,7 @@ static auto initGLFW(
   glfwSetKeyCallback(window, keyboardCallback);
   glfwSetCursorPosCallback(window, mousePositionCallback);
   glfwSetMouseButtonCallback(window, mouseButtonCallback);
+  glfwSetScrollCallback(window, mouseScrollCallback);
   glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
   int width, height;
