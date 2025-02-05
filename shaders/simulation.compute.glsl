@@ -93,25 +93,55 @@ void main() {
   }
 
   { // MOVE_HORIZONTALLY
+    bool shouldChangeDirection = false;
+    uint directionToChangeTo;
+
+    { // MOVE OUT
+      const int direction = RULE_HORIZONTAL_DIRECTIONS[ruleIdx];
+      const uint otherIdx = idx + priorityDirection;
+      if (direction == priorityDirection) { // simulation processes right direction
+        const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
+        const uint otherDirectionIdx = otherIdx + priorityDirection;
+        const uint otherDownIdx = otherIdx - gridWidth;
+        const uint otherTopIdx = otherIdx + gridWidth;
+        const uint otherTopRuleIdx = uint(log2(inputBuffer[otherTopIdx]));
+        const uint otherDownDiagIdx = otherIdx - gridWidth + priorityDirection;
+        const uint otherTopDiagIdx = otherIdx + gridWidth - priorityDirection;
+        const uint otherTopDiagRuleIdx = uint(log2(inputBuffer[otherTopDiagIdx]));
+        if (
+          (inputBuffer[otherIdx] & RULE_HORIZONTAL[ruleIdx]) > 0 &&                // can move horizontally
+          (inputBuffer[otherDirectionIdx] & RULE_HORIZONTAL[otherRuleIdx]) == 0 && // other can't move horizontally
+          (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0 &&        // other can't move vertically
+          (inputBuffer[otherIdx] & RULE_VERTICAL[otherTopRuleIdx]) == 0 &&         // other top can't move vertically
+          (inputBuffer[otherDownDiagIdx] & RULE_DIAGONAL[otherRuleIdx]) == 0 &&    // other can't move diagonally
+          (inputBuffer[otherIdx] & RULE_DIAGONAL[otherTopDiagRuleIdx]) == 0        // other top diag can't move diagonally
+        ) {
+          outputBuffer[idx] = inputBuffer[otherIdx];
+          imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);
+          return;
+        }
+
+        shouldChangeDirection = true;
+        directionToChangeTo = RULE_HORIZONTAL_OPPOSITE_DIRECTION_CELL[ruleIdx];
+      }
+    }
     { // MOVE IN
       const uint otherIdx = idx - priorityDirection;
       const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
-      if (
-        RULE_HORIZONTAL_DIRECTIONS[otherRuleIdx] == priorityDirection &&
-        (inputBuffer[idx] & RULE_HORIZONTAL[otherRuleIdx]) > 0
-      ) {
+      const int otherDirection = RULE_HORIZONTAL_DIRECTIONS[otherRuleIdx];
+      if (otherDirection == priorityDirection) { // simulation processes right direction
         const uint otherDownIdx = otherIdx - gridWidth;
-        const uint otherDownDiagIdx = otherDownIdx + priorityDirection;
         const uint otherTopIdx = otherIdx + gridWidth;
         const uint otherTopRuleIdx = uint(log2(inputBuffer[otherTopIdx]));
-        const uint otherTopDiagIdx = otherTopIdx - priorityDirection;
+        const uint otherDownDiagIdx = otherIdx - gridWidth + priorityDirection;
+        const uint otherTopDiagIdx = otherIdx + gridWidth - priorityDirection;
         const uint otherTopDiagRuleIdx = uint(log2(inputBuffer[otherTopDiagIdx]));
-        
-        if(
-          (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0 &&
-          (inputBuffer[otherIdx] & RULE_VERTICAL[otherTopRuleIdx]) == 0 &&
-          (inputBuffer[otherDownDiagIdx] & RULE_DIAGONAL[otherRuleIdx]) == 0 &&
-          (inputBuffer[otherIdx] & RULE_DIAGONAL[otherTopDiagRuleIdx]) == 0
+        if (
+          (inputBuffer[idx] & RULE_HORIZONTAL[otherRuleIdx]) > 0 &&             // other can move horizontally
+          (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0 &&     // other can't move vertically
+          (inputBuffer[otherIdx] & RULE_VERTICAL[otherTopRuleIdx]) == 0 &&      // other top can't move vertically
+          (inputBuffer[otherDownDiagIdx] & RULE_DIAGONAL[otherRuleIdx]) == 0 && // other can't move diagonally
+          (inputBuffer[otherIdx] & RULE_DIAGONAL[otherTopDiagRuleIdx]) == 0     // other top diag can't move diagonally
         ) {
           outputBuffer[idx] = inputBuffer[otherIdx];
           imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);
@@ -119,33 +149,11 @@ void main() {
         }
       }
     }
-    { // MOVE OUT
-      const uint direction = RULE_HORIZONTAL_DIRECTIONS[ruleIdx];
-      const uint otherIdx = idx + priorityDirection;
-      if (direction == priorityDirection) {
-        const uint otherRuleIdx = uint(log2(inputBuffer[otherIdx]));
-        const uint otherDownIdx = otherIdx - gridWidth;
-        const uint otherDownDiagIdx = otherIdx - gridWidth + priorityDirection;
-        const uint otherUpIdx = otherIdx + gridWidth;
-        const uint otherUpRuleIdx = uint(log2(inputBuffer[otherUpIdx]));
-        const uint otherUpDiagIdx = otherIdx + gridWidth - priorityDirection;
-        const uint otherUpDiagRuleIdx = uint(log2(inputBuffer[otherUpDiagIdx]));
-
-        if (
-          (inputBuffer[otherIdx] & RULE_HORIZONTAL[ruleIdx]) > 0 &&
-          (inputBuffer[otherDownIdx] & RULE_VERTICAL[otherRuleIdx]) == 0 &&
-          (inputBuffer[otherIdx] & RULE_VERTICAL[otherUpRuleIdx]) == 0 &&
-          (inputBuffer[otherDownDiagIdx] & RULE_DIAGONAL[otherRuleIdx]) == 0 &&
-          (inputBuffer[otherIdx] & RULE_DIAGONAL[otherUpDiagRuleIdx]) == 0
-        ) {
-          outputBuffer[idx] = inputBuffer[otherIdx];
-          imageStore(simulationTexture, coords, COLORS[otherRuleIdx]);
-        } else {
-          const uint oppositeDirectionCell = RULE_HORIZONTAL_OPPOSITE_DIRECTION_CELL[ruleIdx];
-          const uint oppositeDirectionCellRuleIdx = uint(log2(oppositeDirectionCell));
-          outputBuffer[idx] = oppositeDirectionCell;
-          imageStore(simulationTexture, coords, COLORS[oppositeDirectionCellRuleIdx]);
-        }
+    { // WANTS TO MOVE BUT CAN'T
+      if (shouldChangeDirection) {
+        const uint directionToChangeToRuleIdx = uint(log2(directionToChangeTo));
+        outputBuffer[idx] = directionToChangeTo;
+        imageStore(simulationTexture, coords, COLORS[directionToChangeToRuleIdx]);
         return;
       }
     }
