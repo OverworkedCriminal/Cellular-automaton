@@ -1,0 +1,1 @@
+target_sources(cellular-automaton-engine PUBLIC Texture.cpp)
