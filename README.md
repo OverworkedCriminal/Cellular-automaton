@@ -1,6 +1,10 @@
 # Cellular-automaton
 Application that simulates sand, water and smoke movement on a grid.
 
+
+https://github.com/user-attachments/assets/43a312db-3ec3-498a-8199-2133aaf78d76
+
+
 | Control | effect |
 | - | - |
 | mouse left button | paint |
